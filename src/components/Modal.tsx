@@ -9,9 +9,10 @@ interface ModalProps {
   onEdit?: () => void;
   onDelete?: () => void;
   hideHeaderActions?: boolean;
+  maxWidth?: string;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth }: ModalProps) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -41,13 +42,13 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      padding: '1rem'
+      padding: maxWidth ? '0.5rem' : '1rem'
     }} onClick={onClose}>
       <div 
         className="glass-panel" 
         style={{ 
-          width: '100%',
-          maxWidth: '775px',
+          width: maxWidth ? maxWidth : '100%',
+          maxWidth: maxWidth || '775px',
           padding: '2rem',
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'

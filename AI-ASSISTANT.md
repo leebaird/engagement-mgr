@@ -29,9 +29,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **No DB in Client**: Never import `prisma` or any node-specific dependencies (like `fs`) inside a Client Component.
 
 ### Database & Schema Changes
-- Every change to `prisma/schema.prisma` must be followed by:
-  1. `npx prisma db push` (or `npx prisma migrate dev`)
-  2. `npx prisma generate`
+- Every change to `prisma/schema.prisma` must be followed by **in this order**:
+  1. `npx prisma db push` (or `npx prisma migrate dev`) — to update the database
+  2. `npx prisma generate` — to update the Prisma Client types
 - **Schema Drift**: Be vigilant about database drift. Ensure pending Prisma migrations or local schema changes are completely synchronized before testing new UI or queries.
 - After schema changes, always run `npx tsc --noEmit` to catch type errors.
 - Never assume a field removal or addition is only UI — always confirm with the user.

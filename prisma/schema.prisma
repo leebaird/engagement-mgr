@@ -26,6 +26,7 @@ model Engagement {
   codeName        String
   clientId        String
   client          Client            @relation(fields: [clientId], references: [id])
+  chargeCode      String?
   status          EngagementStatus?
   focus           String?
   type            EngagementType?

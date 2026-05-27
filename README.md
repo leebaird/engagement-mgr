@@ -55,39 +55,6 @@ sudo -u postgres psql -c "ALTER DATABASE engagement_manager OWNER TO em_admin;"
    npx prisma db seed
    ```
 
-## Adding New Fields
-
-To add a new field to an existing model (e.g., `focus` on `Engagement`):
-
-1. Open `prisma/schema.prisma` and add the field to the desired model:
-
-   ```prisma
-   model Engagement {
-     id              String @id @default(uuid())
-     codeName        String
-     focus           String?   // new field
-     ...
-   }
-   ```
-
-2. Push the schema change to the database:
-
-   ```bash
-   npx prisma db push
-   ```
-
-   > **Note:** Use `npx prisma migrate dev --name add_focus_field` if you prefer to create a version-controlled migration. In general:
-   > - Use `db push` for quick local development.
-   > - Use `migrate dev` when you want a proper migration history.
-
-3. Regenerate the Prisma Client:
-
-   ```bash
-   npx prisma generate
-   ```
-
-4. Update any affected UI components, forms, validation logic, or server actions as needed.
-
 ## Running the Application
 
 Start the development server:
@@ -134,6 +101,39 @@ This section documents the architecture, database schema, security measures, and
 - **Screenshot**: `id`, `findingId`, `filePath`, `description`, `createdAt`.
 
 - **Operator**: `id`, `name`, `title`, `email`, `phoneNumber`, `discord`, `github`, `notes`, `engagements` (M:N), `createdAt`, `updatedAt`.
+
+### Adding New Fields
+
+To add a new field to an existing model (e.g., `focus` on `Engagement`):
+
+1. Open `prisma/schema.prisma` and add the field to the desired model:
+
+   ```prisma
+   model Engagement {
+     id              String @id @default(uuid())
+     codeName        String
+     focus           String?   // new field
+     ...
+   }
+   ```
+
+2. Push the schema change to the database:
+
+   ```bash
+   npx prisma db push
+   ```
+
+   > **Note:** Use `npx prisma migrate dev --name add_focus_field` if you prefer to create a version-controlled migration. In general:
+   > - Use `db push` for quick local development.
+   > - Use `migrate dev` when you want a proper migration history.
+
+3. Regenerate the Prisma Client:
+
+   ```bash
+   npx prisma generate
+   ```
+
+4. Update any affected UI components, forms, validation logic, or server actions as needed.
 
 ### Security Architecture
 

@@ -69,7 +69,7 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                   {eng.status ? eng.status.charAt(0).toUpperCase() + eng.status.slice(1).toLowerCase() : '-'}
                 </td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || '-'}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? eng.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : '-'}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startDate?.toLocaleDateString() || '-'}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endDate?.toLocaleDateString() || '-'}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>

@@ -143,6 +143,7 @@ export function EngagementDetailButton({
         isOpen={isOpen} 
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit Engagement" : "Engagement Details"} 
+        maxWidth="3000px"
         onEdit={() => {
           if (!isEditing) {
             setFormData({
