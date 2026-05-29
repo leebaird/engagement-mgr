@@ -143,7 +143,7 @@ export function EngagementDetailButton({
         isOpen={isOpen} 
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit Engagement" : "Engagement Details"} 
-        maxWidth="3000px"
+        maxWidth="1500px"
         onEdit={() => {
           if (!isEditing) {
             setFormData({
@@ -266,7 +266,7 @@ export function EngagementDetailButton({
           </div>
         ) : (
           // EDIT MODE
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             {/* Left Column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>

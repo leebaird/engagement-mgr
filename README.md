@@ -117,23 +117,13 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
    }
    ```
 
-2. Push the schema change to the database:
+2. Every change to `prisma/schema.prisma` must be followed with:
 
-   ```bash
-   npx prisma db push
-   ```
+   `npx prisma db push` — to update the database
 
-   > **Note:** Use `npx prisma migrate dev --name add_focus_field` if you prefer to create a version-controlled migration. In general:
-   > - Use `db push` for quick local development.
-   > - Use `migrate dev` when you want a proper migration history.
+   `npx prisma generate` — to update the Prisma Client types
 
-3. Regenerate the Prisma Client:
-
-   ```bash
-   npx prisma generate
-   ```
-
-4. Update any affected UI components, forms, validation logic, or server actions as needed.
+3. Update any affected UI components, forms, validation logic, or server actions as needed.
 
 ### Security Architecture
 

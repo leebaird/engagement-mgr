@@ -24,6 +24,7 @@ export function EngagementsClient({ clients, contacts, operators, children }: En
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Add New Engagement"
+        maxWidth="1500px"
       >
         <CreateEngagementForm 
           clients={clients} 

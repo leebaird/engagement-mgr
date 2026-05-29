@@ -7,13 +7,13 @@ datasource db {
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  username           String   @unique
-  passwordHash       String
-  role               Role     @default(USER)
-  lastPasswordChange DateTime @default(now())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String        @id @default(uuid())
+  username             String        @unique
+  passwordHash         String
+  role                 Role          @default(USER)
+  lastPasswordChange   DateTime      @default(now())
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
 
 enum Role {
@@ -22,28 +22,28 @@ enum Role {
 }
 
 model Engagement {
-  id              String            @id @default(uuid())
-  codeName        String
-  clientId        String
-  client          Client            @relation(fields: [clientId], references: [id])
-  chargeCode      String?
-  status          EngagementStatus?
-  focus           String?
-  type            EngagementType?
-  location        Location?
-  objectives      String?
-  kickOffDate     DateTime?
-  startDate       DateTime?
-  endDate         DateTime?
-  targets         String?
-  exclusions      String?
-  notes           String?
-  operators       Operator[] // Implicit M:N
-  contacts        Contact[]         @relation("EngagementContacts")
-  trustedAgents   Contact[]         @relation("TrustedAgents")
-  findings        Finding[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                   String        @id @default(uuid())
+  codeName             String
+  clientId             String
+  client               Client        @relation(fields: [clientId], references: [id])
+  chargeCode           String?
+  status               EngagementStatus?
+  focus                String?
+  type                 EngagementType?
+  location             Location?
+  kickOffDate          DateTime?
+  startDate            DateTime?
+  endDate              DateTime?
+  objectives           String?
+  targets              String?
+  exclusions           String?
+  notes                String?
+  operators            Operator[]    // Implicit M:N
+  contacts             Contact[]     @relation("EngagementContacts")
+  trustedAgents        Contact[]     @relation("TrustedAgents")
+  findings             Finding[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
 
 enum EngagementStatus {
@@ -77,69 +77,69 @@ enum Location {
 }
 
 model Client {
-  id          String       @id @default(uuid())
-  company     String       @map("companyName")
-  address     String?
-  city        String?
-  state       String?
-  zip         String?
-  phone       String?   @map("phoneNumber")
-  website     String?
-  notes       String?
-  contacts    Contact[]
-  engagements Engagement[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                   String        @id @default(uuid())
+  company              String        @map("companyName")
+  address              String?
+  city                 String?
+  state                String?
+  zip                  String?
+  phone                String?       @map("phoneNumber")
+  website              String?
+  notes                String?
+  contacts             Contact[]
+  engagements          Engagement[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
 
 model Contact {
-  id                  String       @id @default(uuid())
-  clientId            String
-  client              Client       @relation(fields: [clientId], references: [id])
-  name                String
-  title               String?
-  email               String?
-  phone               String?   @map("phoneNumber")
-  notes               String?
-  assignedEngagements Engagement[] @relation("EngagementContacts")
-  trustedEngagements  Engagement[] @relation("TrustedAgents")
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  id                   String        @id @default(uuid())
+  clientId             String
+  client               Client        @relation(fields: [clientId], references: [id])
+  name                 String
+  title                String?
+  email                String?
+  phone                String?       @map("phoneNumber")
+  notes                String?
+  assignedEngagements  Engagement[]  @relation("EngagementContacts")
+  trustedEngagements   Engagement[]  @relation("TrustedAgents")
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
 
 model Finding {
-  id              String       @id @default(uuid())
-  engagementId    String?
-  engagement      Engagement?  @relation(fields: [engagementId], references: [id])
-  title           String
-  severity        String
-  background      String?
-  remediation     String?
-  supportingData  String?   @map("supportingLinks")
-  screenshots     Screenshot[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                   String        @id @default(uuid())
+  engagementId         String?
+  engagement           Engagement?   @relation(fields: [engagementId], references: [id])
+  title                String
+  severity             String
+  background           String?
+  remediation          String?
+  supportingData       String?       @map("supportingLinks")
+  screenshots          Screenshot[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
 
 model Screenshot {
-  id          String   @id @default(uuid())
-  findingId   String
-  finding     Finding  @relation(fields: [findingId], references: [id])
-  filePath    String
-  description String?
-  createdAt   DateTime @default(now())
+  id                   String        @id @default(uuid())
+  findingId            String   
+  finding              Finding       @relation(fields: [findingId], references: [id])
+  filePath             String
+  description          String?
+  createdAt            DateTime      @default(now())
 }
 
 model Operator {
-  id          String       @id @default(uuid())
-  name        String
-  title       String?
-  email       String?
-  phoneNumber String?
-  discord     String?
-  github      String?
-  notes       String?
-  engagements Engagement[] // Implicit M:N
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                   String        @id @default(uuid())
+  name                 String
+  title                String?
+  email                String?
+  phoneNumber          String?
+  discord              String?
+  github               String?
+  notes                String?
+  engagements          Engagement[]  // Implicit M:N
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 }
