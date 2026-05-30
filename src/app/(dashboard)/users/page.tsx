@@ -12,12 +12,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     redirect('/');
   }
 
-  const validSortColumns = ['username', 'role', 'createdAt', 'lastPasswordChange'];
+  const validSortColumns = ['username', 'role', 'createdAt', 'lastLogin'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'username';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
   const users = await prisma.user.findMany({
-    select: { id: true, username: true, role: true, createdAt: true, lastPasswordChange: true },
+    select: { id: true, username: true, role: true, createdAt: true, updatedAt: true, lastPasswordChange: true, lastLogin: true },
     orderBy: { [sortCol]: sortDir }
   });
 
@@ -55,8 +55,8 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 </Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}>
-                <Link href={getSortHref('lastPasswordChange')} style={{ color: 'inherit', textDecoration: 'none' }}>
-                  Password{getSortIcon('lastPasswordChange')}
+                <Link href={getSortHref('lastLogin')} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Last Login{getSortIcon('lastLogin')}
                 </Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}></th>
@@ -83,7 +83,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   {user.createdAt.toLocaleDateString()}
                 </td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {user.lastPasswordChange.toLocaleDateString()}
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '-'}
                 </td>
                 <td style={{ padding: '0.75rem' }}></td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>

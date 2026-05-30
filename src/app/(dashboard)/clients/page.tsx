@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { ClientsClient } from './ClientsClient';
 import { ClientDetailButton } from './ClientDetailButton';
+import { formatPhone } from '@/lib/format';
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
@@ -11,7 +12,6 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
   const clients = await prisma.client.findMany({ 
-    include: { contacts: { select: { id: true, name: true, email: true } } },
     orderBy: { [sortCol]: sortDir } 
   });
 
@@ -50,7 +50,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
               <tr key={client.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{client.company}</td>
                 <td style={{ padding: '0.75rem' }}>{client.website || '-'}</td>
-                <td style={{ padding: '0.75rem' }}>{client.phoneNumber || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{formatPhone(client.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <ClientDetailButton client={client} />
                 </td>

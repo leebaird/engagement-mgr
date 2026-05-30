@@ -167,10 +167,12 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', height: '2.5rem' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.2' }}>
-                Created {new Date(operator.createdAt).toLocaleDateString()}<br />
-                Edited {new Date(operator.updatedAt).toLocaleDateString()}
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{new Date(operator.createdAt).toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{new Date(operator.updatedAt).toLocaleDateString()}</div>
               </div>
             </div>
           </div>

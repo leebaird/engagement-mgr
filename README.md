@@ -91,13 +91,13 @@ This section documents the architecture, database schema, security measures, and
 
 - **User**: `id`, `username`, `passwordHash`, `role` (ADMIN, USER), `lastPasswordChange`, `createdAt`, `updatedAt`.
 
-- **Engagement**: `id`, `codeName`, `clientId`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `objectives`, `kickOffDate`, `startDate`, `endDate`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `createdAt`, `updatedAt`.
+- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `kickOffDate`, `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `createdAt`, `updatedAt`.
 
-- **Client**: `id`, `company`, `address`, `city`, `state`, `zip`, `phone`, `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
+- **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 
-- **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone`, `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
+- **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
 
-- **Finding**: `id`, `engagementId` (optional), `title`, `severity`, `background`, `remediation`, `supportingData`, `screenshots`, `createdAt`, `updatedAt`.
+- **Finding**: `id`, `engagementId` (optional), `title`, `severity`, `background`, `remediation`, `supportingData` (DB column: `supportingLinks`), `screenshots`, `createdAt`, `updatedAt`.
 - **Screenshot**: `id`, `findingId`, `filePath`, `description`, `createdAt`.
 
 - **Operator**: `id`, `name`, `title`, `email`, `phoneNumber`, `discord`, `github`, `notes`, `engagements` (M:N), `createdAt`, `updatedAt`.

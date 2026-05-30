@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
+import { formatPhone } from '@/lib/format';
 
 export default async function ContactsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
@@ -64,7 +65,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
                 <td style={{ padding: '0.75rem' }}>{c.title || '-'}</td>
                 <td style={{ padding: '0.75rem' }}>{c.client.company}</td>
                 <td style={{ padding: '0.75rem' }}>{c.email || '-'}</td>
-                <td style={{ padding: '0.75rem' }}>{c.phone || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{formatPhone(c.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <ContactDetailButton contact={c} clients={clients} />
                 </td>

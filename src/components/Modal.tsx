@@ -43,7 +43,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       justifyContent: 'center',
       zIndex: 1000,
       padding: maxWidth ? '0.5rem' : '1rem'
-    }} onClick={onClose}>
+    }} onMouseDown={onClose} onClick={onClose}>
       <div 
         className="glass-panel" 
         style={{ 
@@ -53,6 +53,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
           position: 'relative',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
+        onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

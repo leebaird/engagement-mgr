@@ -9,6 +9,7 @@ interface User {
   username: string;
   role: string;
   createdAt: any;
+  updatedAt: any;
   lastPasswordChange: any;
 }
 
@@ -48,7 +49,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
           ...user, 
           username: formData.username, 
           role: formData.role,
-          lastPasswordChange: formData.password ? new Date() : user.lastPasswordChange
+          lastPasswordChange: formData.password ? new Date(0) : user.lastPasswordChange
         });
         setIsEditing(false);
       }
@@ -93,6 +94,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
         isOpen={isOpen} 
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit User" : "User Details"}
+        maxWidth="600px"
         onEdit={() => {
           if (!isEditing) {
             setFormData({
@@ -117,10 +119,10 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
       >
         {!isEditing ? (
           // VIEW MODE - using same sizes as EDIT/CREATE MODE
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: '340px', lineHeight: 1.5, paddingBottom: '0.5rem' }}>
             <div className="form-group">
               <span className="form-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Username</span>
-              <div style={{ fontWeight: 500, color: '#fff' }}>{user.username}</div>
+              <div style={{ fontWeight: 500, color: '#fff', minWidth: '340px' }}>{user.username}</div>
             </div>
             
             <div className="form-group" style={{ width: '7rem' }}>
@@ -139,14 +141,13 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <span className="form-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Created</span>
-              <div style={{ color: '#fff' }}>{new Date(user.createdAt).toLocaleDateString()}</div>
-            </div>
-
-            <div className="form-group">
-              <span className="form-label" style={{ display: 'block', marginBottom: '0.25rem' }}>Password Last Changed</span>
-              <div style={{ color: '#fff' }}>{new Date(user.lastPasswordChange).toLocaleDateString()}</div>
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{new Date(user.createdAt).toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{new Date(user.updatedAt).toLocaleDateString()}</div>
+              </div>
             </div>
           </div>
         ) : (
@@ -161,6 +162,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 onChange={e => setFormData({...formData, username: e.target.value})} 
                 className="form-input" 
                 required 
+                style={{ minWidth: '340px', width: '100%' }}
               />
             </div>
 
@@ -172,7 +174,12 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 onChange={e => setFormData({...formData, password: e.target.value})} 
                 className="form-input" 
                 placeholder="••••••••"
+                style={{ minWidth: '340px', width: '100%' }}
               />
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                The user will be required to change their password on the next login.<br />
+                Password must be at least 16 characters, with one uppercase, one number, and one symbol.
+              </div>
             </div>
 
             <div style={{ width: '7rem' }}>
@@ -200,7 +207,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
               </select>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
                 <button onClick={handleUpdate} className="btn-save" disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
                 <button onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel">Cancel</button>
             </div>

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import { Crosshair, ShieldAlert, Users, Building2, Zap, Contact } from 'lucide-react';
 
 export default async function DashboardHome() {
@@ -8,16 +9,10 @@ export default async function DashboardHome() {
     day: 'numeric'
   }).format(new Date());
 
-  const [
-    activeEngagementCount,
-    planningEngagementCount,
-    completedEngagementCount,
-    clientCount,
-    contactCount,
-    findingCount,
-    operatorCount,
-    userCount
-  ] = await Promise.all([
+  const session = await getSession();
+  const isAdmin = session?.role === 'ADMIN';
+
+  const baseCounts = await Promise.all([
     prisma.engagement.count({
       where: {
         status: {
@@ -35,8 +30,21 @@ export default async function DashboardHome() {
     prisma.contact.count(),
     prisma.finding.count(),
     prisma.operator.count(),
-    prisma.user.count(),
   ]);
+
+  const [
+    activeEngagementCount,
+    planningEngagementCount,
+    completedEngagementCount,
+    clientCount,
+    contactCount,
+    findingCount,
+    operatorCount,
+  ] = baseCounts;
+
+  const userCount = isAdmin
+    ? await prisma.user.count()
+    : 0;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -115,16 +123,18 @@ export default async function DashboardHome() {
           </div>
         </div>
 
-        {/* Users */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-            <Users size={28} color="#0066ff" />
+        {/* Users - only visible to admins */}
+        {isAdmin && (
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
+            <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
+              <Users size={28} color="#0066ff" />
+            </div>
+            <div style={{ width: '80px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{userCount}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Users</div>
+            </div>
           </div>
-          <div style={{ width: '80px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700 }}>{userCount}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Users</div>
-          </div>
-        </div>
+        )}
 
       </div>
     </div>

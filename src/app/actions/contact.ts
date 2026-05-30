@@ -7,7 +7,7 @@ export async function createContact(prevState: any, formData: FormData) {
   const name = formData.get('name') as string;
   const title = formData.get('title') as string;
   const email = formData.get('email') as string;
-  const phoneNumber = formData.get('phoneNumber') as string;
+  const phone = formData.get('phoneNumber') as string;
   const notes = formData.get('notes') as string;
 
   if (!clientId || !name) return { error: 'Client and Name are required' };

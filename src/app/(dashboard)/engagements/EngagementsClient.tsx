@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateEngagementForm } from './CreateEngagementForm';
@@ -13,12 +13,15 @@ interface EngagementsClientProps {
 
 export function EngagementsClient({ clients, contacts, operators, children }: EngagementsClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <PageHeader title="Engagements" onAddClick={() => setIsModalOpen(true)} />
       
-      {children}
+      <div ref={listRef}>
+        {children}
+      </div>
 
       <Modal 
         isOpen={isModalOpen} 
@@ -30,7 +33,13 @@ export function EngagementsClient({ clients, contacts, operators, children }: En
           clients={clients} 
           contacts={contacts} 
           operators={operators} 
-          onSuccess={() => setIsModalOpen(false)} 
+          onSuccess={() => {
+            setIsModalOpen(false);
+            // Smoothly return to the list view after adding
+            setTimeout(() => {
+              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+          }} 
         />
       </Modal>
     </div>

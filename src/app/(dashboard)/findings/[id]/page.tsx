@@ -36,10 +36,10 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
             </div>
           )}
 
-          {finding.supportingLinks && (
+          {finding.supportingData && (
             <div className="glass-panel" style={{ padding: '2rem' }}>
               <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>See Also</h3>
-              <p style={{ whiteSpace: 'pre-wrap' }}>{finding.supportingLinks}</p>
+              <p style={{ whiteSpace: 'pre-wrap' }}>{finding.supportingData}</p>
             </div>
           )}
         </div>

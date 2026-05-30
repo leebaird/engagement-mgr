@@ -22,7 +22,7 @@ export async function createUser(prevState: any, formData: FormData) {
 
   const complexity = validatePasswordComplexity(password);
   if (!complexity.valid) {
-    return { error: complexity.errors.join(' '), fields: { username, role } };
+    return { error: 'The password must be at last 16 character long, contain at least one uppercase letter, one number, and one symbol.', fields: { username, role } };
   }
 
   try {
@@ -42,6 +42,7 @@ export async function createUser(prevState: any, formData: FormData) {
         username,
         passwordHash,
         role,
+        lastPasswordChange: new Date(0), // Force password change on first login
       },
     });
 
@@ -80,7 +81,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
     if (password) {
       const complexity = validatePasswordComplexity(password);
       if (!complexity.valid) {
-        return { error: complexity.errors.join(' ') };
+        return { error: 'The password must be at last 16 character long, contain at least one uppercase letter, one number, and one symbol.' };
       }
       const passwordHash = await argon2.hash(password, {
         type: argon2.argon2id,
@@ -88,7 +89,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
         timeCost: 3,
       });
       data.passwordHash = passwordHash;
-      data.lastPasswordChange = new Date();
+      data.lastPasswordChange = new Date(0); // Force password change on next login
     }
 
     await prisma.user.update({

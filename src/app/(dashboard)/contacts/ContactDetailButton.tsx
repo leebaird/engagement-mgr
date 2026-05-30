@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateContact, deleteContact } from '@/app/actions/contact';
+import { formatPhone } from '@/lib/format';
 
 interface Client {
   id: string;
@@ -54,7 +55,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
       data.append('name', formData.name);
       data.append('title', formData.title);
       data.append('email', formData.email);
-      data.append('phoneNumber', formData.phoneNumber);
+      data.append('phone', formData.phone);
       data.append('notes', formData.notes);
 
       const result = await updateContact(contact.id, {}, data);
@@ -69,7 +70,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
           client: selectedClient || contact.client,
           title: formData.title || null,
           email: formData.email || null,
-          phoneNumber: formData.phoneNumber || null,
+          phone: formData.phone || null,
           notes: formData.notes || null,
         });
         setIsEditing(false);
@@ -149,7 +150,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
                 <select disabled value={contact.clientId} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                   <option value=""></option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
               <div>
@@ -170,7 +171,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
-                <input readOnly type="tel" value={contact.phone || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                <input readOnly type="tel" value={formatPhone(contact.phone)} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
             </div>
 
@@ -180,9 +181,13 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
               <textarea readOnly value={contact.notes || ''} className="form-input" rows={3} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
 
-            <div style={{ gridColumn: '1 / -1', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.75rem', height: '2.5rem' }}>
-              Created {new Date(contact.createdAt).toLocaleDateString()}<br />
-              Edited {new Date(contact.updatedAt).toLocaleDateString()}
+            <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{new Date(contact.createdAt).toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{new Date(contact.updatedAt).toLocaleDateString()}</div>
+              </div>
             </div>
           </div>
         ) : (
@@ -201,7 +206,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                   onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}
                 >
                   <option value=""></option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
               <div>
@@ -239,8 +244,8 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input
                   type="text"
-                  value={formData.phoneNumber}
-                  onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="form-input"
                 />
               </div>

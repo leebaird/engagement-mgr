@@ -15,15 +15,19 @@ export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
   }, [state, onSuccess]);
 
   return (
-    <form action={formAction} ref={formRef}>
+    <form action={formAction} ref={formRef} style={{ minHeight: '320px' }}>
       <div className="form-group">
         <label className="form-label" htmlFor="username">Username</label>
-        <input autoFocus key={`username-${state?.fields?.username || ''}`} type="text" id="username" name="username" className="form-input" required defaultValue={state?.fields?.username || ''} />
+        <input autoFocus key={`username-${state?.fields?.username || ''}`} type="text" id="username" name="username" className="form-input" required defaultValue={state?.fields?.username || ''} style={{ minWidth: '340px', width: '100%' }} />
       </div>
 
       <div className="form-group">
         <label className="form-label" htmlFor="password">Password</label>
-        <input type="password" id="password" name="password" className="form-input" required />
+        <input type="password" id="password" name="password" className="form-input" required style={{ minWidth: '340px', width: '100%' }} />
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+          The user will be required to change their password on the next login.<br />
+          Password must be at least 16 characters, with one uppercase, one number, and one symbol.
+        </div>
       </div>
 
       <div className="form-group" style={{ width: '7rem' }}>

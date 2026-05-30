@@ -12,7 +12,7 @@ export function EngagementDetailButton({
   operators
 }: {
   engagement: any,
-  clients: { id: string, companyName: string }[],
+  clients: { id: string, company: string }[],
   contacts: { id: string, name: string, clientId: string }[],
   operators: { id: string, name: string }[]
 }) {
@@ -188,7 +188,7 @@ export function EngagementDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
-                <div style={{ fontWeight: 500 }}>{engagement.client?.companyName || '-'}</div>
+                <div style={{ fontWeight: 500 }}>{engagement.client?.company || '-'}</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -258,9 +258,13 @@ export function EngagementDetailButton({
                   <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.notes}</div>
                 </div>
               )}
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.75rem' }}>
-                Created {new Date(engagement.createdAt).toLocaleDateString()}<br />
-                Edited {new Date(engagement.updatedAt).toLocaleDateString()}
+              <div style={{ marginTop: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                  <div>Created</div>
+                  <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
+                  <div>Updated</div>
+                  <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -277,7 +281,7 @@ export function EngagementDetailButton({
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
                 <select value={formData.clientId} onChange={e => setFormData({...formData, clientId: e.target.value})} className="form-input" required style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                   <option value=""></option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -381,7 +385,7 @@ export function EngagementDetailButton({
                     {contacts.map(c => (
                       <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', cursor: 'pointer', borderRadius: '4px', background: selectedContacts.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent' }}>
                         <input type="checkbox" checked={selectedContacts.includes(c.id)} onChange={e => { if (e.target.checked) { setSelectedContacts([...selectedContacts, c.id]); } else { setSelectedContacts(selectedContacts.filter(id => id !== c.id)); } }} style={{ accentColor: 'var(--primary-color)' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}><span>{c.name}</span><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{clients.find(client => client.id === c.clientId)?.companyName}</span></div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}><span>{c.name}</span><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{clients.find(client => client.id === c.clientId)?.company}</span></div>
                       </label>
                     ))}
                   </div>
@@ -405,7 +409,7 @@ export function EngagementDetailButton({
                     {contacts.map(c => (
                       <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', cursor: 'pointer', borderRadius: '4px', background: selectedTAs.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent' }}>
                         <input type="checkbox" checked={selectedTAs.includes(c.id)} onChange={e => { if (e.target.checked) { setSelectedTAs([...selectedTAs, c.id]); } else { setSelectedTAs(selectedTAs.filter(id => id !== c.id)); } }} style={{ accentColor: 'var(--primary-color)' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}><span>{c.name}</span><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{clients.find(client => client.id === c.clientId)?.companyName}</span></div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}><span>{c.name}</span><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{clients.find(client => client.id === c.clientId)?.company}</span></div>
                       </label>
                     ))}
                   </div>

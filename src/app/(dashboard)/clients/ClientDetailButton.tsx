@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';import { useRouter } from 'next/navigation';import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateClient, deleteClient } from '@/app/actions/client';
+import { formatPhone } from '@/lib/format';
 
 interface Client {
   id: string;
@@ -15,7 +16,6 @@ interface Client {
   notes: string | null;
   createdAt: Date;
   updatedAt: Date;
-  contacts?: { id: string; name: string; email: string | null }[];
 }
 
 export function ClientDetailButton({ client: initialClient }: { client: Client }) {
@@ -105,13 +105,13 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
         onEdit={() => {
           if (!isEditing) {
             setFormData({
-              companyName: client.companyName,
+              company: client.company,
               address: client.address || '',
               city: client.city || '',
               state: client.state || '',
               zip: client.zip || '',
               website: client.website || '',
-              phoneNumber: client.phoneNumber || '',
+              phone: client.phone || '',
               notes: client.notes || '',
             });
             setIsEditing(true);
@@ -129,96 +129,60 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
         hideHeaderActions={isEditing}
       >
         {!isEditing ? (
-          // VIEW MODE (form field style)
-          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: '0.5rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {/* Column 1: Name + Address */}
+          // VIEW MODE - matching edit layout & typography
+          <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+            {/* Left column - Name, Address, City, State, Zip */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
-                <input readOnly type="text" value={client.companyName} className="form-input" style={{ pointerEvents: 'none' }} />
+                <input readOnly type="text" value={client.company} className="form-input" style={{ minWidth: '340px', width: '100%', pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Address</div>
-                <input readOnly type="text" value={client.address || ''} className="form-input" style={{ pointerEvents: 'none', marginBottom: '0.25rem' }} />
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input readOnly type="text" value={client.city || ''} className="form-input" style={{ pointerEvents: 'none', width: '40%' }} />
-                  <input readOnly type="text" value={client.state || ''} className="form-input" style={{ pointerEvents: 'none', width: '20%' }} />
-                  <input readOnly type="text" value={client.zip || ''} className="form-input" style={{ pointerEvents: 'none', width: '40%' }} />
+                <input readOnly type="text" value={client.address || ''} className="form-input" style={{ minWidth: '340px', width: '100%', pointerEvents: 'none' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>City</div>
+                <input readOnly type="text" value={client.city || ''} className="form-input" style={{ minWidth: '340px', width: '100%', pointerEvents: 'none' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
+                  <input readOnly type="text" value={client.state || ''} className="form-input" style={{ textTransform: 'uppercase', maxWidth: '60px', pointerEvents: 'none' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
+                  <input readOnly type="text" value={client.zip || ''} className="form-input" style={{ minWidth: '140px', width: '100%', pointerEvents: 'none' }} />
                 </div>
               </div>
             </div>
 
-            {/* Column 2: Website + Phone */}
+            {/* Right column - Website + Phone */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Website</div>
-                <input readOnly type="text" value={client.website || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                <input readOnly type="text" value={client.website || ''} className="form-input" style={{ width: '70%', marginLeft: 'auto', pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
-                <input readOnly type="tel" value={client.phoneNumber || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                <input readOnly type="tel" value={formatPhone(client.phone)} className="form-input" style={{ width: '70%', marginLeft: 'auto', pointerEvents: 'none' }} />
               </div>
             </div>
 
-            {/* Column 3: Contacts (right) */}
-            <div>
-              {client.contacts && client.contacts.length > 0 ? (
-                <>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contacts ({client.contacts.length})</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {client.contacts.map(contact => (
-                      <div key={contact.id} style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div style={{ fontWeight: 500 }}>{contact.name}</div>
-                        </div>
-                        <button
-                        onClick={() => {
-                          setIsOpen(false);
-                          router.push(`/contacts?contactId=${contact.id}`);
-                        }}
-                          style={{
-                            background: 'none',
-                            border: '1px solid transparent',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            padding: '0.1rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            borderRadius: '4px',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = '#0066ff';
-                            e.currentTarget.style.borderColor = '#0066ff';
-                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = 'var(--text-muted)';
-                            e.currentTarget.style.borderColor = 'transparent';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                          title="View contact details"
-                        >
-                          <Eye size={14} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No contacts</div>
-              )}
-            </div>
-
-            {/* Full width below: Notes + Created */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1.25rem' }}>
+            {/* Notes - full width */}
+            <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
               <textarea readOnly value={client.notes || ''} className="form-input" rows={3} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
 
-            <div style={{ gridColumn: '1 / -1', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.75rem', height: '2.5rem' }}>
-              Created {client.createdAt.toLocaleDateString()}<br />
-              Edited {client.updatedAt.toLocaleDateString()}
+            {/* Timestamps - full width */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{client.createdAt.toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{client.updatedAt.toLocaleDateString()}</div>
+              </div>
             </div>
           </div>
         ) : (
@@ -232,8 +196,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   autoFocus
                   ref={nameInputRef}
                   type="text"
-                  value={formData.companyName}
-                  onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                  value={formData.company}
+                  onChange={e => setFormData({ ...formData, company: e.target.value })}
                   className="form-input"
                   style={{ minWidth: '340px', width: '100%' }}
                   maxLength={30}
@@ -324,8 +288,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input
                   type="text"
-                  value={formData.phoneNumber}
-                  onChange={e => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="form-input"
                   style={{ width: '70%', marginLeft: 'auto' }}
                   onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
@@ -363,26 +327,26 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   }
 
                   const result = await updateClient(client.id, {
-                    companyName: formData.companyName,
+                    company: formData.company,
                     address: formData.address || null,
                     city: formData.city || null,
                     state: formData.state || null,
                     zip: formData.zip || null,
                     website: formData.website || null,
-                    phoneNumber: formData.phoneNumber || null,
+                    phone: formData.phone || null,
                     notes: formData.notes || null,
                   });
 
                   if (result.success) {
                     setClient(prev => ({
                       ...prev,
-                      companyName: formData.companyName,
+                      company: formData.company,
                       address: formData.address || null,
                       city: formData.city || null,
                       state: formData.state || null,
                       zip: formData.zip || null,
                       website: formData.website || null,
-                      phoneNumber: formData.phoneNumber || null,
+                      phone: formData.phone || null,
                       notes: formData.notes || null,
                     }));
                     setIsEditing(false);
@@ -397,13 +361,13 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
               <button 
                 onClick={() => {
                   setFormData({
-                    companyName: client.companyName,
+                    company: client.company,
                     address: client.address || "",
                     city: client.city || "",
                     state: client.state || "",
                     zip: client.zip || "",
                     website: client.website || "",
-                    phoneNumber: client.phoneNumber || "",
+                    phone: client.phone || "",
                     notes: client.notes || "",
                   });
                   setIsEditing(false);

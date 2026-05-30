@@ -1,17 +1,21 @@
 "use client";
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateFinding, deleteFinding } from '@/app/actions/finding';
 
 export function FindingDetailButton({ finding: initialFinding }: { finding: any }) {
-  const router = useRouter();
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setIsEditing(false);
+    setError(null);
+  }, []);
 
   const [formData, setFormData] = useState({
     title: initialFinding.title,
@@ -94,7 +98,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
 
       <Modal 
         isOpen={isOpen} 
-        onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+        onClose={handleClose} 
         title={isEditing ? "Edit Finding" : "Finding Details"} 
         onEdit={() => {
           if (!isEditing) {
@@ -156,18 +160,13 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
               <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', height: '2.5rem' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Created {new Date(finding.createdAt).toLocaleDateString()}<br />
-                Edited {new Date(finding.updatedAt).toLocaleDateString()}
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{new Date(finding.createdAt).toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{new Date(finding.updatedAt).toLocaleDateString()}</div>
               </div>
-              <button 
-                onClick={() => router.push(`/findings/${finding.id}`)}
-                className="btn-secondary"
-                style={{ padding: '0.4rem 1rem', fontSize: '0.9rem' }}
-              >
-                Manage Screenshots
-              </button>
             </div>
           </div>
         ) : (
@@ -222,7 +221,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', minHeight: '2.5rem', alignItems: 'center' }}>
                 <button onClick={handleUpdate} className="btn-save" disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
                 <button onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel">Cancel</button>
             </div>

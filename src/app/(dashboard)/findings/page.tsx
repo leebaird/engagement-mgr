@@ -6,7 +6,7 @@ import { FindingDetailButton } from './FindingDetailButton';
 export default async function FindingsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
 
-  const validSortColumns = ['title', 'severity', 'createdAt'];
+  const validSortColumns = ['title', 'severity', 'createdAt', 'updatedAt'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'title';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
@@ -68,6 +68,9 @@ export default async function FindingsPage({ searchParams }: { searchParams: Pro
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>
                 <Link href={getSortHref('createdAt')} style={{ color: 'inherit', textDecoration: 'none' }}>Created{getSortIcon('createdAt')}</Link>
               </th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>
+                <Link href={getSortHref('updatedAt')} style={{ color: 'inherit', textDecoration: 'none' }}>Updated{getSortIcon('updatedAt')}</Link>
+              </th>
               <th style={{ padding: '0.75rem', width: '40px' }}></th>
             </tr>
           </thead>
@@ -87,6 +90,7 @@ export default async function FindingsPage({ searchParams }: { searchParams: Pro
                   </span>
                 </td>
                 <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{f.createdAt.toLocaleDateString()}</td>
+                <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{f.updatedAt.toLocaleDateString()}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <FindingDetailButton finding={f} />
                 </td>
