@@ -116,30 +116,82 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
         isOpen={isOpen} 
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit Contact" : "Contact Details"} 
-        onEdit={() => {
-          if (!isEditing) {
-            setFormData({
-              clientId: contact.clientId,
-              name: contact.name,
-              title: contact.title || '',
-              email: contact.email || '',
-              phone: contact.phone || '',
-              notes: contact.notes || '',
-            });
-            setIsEditing(true);
-            setError(null);
-          }
-        }} 
-        onDelete={async () => {
-          if (!confirm('Are you sure you want to delete this contact?')) return;
-          const result = await deleteContact(contact.id);
-          if (result.success) {
-            setIsOpen(false);
-          } else {
-            alert(result.error || 'Failed to delete contact');
-          }
-        }} 
-        hideHeaderActions={isEditing}
+        headerActions={isEditing ? (
+          <>
+            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                setFormData({
+                  clientId: contact.clientId,
+                  name: contact.name,
+                  title: contact.title || '',
+                  email: contact.email || '',
+                  phone: contact.phone || '',
+                  notes: contact.notes || '',
+                });
+                setIsEditing(true);
+                setError(null);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this contact?')) return;
+                const result = await deleteContact(contact.id);
+                if (result.success) {
+                  setIsOpen(false);
+                } else {
+                  alert(result.error || 'Failed to delete contact');
+                }
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#ff3366';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Delete
+            </button>
+          </>
+        )}
       >
         {!isEditing ? (
           // VIEW MODE (form field style)
@@ -176,9 +228,9 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
             </div>
 
             {/* Full width below: Notes + Created */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1.25rem' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
-              <textarea readOnly value={contact.notes || ''} className="form-input" rows={3} style={{ width: '100%', pointerEvents: 'none' }} />
+              <textarea readOnly value={contact.notes || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
 
             <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
@@ -271,22 +323,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                 }}              ></textarea>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
-              <button 
-                  onClick={handleUpdate}
-                  className="btn-save" 
-                  disabled={isPending}
-                >
-                  {isPending ? 'Saving...' : 'Save'}
-                </button>
-                <button 
-                  onClick={() => { setIsEditing(false); setError(null); }}
-                  className="btn-cancel" 
-                >
-                  Cancel
-                </button>
-              </div>
-            
+            <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }} />
             {error && (
               <div style={{ gridColumn: '1 / -1', color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>
                 {error}

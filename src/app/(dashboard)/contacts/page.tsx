@@ -62,9 +62,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             {contacts.map(c => (
               <tr key={c.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{c.name}</td>
-                <td style={{ padding: '0.75rem' }}>{c.title || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{c.title || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{c.client.company}</td>
-                <td style={{ padding: '0.75rem' }}>{c.email || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{c.email || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(c.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <ContactDetailButton contact={c} clients={clients} />

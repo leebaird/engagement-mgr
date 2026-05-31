@@ -10,9 +10,10 @@ interface ModalProps {
   onDelete?: () => void;
   hideHeaderActions?: boolean;
   maxWidth?: string;
+  headerActions?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, headerActions }: ModalProps) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -59,72 +60,76 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{title}</h2>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            {!hideHeaderActions && onEdit && (
-              <button
-                onClick={onEdit}
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--surface-border)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  padding: '0.35rem 0.9rem',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = '#0066ff';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--surface-border)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                Edit
-              </button>
-            )}
-            {!hideHeaderActions && onDelete && (
-              <button
-                onClick={onDelete}
-                style={{
-                  background: 'none',
-                  border: '1px solid var(--surface-border)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  padding: '0.35rem 0.9rem',
-                  borderRadius: '4px',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = '#ff3366';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = 'var(--surface-border)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                Delete
-              </button>
-            )}
-            {!hideHeaderActions && !onEdit && !onDelete && (
-              <button 
-                onClick={onClose}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  color: 'var(--text-muted)', 
-                  cursor: 'pointer',
-                  padding: '0.5rem',
-                  display: 'flex'
-                }}
-              >
-                <X size={20} />
-              </button>
+            {headerActions ? headerActions : (
+              <>
+                {!hideHeaderActions && onEdit && (
+                  <button
+                    onClick={onEdit}
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--surface-border)',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                      padding: '0.35rem 0.9rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = '#0066ff';
+                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'var(--surface-border)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
+                {!hideHeaderActions && onDelete && (
+                  <button
+                    onClick={onDelete}
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--surface-border)',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                      padding: '0.35rem 0.9rem',
+                      borderRadius: '4px',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = '#ff3366';
+                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'var(--surface-border)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
+                {!hideHeaderActions && !onEdit && !onDelete && (
+                  <button 
+                    onClick={onClose}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      color: 'var(--text-muted)', 
+                      cursor: 'pointer',
+                      padding: '0.5rem',
+                      display: 'flex'
+                    }}
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

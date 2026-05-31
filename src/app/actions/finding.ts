@@ -7,6 +7,7 @@ import { join } from 'path';
 export async function createFinding(prevState: any, formData: FormData) {
   const engagementId = formData.get('engagementId') as string;
   const title = formData.get('title') as string;
+  const category = formData.get('category') as string;
   const severity = formData.get('severity') as string;
   const background = formData.get('background') as string;
   const remediation = formData.get('remediation') as string;
@@ -19,6 +20,7 @@ export async function createFinding(prevState: any, formData: FormData) {
   try {
     const data: any = {
       title,
+      category,
       severity,
       background,
       remediation,
@@ -32,6 +34,7 @@ export async function createFinding(prevState: any, formData: FormData) {
     revalidatePath('/findings');
     return { success: 'Finding created successfully.' };
   } catch (e) {
+    console.error('Create Finding error:', e);
     return { error: 'Failed to create finding.' };
   }
 }
@@ -39,6 +42,7 @@ export async function createFinding(prevState: any, formData: FormData) {
 export async function updateFinding(id: string, prevState: any, formData: FormData) {
   const engagementId = formData.get('engagementId') as string;
   const title = formData.get('title') as string;
+  const category = formData.get('category') as string;
   const severity = formData.get('severity') as string;
   const background = formData.get('background') as string;
   const remediation = formData.get('remediation') as string;
@@ -51,6 +55,7 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
   try {
     const data: any = {
       title,
+      category,
       severity,
       background,
       remediation,
@@ -65,6 +70,7 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
     revalidatePath('/findings');
     return { success: 'Finding updated successfully.' };
   } catch (e) {
+    console.error('Update Finding error:', e);
     return { error: 'Failed to update finding.' };
   }
 }

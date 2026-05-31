@@ -54,51 +54,6 @@ export default async function FindingsPage({ searchParams }: { searchParams: Pro
   };
 
   return (
-    <FindingsClient>
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('title')} style={{ color: 'inherit', textDecoration: 'none' }}>Title{getSortIcon('title')}</Link>
-              </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '120px' }}>
-                <Link href={getSortHref('severity')} style={{ color: 'inherit', textDecoration: 'none' }}>Severity{getSortIcon('severity')}</Link>
-              </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>
-                <Link href={getSortHref('createdAt')} style={{ color: 'inherit', textDecoration: 'none' }}>Created{getSortIcon('createdAt')}</Link>
-              </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>
-                <Link href={getSortHref('updatedAt')} style={{ color: 'inherit', textDecoration: 'none' }}>Updated{getSortIcon('updatedAt')}</Link>
-              </th>
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {findings.map(f => (
-              <tr key={f.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500 }}>{f.title}</td>
-                <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.severity}>
-                  <span style={{ 
-                    padding: '0.2rem 0.6rem', 
-                    borderRadius: '4px', 
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    ...getSeverityStyle(f.severity)
-                  }}>
-                    {f.severity}
-                  </span>
-                </td>
-                <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{f.createdAt.toLocaleDateString()}</td>
-                <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{f.updatedAt.toLocaleDateString()}</td>
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <FindingDetailButton finding={f} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </FindingsClient>
+    <FindingsClient initialFindings={findings} />
   );
 }

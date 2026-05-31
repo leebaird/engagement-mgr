@@ -29,10 +29,24 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <form action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
           <input autoFocus type="text" name="title" className="form-input" required />
+        </div>
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+          <select name="category" className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+            <option value=""></option>
+            <option value="AI">AI</option>
+            <option value="Firewall">Firewall</option>
+            <option value="Host">Host</option>
+            <option value="OSINT">OSINT</option>
+            <option value="Physical">Physical</option>
+            <option value="Social Eng">Social Eng</option>
+            <option value="Web App">Web App</option>
+            <option value="Wireless">Wireless</option>
+          </select>
         </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>

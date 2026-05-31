@@ -1,5 +1,5 @@
 export function formatPhone(phone: string | null | undefined): string {
-  if (!phone) return '-';
+  if (!phone) return '';
 
   const digits = phone.replace(/\D/g, '');
 

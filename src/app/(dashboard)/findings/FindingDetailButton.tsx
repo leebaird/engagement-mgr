@@ -1,15 +1,24 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateFinding, deleteFinding } from '@/app/actions/finding';
 
-export function FindingDetailButton({ finding: initialFinding }: { finding: any }) {
+export function FindingDetailButton({ 
+  finding: initialFinding, 
+  onOptimisticDelete 
+}: { 
+  finding: any; 
+  onOptimisticDelete?: (id: string) => void;
+}) {
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -19,6 +28,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
 
   const [formData, setFormData] = useState({
     title: initialFinding.title,
+    category: initialFinding.category || '',
     severity: initialFinding.severity,
     background: initialFinding.background || '',
     remediation: initialFinding.remediation || '',
@@ -100,37 +110,97 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
         isOpen={isOpen} 
         onClose={handleClose} 
         title={isEditing ? "Edit Finding" : "Finding Details"} 
-        onEdit={() => {
-          if (!isEditing) {
-            setFormData({
-              title: finding.title,
-              severity: finding.severity,
-              background: finding.background || '',
-              remediation: finding.remediation || '',
-              supportingLinks: finding.supportingLinks || '',
-            });
-            setIsEditing(true);
-            setError(null);
-          }
-        }} 
-        onDelete={async () => {
-          if (!confirm('Are you sure you want to delete this finding? This will also delete any related screenshots.')) return;
-          const result = await deleteFinding(finding.id);
-          if (result.success) {
-            setIsOpen(false);
-          } else {
-            alert(result.error || 'Failed to delete finding');
-          }
-        }} 
-        hideHeaderActions={isEditing}
+        maxWidth="1000px"
+        headerActions={isEditing ? (
+          <>
+            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                setFormData({
+                  title: finding.title,
+                  category: finding.category || '',
+                  severity: finding.severity,
+                  background: finding.background || '',
+                  remediation: finding.remediation || '',
+                  supportingLinks: finding.supportingLinks || '',
+                });
+                setIsEditing(true);
+                setError(null);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this finding? This will also delete any related screenshots.')) return;
+                const result = await deleteFinding(finding.id);
+                if (result.success) {
+                  onOptimisticDelete?.(finding.id);
+                  setIsOpen(false);
+                  router.refresh();
+                } else {
+                  alert(result.error || 'Failed to delete finding');
+                }
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#ff3366';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Delete
+            </button>
+          </>
+        )}
       >
         {!isEditing ? (
           // VIEW MODE (form field style)
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <input readOnly type="text" value={finding.title} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
@@ -157,7 +227,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
 
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-              <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
+              <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
 
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
@@ -172,10 +242,26 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
         ) : (
           // EDIT MODE
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '1.25rem' }}>
+            {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <input ref={titleInputRef} autoFocus type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                  <option value=""></option>
+                  <option value="AI">AI</option>
+                  <option value="Firewall">Firewall</option>
+                  <option value="Host">Host</option>
+                  <option value="OSINT">OSINT</option>
+                  <option value="Physical">Physical</option>
+                  <option value="Social Eng">Social Eng</option>
+                  <option value="Web App">Web App</option>
+                  <option value="Wireless">Wireless</option>
+                </select>
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
@@ -206,7 +292,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
                 value={formData.supportingLinks} 
                 onChange={e => setFormData({...formData, supportingLinks: e.target.value})} 
                 className="form-input" 
-                rows={2} 
+                rows={4} 
                 style={{ width: '100%' }}
                 onKeyDown={e => {
                   if (e.key === 'Tab' && !e.shiftKey) {
@@ -221,12 +307,7 @@ export function FindingDetailButton({ finding: initialFinding }: { finding: any 
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', minHeight: '2.5rem', alignItems: 'center' }}>
-                <button onClick={handleUpdate} className="btn-save" disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-                <button onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel">Cancel</button>
-            </div>
-            
-            {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }} />
           </div>
         )}
       </Modal>

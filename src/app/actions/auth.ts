@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
-import { validatePasswordComplexity } from '@/lib/auth/password';
+import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 
 export async function login(prevState: any, formData: FormData) {
   const username = formData.get('username') as string;
@@ -23,7 +23,7 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   try {
-    const isPasswordValid = await argon2.verify(user.passwordHash, password);
+    const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
 
     if (!isPasswordValid) {
       return { error: 'Invalid credentials' };
@@ -96,11 +96,7 @@ export async function changePassword(prevState: any, formData: FormData) {
   }
 
   try {
-    const passwordHash = await argon2.hash(newPassword, {
-      type: argon2.argon2id,
-      memoryCost: 2 ** 16,
-      timeCost: 3,
-    });
+    const passwordHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
 
     await prisma.user.update({
       where: { id: session.userId },

@@ -78,8 +78,8 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
             {operators.map(op => (
               <tr key={op.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{op.name}</td>
-                <td style={{ padding: '0.75rem' }}>{op.title || '-'}</td>
-                <td style={{ padding: '0.75rem' }}>{op.email || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{op.title || ''}</td>
+                <td style={{ padding: '0.75rem' }}>{op.email || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(op.phoneNumber)}</td>
 
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>

@@ -1,3 +1,5 @@
+import * as argon2 from 'argon2';
+
 export function validatePasswordComplexity(password: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -22,3 +24,17 @@ export function validatePasswordComplexity(password: string): { valid: boolean; 
     errors,
   };
 }
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const ARGON2_OPTIONS: argon2.Options = isProduction
+  ? {
+      type: argon2.argon2id,
+      memoryCost: 2 ** 16, // 64 MB – strong for production
+      timeCost: 3,
+    }
+  : {
+      type: argon2.argon2id,
+      memoryCost: 2 ** 14, // 16 MB – much faster for development
+      timeCost: 2,
+    };

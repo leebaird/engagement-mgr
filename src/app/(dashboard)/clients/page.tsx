@@ -49,7 +49,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
             {clients.map(client => (
               <tr key={client.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{client.company}</td>
-                <td style={{ padding: '0.75rem' }}>{client.website || '-'}</td>
+                <td style={{ padding: '0.75rem' }}>{client.website || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(client.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <ClientDetailButton client={client} />

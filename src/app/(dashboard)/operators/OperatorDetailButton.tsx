@@ -86,31 +86,83 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
         isOpen={isOpen} 
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit Operator" : "Operator Details"} 
-        onEdit={() => {
-          if (!isEditing) {
-            setFormData({
-              name: operator.name,
-              title: operator.title || '',
-              email: operator.email || '',
-              phoneNumber: operator.phoneNumber || '',
-              discord: operator.discord || '',
-              github: operator.github || '',
-              notes: operator.notes || '',
-            });
-            setIsEditing(true);
-            setError(null);
-          }
-        }} 
-        onDelete={async () => {
-          if (!confirm('Are you sure you want to delete this operator?')) return;
-          const result = await deleteOperator(operator.id);
-          if (result.success) {
-            setIsOpen(false);
-          } else {
-            alert(result.error || 'Failed to delete operator');
-          }
-        }} 
-        hideHeaderActions={isEditing}
+        headerActions={isEditing ? (
+          <>
+            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                setFormData({
+                  name: operator.name,
+                  title: operator.title || '',
+                  email: operator.email || '',
+                  phoneNumber: operator.phoneNumber || '',
+                  discord: operator.discord || '',
+                  github: operator.github || '',
+                  notes: operator.notes || '',
+                });
+                setIsEditing(true);
+                setError(null);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this operator?')) return;
+                const result = await deleteOperator(operator.id);
+                if (result.success) {
+                  setIsOpen(false);
+                } else {
+                  alert(result.error || 'Failed to delete operator');
+                }
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#ff3366';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Delete
+            </button>
+          </>
+        )}
       >
         {!isEditing ? (
           // VIEW MODE - styled to match size and layout of EDIT/CREATE views exactly
@@ -241,11 +293,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
-                <button onClick={handleUpdate} className="btn-save" disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-                <button onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel">Cancel</button>
-            </div>
-            
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }} />
             {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
           </div>
         )}

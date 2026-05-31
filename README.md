@@ -97,7 +97,7 @@ This section documents the architecture, database schema, security measures, and
 
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
 
-- **Finding**: `id`, `engagementId` (optional), `title`, `severity`, `background`, `remediation`, `supportingData` (DB column: `supportingLinks`), `screenshots`, `createdAt`, `updatedAt`.
+- **Finding**: `id`, `engagementId` (optional), `title`, `category`, `severity`, `background`, `remediation`, `supportingData` (DB column: `supportingLinks`), `screenshots`, `createdAt`, `updatedAt`.
 - **Screenshot**: `id`, `findingId`, `filePath`, `description`, `createdAt`.
 
 - **Operator**: `id`, `name`, `title`, `email`, `phoneNumber`, `discord`, `github`, `notes`, `engagements` (M:N), `createdAt`, `updatedAt`.

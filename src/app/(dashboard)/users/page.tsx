@@ -83,7 +83,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   {user.createdAt.toLocaleDateString()}
                 </td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '-'}
+                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
                 </td>
                 <td style={{ padding: '0.75rem' }}></td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>

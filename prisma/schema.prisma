@@ -113,6 +113,7 @@ model Finding {
   engagementId         String?
   engagement           Engagement?   @relation(fields: [engagementId], references: [id])
   title                String
+  category             String?
   severity             String
   background           String?
   remediation          String?

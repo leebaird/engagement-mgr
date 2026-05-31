@@ -144,39 +144,91 @@ export function EngagementDetailButton({
         onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
         title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
-        onEdit={() => {
-          if (!isEditing) {
-            setFormData({
-              codeName: engagement.codeName,
-              clientId: engagement.clientId,
-              type: engagement.type,
-              location: engagement.location,
-              status: engagement.status || '',
-              focus: engagement.focus || '',
-              startDate: engagement.startDate ? new Date(engagement.startDate).toISOString().split('T')[0] : '',
-              endDate: engagement.endDate ? new Date(engagement.endDate).toISOString().split('T')[0] : '',
-              objectives: engagement.objectives || '',
-              targets: engagement.targets || '',
-              exclusions: engagement.exclusions || '',
-              notes: engagement.notes || '',
-            });
-            setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
-            setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
-            setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
-            setIsEditing(true);
-            setError(null);
-          }
-        }} 
-        onDelete={async () => {
-          if (!confirm('Are you sure you want to delete this engagement?')) return;
-          const result = await deleteEngagement(engagement.id);
-          if (result.success) {
-            setIsOpen(false);
-          } else {
-            alert(result.error || 'Failed to delete engagement');
-          }
-        }} 
-        hideHeaderActions={isEditing}
+        headerActions={isEditing ? (
+          <>
+            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
+            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => {
+                setFormData({
+                  codeName: engagement.codeName,
+                  clientId: engagement.clientId,
+                  type: engagement.type,
+                  location: engagement.location,
+                  status: engagement.status || '',
+                  focus: engagement.focus || '',
+                  startDate: engagement.startDate ? new Date(engagement.startDate).toISOString().split('T')[0] : '',
+                  endDate: engagement.endDate ? new Date(engagement.endDate).toISOString().split('T')[0] : '',
+                  objectives: engagement.objectives || '',
+                  targets: engagement.targets || '',
+                  exclusions: engagement.exclusions || '',
+                  notes: engagement.notes || '',
+                });
+                setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
+                setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
+                setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
+                setIsEditing(true);
+                setError(null);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Edit
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to delete this engagement?')) return;
+                const result = await deleteEngagement(engagement.id);
+                if (result.success) {
+                  setIsOpen(false);
+                } else {
+                  alert(result.error || 'Failed to delete engagement');
+                }
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#ff3366';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Delete
+            </button>
+          </>
+        )}
       >
         {!isEditing ? (
           // VIEW MODE
@@ -300,6 +352,7 @@ export function EngagementDetailButton({
                     <option value="RED_TEAM">Red Team</option>
                     <option value="USB_DROP">USB Drop</option>
                     <option value="VISHING">Vishing</option>
+                    <option value="WEB_APP">Web App</option>
                     <option value="WIRELESS">Wireless</option>
                   </select>
                 </div>
@@ -453,11 +506,7 @@ export function EngagementDetailButton({
               </div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
-                <button onClick={handleUpdate} className="btn-save" disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-                <button onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel">Cancel</button>
-            </div>
-            
+            <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', height: '2.5rem' }} />
             {error && <div style={{ gridColumn: '1 / -1', color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
           </div>
         )}

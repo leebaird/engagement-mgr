@@ -66,12 +66,12 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{eng.codeName}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.client.company}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>
-                  {eng.status ? eng.status.charAt(0).toUpperCase() + eng.status.slice(1).toLowerCase() : '-'}
+                  {eng.status ? eng.status.charAt(0).toUpperCase() + eng.status.slice(1).toLowerCase() : ''}
                 </td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || '-'}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? eng.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : '-'}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startDate?.toLocaleDateString() || '-'}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endDate?.toLocaleDateString() || '-'}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? eng.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startDate?.toLocaleDateString() || ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endDate?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} />
                 </td>

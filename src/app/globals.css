@@ -165,6 +165,7 @@ select.form-input {
   transition: all 0.2s ease;
   font-family: inherit;
   width: fit-content;
+  outline: none;
 }
 
 .btn-save:hover:not(:disabled) {
@@ -191,6 +192,7 @@ select.form-input {
   transition: all 0.2s ease;
   font-family: inherit;
   width: fit-content;
+  outline: none;
 }
 
 .btn-cancel:hover:not(:disabled) {

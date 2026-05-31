@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
 import { getSession } from '@/lib/auth/session';
-import { validatePasswordComplexity } from '@/lib/auth/password';
+import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 import { revalidatePath } from 'next/cache';
 
 export async function createUser(prevState: any, formData: FormData) {
@@ -31,11 +31,7 @@ export async function createUser(prevState: any, formData: FormData) {
       return { error: 'Username already exists.', fields: { username, role } };
     }
 
-    const passwordHash = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: 2 ** 16,
-      timeCost: 3,
-    });
+    const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
 
     await prisma.user.create({
       data: {
@@ -83,11 +79,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
       if (!complexity.valid) {
         return { error: 'The password must be at last 16 character long, contain at least one uppercase letter, one number, and one symbol.' };
       }
-      const passwordHash = await argon2.hash(password, {
-        type: argon2.argon2id,
-        memoryCost: 2 ** 16,
-        timeCost: 3,
-      });
+      const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
       data.passwordHash = passwordHash;
       data.lastPasswordChange = new Date(0); // Force password change on next login
     }
