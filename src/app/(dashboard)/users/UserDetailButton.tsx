@@ -187,8 +187,18 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 onChange={e => setFormData({ ...formData, username: e.target.value })}
                 className="form-input"
                 required
+                tabIndex={1}
                 style={{ width: '100%' }}
                 onFocus={handleEditFieldFocus}
+                onKeyDown={(e) => {
+                  const modal = e.currentTarget.closest('.glass-panel');
+                  if (!modal) return;
+                  if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    const password = modal.querySelector('[tabindex="3"]') as HTMLElement;
+                    password?.focus();
+                  }
+                }}
               />
             ) : (
               <input
@@ -209,6 +219,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 onChange={e => setFormData({ ...formData, role: e.target.value })}
                 className="form-input"
                 required
+                tabIndex={2}
                 style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
                 onFocus={(e) => {
                   try {
@@ -219,14 +230,17 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                     // ignore
                   }
                 }}
-                onKeyDown={e => {
+                onKeyDown={(e) => {
+                  const modal = e.currentTarget.closest('.glass-panel');
+                  if (!modal) return;
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();
-                    const modal = e.currentTarget.closest('.glass-panel');
-                    if (modal) {
-                      const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                      if (firstField) firstField.focus();
-                    }
+                    const password = modal.querySelector('[tabindex="3"]') as HTMLElement;
+                    password?.focus();
+                  } else if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    const username = modal.querySelector('[tabindex="1"]') as HTMLElement;
+                    username?.focus();
                   }
                 }}
               >
@@ -255,8 +269,22 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                 className="form-input"
                 placeholder="••••••••"
+                tabIndex={3}
                 style={{ width: '100%' }}
                 onFocus={handleEditFieldFocus}
+                onKeyDown={(e) => {
+                  const modal = e.currentTarget.closest('.glass-panel');
+                  if (!modal) return;
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    const username = modal.querySelector('[tabindex="1"]') as HTMLElement;
+                    username?.focus();
+                  } else if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    const role = modal.querySelector('[tabindex="2"]') as HTMLElement;
+                    role?.focus();
+                  }
+                }}
               />
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                 The user will be required to change their password on the next login.

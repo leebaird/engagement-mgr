@@ -7,8 +7,10 @@ Engagement Manager is a web application for tracking offensive security engageme
 Before running the application, ensure you have the necessary dependencies installed on your Ubuntu system:
 
 ```bash
-sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-contrib
+sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-contrib zip unzip
 ```
+
+`pg_dump`, `psql`, `zip`, and `unzip` are required for database backup and restore (see [Server migration](#server-migration-backup--restore)).
 
 ## Environment Configuration
 
@@ -16,10 +18,12 @@ Create a `.env` file in the project root before running Prisma or the app:
 
 ```bash
 cat > .env << 'EOF'
-DATABASE_URL="postgresql://em_admin:em_pass@localhost:5432/engagement_manager"
+DATABASE_URL="postgresql://em_admin:em_pass@localhost:5432/engagement_manager?schema=public"
 JWT_SECRET="replace-with-a-long-random-secret"
 EOF
 ```
+
+Prisma uses the `schema=public` query parameter in `DATABASE_URL`. Backup and restore strip Prisma-only parameters before calling `pg_dump` or `psql`.
 
 ## Database Setup
 
@@ -74,6 +78,60 @@ After seeding the database, you can log in using the default Administrator accou
 
 > **Note:** Upon logging in, you will be required to change this password after 90 days. All new passwords must be at least 16 characters long and include an uppercase letter, lowercase letter, number, and symbol.
 
+## Server migration (Backup / Restore / Reset)
+
+Administrators can back up and restore the full application data from the **Users** page. Use this when moving from an old server to a new one: clone the app on the new host, then restore a backup from the old host.
+
+On **Users**, the **Database** section above the user list has **Backup**, **Restore**, and **Reset** buttons. **New Record** stays in the header for adding users.
+
+### Backup filename
+
+**Backup** saves a `.zip` download named:
+
+`em-backup-YYYY-MM-DD-HH-MM.zip`
+
+The timestamp uses the **local time** of the server running the app (year, month, day, hour, and minute). Example: `em-backup-2026-06-02-14-30.zip`.
+
+If you export twice in the same minute, the browser may append a suffix (for example `(1)`) to avoid overwriting an existing download.
+
+### What is inside the zip
+
+| Path | Contents |
+|------|----------|
+| `engagement-manager-backup/database.sql` | Full PostgreSQL dump (schema, tables, data, enums, relations) from `pg_dump` |
+| `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
+
+**Restore** accepts the `.zip` from **Backup** and replaces the current database and `uploads/` folder. A plain `.sql` file restores the database only (no screenshots). **Reset** wipes all data and recreates the default `admin` account.
+
+### Old server
+
+1. Log in as an **Admin** user.
+2. Open **Users** and click **Backup** (under **Database**).
+3. Save the `.zip` and copy it to the new server (for example with `scp` or `rsync`):
+
+   ```bash
+   scp em-backup-2026-06-02-14-30.zip user@new-server:/path/to/
+   ```
+
+### New server
+
+1. Install prerequisites (Node.js, PostgreSQL, `zip`, `unzip`) and clone the repository.
+2. Create `.env` with `DATABASE_URL` and `JWT_SECRET` (see [Environment Configuration](#environment-configuration)).
+3. Create an empty PostgreSQL database and user (see [Database Setup](#database-setup)).
+4. Install dependencies: `npm install`.
+5. **Do not** run `npx prisma migrate dev` or `npx prisma db seed` before importing — the SQL dump creates schema and data.
+6. Start the app: `npm run dev` (or your production process).
+7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI (`admin` / `admin`); the import step replaces that data with the backup.
+8. Open **Users**, click **Restore** (under **Database**) to select the `.zip` from the old server, and confirm.
+9. Restart the app if it was already running so it picks up the restored data.
+
+### Notes
+
+- **Destructive actions:** Restore and Reset replace all existing database rows and overwrite the `uploads/` directory.
+- **JWT_SECRET:** May differ on the new server; existing browser sessions from the old server are not migrated. Users sign in again with accounts from the imported database.
+- **Application code:** Use `git clone` (or deploy the same revision) on the new server so the app matches the schema expected by the backup. If the old server ran a newer schema than the cloned code, align versions before importing.
+- **Tools:** Backup and restore require `pg_dump`, `psql`, `zip`, and `unzip` on the server where the app runs.
+
 ## Implementation Plan & Architecture
 
 This section documents the architecture, database schema, security measures, and completed development phases for the Engagement Manager application.
@@ -89,7 +147,7 @@ This section documents the architecture, database schema, security measures, and
 
 ### Database Schema
 
-- **User**: `id`, `username`, `passwordHash`, `role` (ADMIN, USER), `lastPasswordChange`, `createdAt`, `updatedAt`.
+- **User**: `id`, `username`, `passwordHash`, `role` (ADMIN, USER), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
 
 - **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `kickOffDate`, `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `createdAt`, `updatedAt`.
 
@@ -127,7 +185,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `ADMIN` roles can access the `/users` endpoint to create new accounts (the UI dynamically hides the Users navigation button from non-admins).
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `ADMIN` roles can access the `/users` endpoint to create new accounts (the UI dynamically hides the Users navigation button from non-admins). Only admins can back up, restore, or reset the database from the Users page.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
     - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

@@ -12,7 +12,7 @@ const navItems: { name: string; href: string; icon: typeof LayoutDashboard; admi
   { name: 'Contacts', href: '/contacts', icon: Contact },
   { name: 'Findings', href: '/findings', icon: ShieldAlert },
   { name: 'Operators', href: '/operators', icon: Zap },
-  { name: 'Users', href: '/users', icon: Users, adminOnly: true },
+  { name: 'Admin', href: '/users', icon: Users, adminOnly: true },
 ];
 
 export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {

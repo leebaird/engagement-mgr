@@ -1,11 +1,7 @@
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth/session';
-import { Crosshair, ShieldAlert, Users, Building2, Zap, Contact } from 'lucide-react';
+import { Crosshair, ShieldAlert, Building2, Zap, Contact } from 'lucide-react';
 
 export default async function DashboardHome() {
-  const session = await getSession();
-  const isAdmin = session?.role === 'ADMIN';
-
   const [
     activeEngagementCount,
     planningEngagementCount,
@@ -14,7 +10,6 @@ export default async function DashboardHome() {
     contactCount,
     findingCount,
     operatorCount,
-    userCount,
   ] = await Promise.all([
     prisma.engagement.count({
       where: { status: { notIn: ['PLANNING', 'COMPLETE'] } },
@@ -25,7 +20,6 @@ export default async function DashboardHome() {
     prisma.contact.count(),
     prisma.finding.count(),
     prisma.operator.count(),
-    isAdmin ? prisma.user.count() : Promise.resolve(0),
   ]);
 
   const statCards = [
@@ -33,7 +27,6 @@ export default async function DashboardHome() {
     { label: 'Contacts', count: contactCount, icon: Contact },
     { label: 'Findings', count: findingCount, icon: ShieldAlert },
     { label: 'Operators', count: operatorCount, icon: Zap },
-    ...(isAdmin ? [{ label: 'Users', count: userCount, icon: Users }] : []),
   ];
 
   const engagementStats = [
@@ -42,7 +35,7 @@ export default async function DashboardHome() {
     { label: 'Completed', count: completedEngagementCount },
   ];
 
-  const columnCount = isAdmin ? 5 : 4;
+  const columnCount = 4;
 
   const iconSize = 32;
   const iconBoxStyle = {
