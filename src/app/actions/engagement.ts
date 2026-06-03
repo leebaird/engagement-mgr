@@ -67,7 +67,8 @@ export async function createEngagement(prevState: any, formData: FormData) {
 
 export async function updateEngagement(id: string, prevState: any, formData: FormData) {
   const codeName = formData.get('codeName') as string;
-  const clientId = formData.get('clientId') as string;
+  const clientName = formData.get('clientName') as string;
+  let clientId = formData.get('clientId') as string;
   const type = formData.get('type') as any;
   const location = formData.get('location') as any;
   const focus = formData.get('focus') as string;
@@ -79,19 +80,29 @@ export async function updateEngagement(id: string, prevState: any, formData: For
   const operatorIds = formData.getAll('operators') as string[];
   const contactIds = formData.getAll('contacts') as string[];
   const trustedAgentIds = formData.getAll('trustedAgents') as string[];
+  const chargeCode = formData.get('chargeCode') as string;
   const kickOffDate = formData.get('kickOffDate') as string;
   const startDate = formData.get('startDate') as string;
   const endDate = formData.get('endDate') as string;
 
   if (!codeName) return { error: 'A Code Name is required to update an engagement.' };
-  if (!clientId) return { error: 'A Client is required to update an engagement.' };
+  if (!clientId && !clientName) return { error: 'A Client is required to update an engagement.' };
 
   try {
+    if (clientName && !clientId) {
+      let client = await prisma.client.findFirst({ where: { company: { equals: clientName, mode: 'insensitive' } } });
+      if (!client) {
+        client = await prisma.client.create({ data: { company: clientName } });
+      }
+      clientId = client.id;
+    }
+
     await prisma.engagement.update({
       where: { id },
       data: {
         codeName,
         client: { connect: { id: clientId } },
+        chargeCode: chargeCode || null,
         type: type || null,
         location: location || null,
         status: status ? (status as any) : null,

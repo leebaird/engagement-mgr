@@ -49,6 +49,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
         className="glass-panel" 
         style={{ 
           width: maxWidth ? maxWidth : '100%',
+          minWidth: maxWidth || undefined,
           maxWidth: maxWidth || '775px',
           padding: '2rem',
           position: 'relative',
