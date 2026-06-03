@@ -52,7 +52,8 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
           maxWidth: maxWidth || '775px',
           padding: '2rem',
           position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          boxSizing: 'border-box',
         }}
         onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}

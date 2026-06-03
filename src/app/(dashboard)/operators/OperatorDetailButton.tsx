@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateOperator, deleteOperator } from '@/app/actions/operator';
+import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 export function OperatorDetailButton({ operator: initialOperator }: { operator: any }) {
   const router = useRouter();
@@ -14,9 +15,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
   const [error, setError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (isEditing && nameInputRef.current) {
-      nameInputRef.current.focus();
-    }
+    if (isEditing) focusEditFieldAtStart(nameInputRef.current);
   }, [isEditing]);
 
   const [formData, setFormData] = useState({
@@ -234,7 +233,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
-                <input ref={nameInputRef} autoFocus type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input" required />
+                <input ref={nameInputRef} type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
@@ -253,22 +252,22 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" />
+                <input {...editEmailInputProps} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
-                <input type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="form-input" />
+                <input type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
-                <input type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" />
+                <input type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub</div>
-                <input type="text" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="form-input" />
+                <input type="text" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
             </div>
 
@@ -280,6 +279,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
                 className="form-input" 
                 rows={4} 
                 style={{ width: '100%' }}
+                onFocus={handleEditFieldFocus}
                 onKeyDown={e => {
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();

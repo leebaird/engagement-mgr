@@ -99,11 +99,18 @@ select.form-input {
   transition: all 0.2s ease;
   font-family: inherit;
   width: 100%;
+  outline: none;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);
+}
+
+.btn-primary:focus {
+  outline: none;
+  background: var(--primary-hover);
   box-shadow: 0 4px 12px rgba(255, 51, 102, 0.4);
 }
 
@@ -129,12 +136,20 @@ select.form-input {
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
+  outline: none;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
   border-color: #0066ff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
+}
+
+.btn-secondary:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #0066ff;
   box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
 }
 
@@ -173,6 +188,13 @@ select.form-input {
   border-color: #00cc00;
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(0, 204, 0, 0.4);
+}
+
+.btn-save:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #0066ff;
+  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
 }
 
 .btn-save:disabled {

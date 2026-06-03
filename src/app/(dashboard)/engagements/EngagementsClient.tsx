@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateEngagementForm } from './CreateEngagementForm';
@@ -12,6 +13,7 @@ interface EngagementsClientProps {
 }
 
 export function EngagementsClient({ clients, contacts, operators, children }: EngagementsClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +30,16 @@ export function EngagementsClient({ clients, contacts, operators, children }: En
         onClose={() => setIsModalOpen(false)} 
         title="Add New Engagement"
         maxWidth="1500px"
+        headerActions={
+          <button
+            type="submit"
+            form="create-engagement-form"
+            className="btn-save"
+            style={{ boxShadow: 'none' }}
+          >
+            Add Engagement
+          </button>
+        }
       >
         <CreateEngagementForm 
           clients={clients} 
@@ -35,6 +47,7 @@ export function EngagementsClient({ clients, contacts, operators, children }: En
           operators={operators} 
           onSuccess={() => {
             setIsModalOpen(false);
+            router.refresh();
             // Smoothly return to the list view after adding
             setTimeout(() => {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

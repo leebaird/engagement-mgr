@@ -3,7 +3,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { createFinding } from '@/app/actions/finding';
 
 export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [state, formAction, isPending] = useActionState(createFinding, null);
+  const [state, formAction] = useActionState(createFinding, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [severity, setSeverity] = useState('');
 
@@ -27,7 +27,7 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <form action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form id="create-finding-form" action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
         <div>
@@ -84,7 +84,7 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
         <textarea 
           name="supportingLinks" 
           className="form-input" 
-          rows={2} 
+          rows={4} 
           style={{ width: '100%' }}
           onKeyDown={e => {
             if (e.key === 'Tab' && !e.shiftKey) {
@@ -100,12 +100,6 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       {state?.error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{state.error}</div>}
-      
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-        <button type="submit" className="btn-secondary" disabled={isPending} style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>
-          {isPending ? 'Saving...' : 'Add Finding'}
-        </button>
-      </div>
     </form>
   );
 }

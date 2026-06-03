@@ -3,7 +3,7 @@ import { useActionState, useEffect, useRef } from 'react';
 import { createOperator } from '@/app/actions/operator';
 
 export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [state, formAction, isPending] = useActionState(createOperator, null);
+  const [state, formAction] = useActionState(createOperator, null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
   }, [state, onSuccess]);
 
   return (
-    <form action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form id="create-operator-form" action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
         <div>
@@ -78,13 +78,6 @@ export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
       </div>
 
       {state?.error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{state.error}</div>}
-      
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-        <button type="submit" className="btn-secondary" disabled={isPending} style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>
-          {isPending ? 'Saving...' : 'Add Operator'}
-        </button>
-      </div>
-
     </form>
   );
 }

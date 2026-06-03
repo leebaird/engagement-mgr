@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateOperatorForm } from './CreateOperatorForm';
@@ -9,6 +10,7 @@ interface OperatorsClientProps {
 }
 
 export function OperatorsClient({ children }: OperatorsClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -24,9 +26,20 @@ export function OperatorsClient({ children }: OperatorsClientProps) {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Add New Operator"
+        headerActions={
+          <button
+            type="submit"
+            form="create-operator-form"
+            className="btn-save"
+            style={{ boxShadow: 'none' }}
+          >
+            Add Operator
+          </button>
+        }
       >
         <CreateOperatorForm onSuccess={() => {
             setIsModalOpen(false);
+            router.refresh();
             // Smoothly return to the list view after adding
             setTimeout(() => {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

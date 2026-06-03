@@ -1,10 +1,11 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateContact, deleteContact } from '@/app/actions/contact';
 import { formatPhone } from '@/lib/format';
+import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 interface Client {
   id: string;
@@ -31,6 +32,11 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) focusEditFieldAtStart(nameInputRef.current);
+  }, [isEditing]);
 
   const [formData, setFormData] = useState({
     clientId: initialContact.clientId,
@@ -195,16 +201,9 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
       >
         {!isEditing ? (
           // VIEW MODE (form field style)
-          <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {/* Column 1: Client + Name + Title */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+            {/* Column 1: Name + Title + Client */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
-                <select disabled value={contact.clientId} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                  <option value=""></option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
-                </select>
-              </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
                 <input readOnly type="text" value={contact.name || ''} className="form-input" style={{ pointerEvents: 'none' }} />
@@ -212,6 +211,13 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <input readOnly type="text" value={contact.title || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
+                <select disabled value={contact.clientId} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                  <option value=""></option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
+                </select>
               </div>
             </div>
 
@@ -244,13 +250,33 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
           </div>
         ) : (
           // EDIT MODE - matching view layout
-          <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             {/* Left column */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  className="form-input"
+                  onFocus={handleEditFieldFocus}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={e => setFormData({ ...formData, title: e.target.value })}
+                  className="form-input"
+                  onFocus={handleEditFieldFocus}
+                />
+              </div>
+              <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
                 <select
-                  autoFocus
                   value={formData.clientId}
                   onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                   className="form-input"
@@ -261,24 +287,6 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                   {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="form-input"
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="form-input"
-                />
-              </div>
             </div>
 
             {/* Right column */}
@@ -286,10 +294,11 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
                 <input
-                  type="email"
+                  {...editEmailInputProps}
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   className="form-input"
+                  onFocus={handleEditFieldFocus}
                 />
               </div>
               <div>
@@ -299,6 +308,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="form-input"
+                  onFocus={handleEditFieldFocus}
                 />
               </div>
             </div>
@@ -311,7 +321,9 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
                 className="form-input"
                 rows={4}
-                style={{ width: '100%' }}                onKeyDown={e => {
+                style={{ width: '100%' }}
+                onFocus={handleEditFieldFocus}
+                onKeyDown={e => {
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();
                     const modal = e.currentTarget.closest('.glass-panel');

@@ -11,7 +11,7 @@ export function CreateEngagementForm({
   operators: { id: string, name: string }[],
   onSuccess?: () => void
 }) {
-  const [state, formAction, isPending] = useActionState(createEngagement, null);
+  const [state, formAction] = useActionState(createEngagement, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [selectedOps, setSelectedOps] = useState<string[]>([]);
   const [opsOpen, setOpsOpen] = useState(false);
@@ -54,7 +54,7 @@ export function CreateEngagementForm({
   }, [state, onSuccess]);
 
   return (
-    <form action={formAction} ref={formRef}>
+    <form id="create-engagement-form" action={formAction} ref={formRef}>
       {/* Hidden inputs so multi-selects submit to the server action */}
       {selectedContacts.map(id => <input type="hidden" key={id} name="contacts" value={id} />)}
       {selectedTAs.map(id => <input type="hidden" key={id} name="trustedAgents" value={id} />)}
@@ -283,11 +283,6 @@ export function CreateEngagementForm({
       {/* Error and Success Messages */}
       {state?.error && <div className="text-error mb-4">{state.error}</div>}
       {state?.success && <div style={{ color: '#4ade80', marginBottom: '1rem' }}>{state.success}</div>}
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <button type="submit" className="btn-secondary" disabled={isPending} style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>
-          {isPending ? 'Saving...' : 'Add Engagement'}
-        </button>
-      </div>
     </form>
   );
 }

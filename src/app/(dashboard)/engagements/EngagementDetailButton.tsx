@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, ChevronDown } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
+import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 export function EngagementDetailButton({
   engagement: initialEngagement,
@@ -48,6 +49,11 @@ export function EngagementDetailButton({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const contactDropdownRef = useRef<HTMLDivElement>(null);
   const taDropdownRef = useRef<HTMLDivElement>(null);
+  const codeNameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) focusEditFieldAtStart(codeNameInputRef.current);
+  }, [isEditing]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -231,9 +237,10 @@ export function EngagementDetailButton({
         )}
       >
         {!isEditing ? (
-          // VIEW MODE
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          // VIEW MODE - matching the New Engagement modal layout (3-column grid)
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+            {/* Column 1 - matching Create */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Code Name</div>
                 <div style={{ fontWeight: 500 }}>{engagement.codeName || '-'}</div>
@@ -242,104 +249,110 @@ export function EngagementDetailButton({
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
                 <div style={{ fontWeight: 500 }}>{engagement.client?.company || '-'}</div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Status</div>
-                    <div>{engagement.status ? engagement.status.charAt(0).toUpperCase() + engagement.status.slice(1).toLowerCase() : '-'}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Location</div>
-                    <div>{engagement.location || '-'}</div>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Focus</div>
-                  <div>{engagement.focus || '-'}</div>
-                </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Charge Code</div>
+                <div style={{ fontWeight: 500 }}>{engagement.chargeCode || '-'}</div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Start Date</div>
-                  <div>{engagement.startDate ? new Date(engagement.startDate).toLocaleDateString() : '-'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Status</div>
+                  <div>{engagement.status ? engagement.status.charAt(0).toUpperCase() + engagement.status.slice(1).toLowerCase() : '-'}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>End Date</div>
-                  <div>{engagement.endDate ? new Date(engagement.endDate).toLocaleDateString() : '-'}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Location</div>
+                  <div>{engagement.location || '-'}</div>
                 </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Focus</div>
+                <div style={{ fontWeight: 500 }}>{engagement.focus || '-'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Type</div>
+                <div style={{ fontWeight: 500 }}>{engagement.type || '-'}</div>
               </div>
             </div>
 
+            {/* Column 2 - matching Create (dates + long text) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Kickoff</div>
+                  <div style={{ fontWeight: 500 }}>{engagement.kickOffDate ? new Date(engagement.kickOffDate).toLocaleDateString() : '-'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Start</div>
+                  <div style={{ fontWeight: 500 }}>{engagement.startDate ? new Date(engagement.startDate).toLocaleDateString() : '-'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>End</div>
+                  <div style={{ fontWeight: 500 }}>{engagement.endDate ? new Date(engagement.endDate).toLocaleDateString() : '-'}</div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Objectives</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.objectives || '-'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Targets</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.targets || '-'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Exclusions</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.exclusions || '-'}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.notes || '-'}</div>
+              </div>
+            </div>
+
+            {/* Column 3 - matching Create (relationships) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Operators</div>
-                <div>{engagement.operators?.length ? engagement.operators.map((o: any) => o.name).join(', ') : '-'}</div>
+                <div style={{ fontWeight: 500 }}>{engagement.operators?.length ? engagement.operators.map((o: any) => o.name).join(', ') : '-'}</div>
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Contacts</div>
-                <div>{engagement.contacts?.length ? engagement.contacts.map((c: any) => c.name).join(', ') : '-'}</div>
+                <div style={{ fontWeight: 500 }}>{engagement.contacts?.length ? engagement.contacts.map((c: any) => c.name).join(', ') : '-'}</div>
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Trusted Agents</div>
-                <div>{engagement.trustedAgents?.length ? engagement.trustedAgents.map((t: any) => t.name).join(', ') : '-'}</div>
+                <div style={{ fontWeight: 500 }}>{engagement.trustedAgents?.length ? engagement.trustedAgents.map((t: any) => t.name).join(', ') : '-'}</div>
               </div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.5rem' }}>
-              {engagement.objectives && (
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Objectives</div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.objectives}</div>
-                </div>
-              )}
-              {engagement.targets && (
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Targets</div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.targets}</div>
-                </div>
-              )}
-              {engagement.exclusions && (
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Exclusions</div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.exclusions}</div>
-                </div>
-              )}
-              {engagement.notes && (
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
-                  <div style={{ whiteSpace: 'pre-wrap' }}>{engagement.notes}</div>
-                </div>
-              )}
-              <div style={{ marginTop: '0.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
-                  <div>Created</div>
-                  <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
-                  <div>Updated</div>
-                  <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
-                </div>
+            {/* Timestamps at bottom - bottom left like other modals */}
+            <div style={{ gridColumn: '1 / -1', marginTop: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
+                <div>Created</div>
+                <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
+                <div>Updated</div>
+                <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
               </div>
             </div>
           </div>
         ) : (
-          // EDIT MODE
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {/* Left Column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Code Name</div>
-                <input autoFocus type="text" value={formData.codeName} onChange={e => setFormData({...formData, codeName: e.target.value})} className="form-input" required />
+          // EDIT MODE - matching New Engagement modal exactly in size/position
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', fontSize: '1rem', lineHeight: 1.5, minHeight: '620px' }}>
+            {/* Left Column - exact match to New Engagement modal */}
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+              <div className="form-group">
+                <label className="form-label">Code Name</label>
+                <input ref={codeNameInputRef} type="text" value={formData.codeName} onChange={e => setFormData({...formData, codeName: e.target.value})} className="form-input" required style={{ paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus} />
               </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
+              <div className="form-group">
+                <label className="form-label">Client</label>
                 <select value={formData.clientId} onChange={e => setFormData({...formData, clientId: e.target.value})} className="form-input" required style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                   <option value=""></option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Type</div>
-                    <select value={formData.type || ''} onChange={e => setFormData({...formData, type: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <div className="form-group">
+                  <label className="form-label">Type</label>
+                    <select value={formData.type || ''} onChange={e => setFormData({...formData, type: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                     <option value=""></option>
                     <option value="AI">AI</option>
                     <option value="CODE_REVIEW">Code Review</option>
@@ -356,9 +369,9 @@ export function EngagementDetailButton({
                     <option value="WIRELESS">Wireless</option>
                   </select>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Location</div>
-                    <select value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <div className="form-group">
+                  <label className="form-label">Location</label>
+                    <select value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                     <option value=""></option>
                     <option value="INTERNAL">Internal</option>
                     <option value="EXTERNAL">External</option>
@@ -366,9 +379,9 @@ export function EngagementDetailButton({
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Status</div>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                     <option value=""></option>
                     <option value="PLANNING">Planning</option>
                     <option value="ROE">ROE</option>
@@ -378,24 +391,24 @@ export function EngagementDetailButton({
                     <option value="COMPLETE">Complete</option>
                   </select>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Focus</div>
-                  <input type="text" value={formData.focus} onChange={e => setFormData({...formData, focus: e.target.value})} className="form-input" />
+                <div className="form-group">
+                  <label className="form-label">Focus</label>
+                  <input type="text" value={formData.focus} onChange={e => setFormData({...formData, focus: e.target.value})} className="form-input" style={{ paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus} />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Start Date</div>
-                  <input type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="form-input" style={{ colorScheme: 'dark' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 2fr', gap: '0.75rem' }}>
+                <div className="form-group">
+                  <label className="form-label">Start</label>
+                  <input type="date" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="form-input" style={{ colorScheme: 'dark', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus} />
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>End Date</div>
-                  <input type="date" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="form-input" style={{ colorScheme: 'dark' }} />
+                <div className="form-group">
+                  <label className="form-label">End</label>
+                  <input type="date" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="form-input" style={{ colorScheme: 'dark', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus} />
                 </div>
               </div>
             </div>
 
-            {/* Right Column */}
+            {/* Right Column - exact match to New Engagement modal */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ position: 'relative' }} ref={dropdownRef}>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Operators</div>
@@ -472,26 +485,27 @@ export function EngagementDetailButton({
 
             {/* Full width textareas */}
             <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.5rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Objectives</div>
-                <textarea value={formData.objectives} onChange={e => setFormData({...formData, objectives: e.target.value})} className="form-input" rows={2} style={{ width: '100%' }}></textarea>
+              <div className="form-group">
+                <label className="form-label">Objectives</label>
+                <textarea value={formData.objectives} onChange={e => setFormData({...formData, objectives: e.target.value})} className="form-input" rows={2} style={{ width: '100%', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus}></textarea>
               </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Targets</div>
-                <textarea value={formData.targets} onChange={e => setFormData({...formData, targets: e.target.value})} className="form-input" rows={2} style={{ width: '100%' }}></textarea>
+              <div className="form-group">
+                <label className="form-label">Targets</label>
+                <textarea value={formData.targets} onChange={e => setFormData({...formData, targets: e.target.value})} className="form-input" rows={2} style={{ width: '100%', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus}></textarea>
               </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Exclusions</div>
-                <textarea value={formData.exclusions} onChange={e => setFormData({...formData, exclusions: e.target.value})} className="form-input" rows={2} style={{ width: '100%' }}></textarea>
+              <div className="form-group">
+                <label className="form-label">Exclusions</label>
+                <textarea value={formData.exclusions} onChange={e => setFormData({...formData, exclusions: e.target.value})} className="form-input" rows={2} style={{ width: '100%', paddingTop: '0.25rem', paddingBottom: '0.25rem' }} onFocus={handleEditFieldFocus}></textarea>
               </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
+              <div className="form-group">
+                <label className="form-label">Notes</label>
                 <textarea 
                   value={formData.notes} 
                   onChange={e => setFormData({...formData, notes: e.target.value})} 
                   className="form-input" 
                   rows={3} 
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', paddingTop: '0.25rem', paddingBottom: '0.25rem' }}
+                  onFocus={handleEditFieldFocus}
                   onKeyDown={e => {
                     if (e.key === 'Tab' && !e.shiftKey) {
                       e.preventDefault();
@@ -506,8 +520,7 @@ export function EngagementDetailButton({
               </div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem', height: '2.5rem' }} />
-            {error && <div style={{ gridColumn: '1 / -1', color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
+            {error && <div style={{ gridColumn: '1 / -1', color: '#ff4444', textAlign: 'center', marginTop: '0.5rem', marginBottom: '0.5rem' }}>{error}</div>}
           </div>
         )}
       </Modal>

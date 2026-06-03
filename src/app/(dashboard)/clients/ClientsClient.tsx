@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateClientForm } from './CreateClientForm';
@@ -9,6 +10,7 @@ interface ClientsClientProps {
 }
 
 export function ClientsClient({ children }: ClientsClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -24,9 +26,20 @@ export function ClientsClient({ children }: ClientsClientProps) {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Add New Client"
+        headerActions={
+          <button
+            type="submit"
+            form="create-client-form"
+            className="btn-save"
+            style={{ boxShadow: 'none' }}
+          >
+            Add Client
+          </button>
+        }
       >
         <CreateClientForm onSuccess={() => {
             setIsModalOpen(false);
+            router.refresh();
             // Smoothly return to the list view after adding
             setTimeout(() => {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

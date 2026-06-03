@@ -12,7 +12,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     redirect('/');
   }
 
-  const validSortColumns = ['username', 'role', 'createdAt', 'lastLogin'];
+  const validSortColumns = ['username', 'role', 'lastLogin'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'username';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
@@ -36,38 +36,32 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   return (
     <UsersClient>
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '120px' }}>
+              <th style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '188px' }}>
                 <Link href={getSortHref('username')} style={{ color: 'inherit', textDecoration: 'none' }}>
                   Username{getSortIcon('username')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
+              <th style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '160px', textAlign: 'center' }}>
                 <Link href={getSortHref('role')} style={{ color: 'inherit', textDecoration: 'none' }}>
                   Role{getSortIcon('role')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '180px' }}>
-                <Link href={getSortHref('createdAt')} style={{ color: 'inherit', textDecoration: 'none' }}>
-                  Created{getSortIcon('createdAt')}
-                </Link>
-              </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}>
-                <Link href={getSortHref('lastLogin')} style={{ color: 'inherit', textDecoration: 'none' }}>
+              <th style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right' }}>
+                <Link href={getSortHref('lastLogin')} style={{ color: 'inherit', textDecoration: 'none', display: 'block', textAlign: 'right' }}>
                   Last Login{getSortIcon('lastLogin')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}></th>
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
+              <th style={{ padding: '0.25rem', width: '40px' }}></th>
             </tr>
           </thead>
           <tbody>
             {users.map(user => (
               <tr key={user.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={user.username}>{user.username}</td>
-                <td style={{ padding: '0.75rem' }}>
+                <td style={{ padding: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '188px' }} title={user.username}>{user.username}</td>
+                <td style={{ padding: '0.25rem', width: '160px', textAlign: 'center' }}>
                   <span style={{
                     padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
@@ -79,14 +73,10 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     {user.role === 'ADMIN' ? 'Admin' : 'User'}
                   </span>
                 </td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {user.createdAt.toLocaleDateString()}
-                </td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                <td style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
                 </td>
-                <td style={{ padding: '0.75rem' }}></td>
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <td style={{ padding: '0.25rem', display: 'flex', justifyContent: 'flex-end', width: '40px' }}>
                   <UserDetailButton user={user} />
                 </td>
               </tr>

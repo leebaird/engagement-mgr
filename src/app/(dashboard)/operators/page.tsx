@@ -55,7 +55,7 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
   return (
     <OperatorsClient>
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
@@ -77,8 +77,8 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
           <tbody>
             {operators.map(op => (
               <tr key={op.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500 }}>{op.name}</td>
-                <td style={{ padding: '0.75rem' }}>{op.title || ''}</td>
+                <td style={{ padding: '0.75rem', fontWeight: 500, width: '170px' }}>{op.name}</td>
+                <td style={{ padding: '0.75rem', width: '170px' }}>{op.title || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{op.email || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(op.phoneNumber)}</td>
 

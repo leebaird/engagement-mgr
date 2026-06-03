@@ -2,17 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Shield, Contact, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Contact, Zap } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 
-const navItems = [
+const navItems: { name: string; href: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Engagements', href: '/engagements', icon: Crosshair },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Contacts', href: '/contacts', icon: Contact },
   { name: 'Findings', href: '/findings', icon: ShieldAlert },
   { name: 'Operators', href: '/operators', icon: Zap },
-  { name: 'Users', href: '/users', icon: Users },
+  { name: 'Users', href: '/users', icon: Users, adminOnly: true },
 ];
 
 export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -37,7 +37,7 @@ export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
 
       <nav style={{ flex: 1, padding: '0 1rem' }}>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {navItems.filter(item => item.name !== 'Users' || isAdmin).map((item) => {
+          {navItems.filter(item => !item.adminOnly || isAdmin).map((item) => {
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             const Icon = item.icon;
             return (

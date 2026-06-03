@@ -11,8 +11,8 @@ export default function ChangePasswordPage() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
         <div className="text-center mb-8">
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,51,102,0.1)', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
-            <Shield size={32} color="var(--primary-color)" />
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sidebar-active-bg)', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
+            <Shield size={32} color="var(--sidebar-active)" />
           </div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Set New Password</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem', fontSize: '0.9rem' }}>

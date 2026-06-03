@@ -3,8 +3,14 @@ import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth/session';
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === '/dash2' || pathname.startsWith('/dash2/')) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   const session = await getSession();
-  const isLoginPage = request.nextUrl.pathname === '/login';
+  const isLoginPage = pathname === '/login';
 
   if (!session && !isLoginPage) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -20,7 +26,7 @@ export async function proxy(request: NextRequest) {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    const isChangePasswordPage = request.nextUrl.pathname === '/change-password';
+    const isChangePasswordPage = pathname === '/change-password';
 
     if (lastPasswordChange < ninetyDaysAgo && !isChangePasswordPage) {
       return NextResponse.redirect(new URL('/change-password', request.url));

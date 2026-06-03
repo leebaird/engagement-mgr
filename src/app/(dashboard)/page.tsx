@@ -3,34 +3,8 @@ import { getSession } from '@/lib/auth/session';
 import { Crosshair, ShieldAlert, Users, Building2, Zap, Contact } from 'lucide-react';
 
 export default async function DashboardHome() {
-  const currentDate = new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric'
-  }).format(new Date());
-
   const session = await getSession();
   const isAdmin = session?.role === 'ADMIN';
-
-  const baseCounts = await Promise.all([
-    prisma.engagement.count({
-      where: {
-        status: {
-          notIn: ['PLANNING', 'COMPLETE']
-        }
-      }
-    }),
-    prisma.engagement.count({
-      where: { status: 'PLANNING' }
-    }),
-    prisma.engagement.count({
-      where: { status: 'COMPLETE' }
-    }),
-    prisma.client.count(),
-    prisma.contact.count(),
-    prisma.finding.count(),
-    prisma.operator.count(),
-  ]);
 
   const [
     activeEngagementCount,
@@ -40,102 +14,149 @@ export default async function DashboardHome() {
     contactCount,
     findingCount,
     operatorCount,
-  ] = baseCounts;
+    userCount,
+  ] = await Promise.all([
+    prisma.engagement.count({
+      where: { status: { notIn: ['PLANNING', 'COMPLETE'] } },
+    }),
+    prisma.engagement.count({ where: { status: 'PLANNING' } }),
+    prisma.engagement.count({ where: { status: 'COMPLETE' } }),
+    prisma.client.count(),
+    prisma.contact.count(),
+    prisma.finding.count(),
+    prisma.operator.count(),
+    isAdmin ? prisma.user.count() : Promise.resolve(0),
+  ]);
 
-  const userCount = isAdmin
-    ? await prisma.user.count()
-    : 0;
+  const statCards = [
+    { label: 'Clients', count: clientCount, icon: Building2 },
+    { label: 'Contacts', count: contactCount, icon: Contact },
+    { label: 'Findings', count: findingCount, icon: ShieldAlert },
+    { label: 'Operators', count: operatorCount, icon: Zap },
+    ...(isAdmin ? [{ label: 'Users', count: userCount, icon: Users }] : []),
+  ];
+
+  const engagementStats = [
+    { label: 'Active', count: activeEngagementCount },
+    { label: 'Planning', count: planningEngagementCount },
+    { label: 'Completed', count: completedEngagementCount },
+  ];
+
+  const columnCount = isAdmin ? 5 : 4;
+
+  const iconSize = 32;
+  const iconBoxStyle = {
+    background: 'rgba(0,102,255,0.05)',
+    padding: '1rem',
+    borderRadius: '12px',
+    display: 'flex',
+  } as const;
+  const statCardIconBoxStyle = {
+    ...iconBoxStyle,
+    padding: '0.625rem',
+  };
+  const topRowIconBoxStyle = {
+    ...iconBoxStyle,
+    padding: '0.5rem',
+  };
+  const topRowCellStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: '0 1rem',
+    boxSizing: 'border-box',
+  } as const;
+  const topRowNumberCellStyle = {
+    ...topRowCellStyle,
+    alignItems: 'flex-end',
+  } as const;
+  const statColumnStyle = {
+    padding: '1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1rem',
+  } as const;
+  const countStyle = {
+    fontSize: '2rem',
+    fontWeight: 700,
+    lineHeight: 1,
+  } as const;
+  const labelStyle = {
+    color: 'var(--text-muted)',
+    fontSize: '0.9rem',
+    lineHeight: 1,
+  } as const;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>{currentDate}</h1>
-      
-      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
-        
-        {/* Engagements */}
-        <div className="glass-panel" style={{ gridColumn: '2 / span 3', padding: '1.5rem 0', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-            <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px', display: 'flex' }}>
-              <Crosshair size={28} color="#0066ff" />
-            </div>
-            <div style={{ width: '80px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{activeEngagementCount}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Active</div>
+      <h1 style={{ fontSize: '2rem', margin: '0 0 2rem' }}>Dashboard</h1>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
+          gap: '1.5rem',
+        }}
+      >
+        <div
+          className="glass-panel"
+          style={{
+            gridColumn: '1 / -1',
+            height: '100px',
+            display: 'grid',
+            gridTemplateColumns: 'subgrid',
+            gridTemplateRows: '1fr 1fr',
+            rowGap: '0.25rem',
+            padding: '0.5rem 0',
+            alignItems: 'center',
+            justifyItems: 'center',
+          }}
+        >
+          <div style={{ ...topRowNumberCellStyle, gridRow: 1, gridColumn: 1 }}>
+            <div style={topRowIconBoxStyle}>
+              <Crosshair size={iconSize} color="#0066ff" />
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-            <div style={{ width: '60px' }}></div>
-            <div style={{ width: '80px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{planningEngagementCount}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Planning</div>
+          {engagementStats.map((stat, index) => (
+            <div
+              key={stat.label}
+              style={{
+                ...topRowNumberCellStyle,
+                gridRow: 1,
+                gridColumn: index + 2,
+              }}
+            >
+              <span style={countStyle}>{stat.count}</span>
             </div>
+          ))}
+          <div style={{ ...topRowCellStyle, gridRow: 2, gridColumn: 1 }}>
+            <span style={labelStyle}>Engagements</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-            <div style={{ width: '60px' }}></div>
-            <div style={{ width: '80px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{completedEngagementCount}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Completed</div>
+          {engagementStats.map((stat, index) => (
+            <div
+              key={`${stat.label}-label`}
+              style={{
+                ...topRowCellStyle,
+                gridRow: 2,
+                gridColumn: index + 2,
+              }}
+            >
+              <span style={labelStyle}>{stat.label}</span>
             </div>
-          </div>
+          ))}
         </div>
 
-        {/* Clients */}
-        <div className="glass-panel" style={{ gridColumnStart: 1, padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-            <Building2 size={28} color="#0066ff" />
-          </div>
-          <div style={{ width: '80px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700 }}>{clientCount}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Clients</div>
-          </div>
-        </div>
-
-        {/* Contacts */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-            <Contact size={28} color="#0066ff" />
-          </div>
-          <div style={{ width: '80px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700 }}>{contactCount}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Contacts</div>
-          </div>
-        </div>
-
-        {/* Findings */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-            <ShieldAlert size={28} color="#0066ff" />
-          </div>
-          <div style={{ width: '80px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700 }}>{findingCount}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Findings</div>
-          </div>
-        </div>
-
-        {/* Operators */}
-        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-            <Zap size={28} color="#0066ff" />
-          </div>
-          <div style={{ width: '80px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700 }}>{operatorCount}</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Operators</div>
-          </div>
-        </div>
-
-        {/* Users - only visible to admins */}
-        {isAdmin && (
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem' }}>
-            <div style={{ background: 'rgba(0,102,255,0.05)', padding: '1rem', borderRadius: '12px' }}>
-              <Users size={28} color="#0066ff" />
+        {statCards.map(({ label, count, icon: Icon }) => (
+          <div key={label} className="glass-panel" style={statColumnStyle}>
+            <div style={statCardIconBoxStyle}>
+              <Icon size={iconSize} color="#0066ff" />
             </div>
-            <div style={{ width: '80px', textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>{userCount}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Users</div>
-            </div>
+            <div style={countStyle}>{count}</div>
+            <div style={labelStyle}>{label}</div>
           </div>
-        )}
-
+        ))}
       </div>
     </div>
   );

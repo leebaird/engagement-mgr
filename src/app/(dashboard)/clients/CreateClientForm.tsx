@@ -3,7 +3,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/app/actions/client';
 
 export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
-  const [state, formAction, isPending] = useActionState(createClient, null);
+  const [state, formAction] = useActionState(createClient, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [cityError, setCityError] = useState(false);
   const [stateError, setStateError] = useState(false);
@@ -46,7 +46,7 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <form action={formAction} ref={formRef}>
+    <form id="create-client-form" action={formAction} ref={formRef}>
       <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
         {/* Left column - matches edit modal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -141,12 +141,6 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
 
       {state?.error && <div className="text-error mb-4">{state.error}</div>}
       {state?.success && <div style={{ color: '#4ade80', marginBottom: '1rem' }}>{state.success}</div>}
-
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-        <button type="submit" className="btn-secondary" disabled={isPending} style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>
-          {isPending ? 'Saving...' : 'Add Client'}
-        </button>
-      </div>
     </form>
   );
 }

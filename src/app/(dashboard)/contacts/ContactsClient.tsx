@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateContactForm } from './CreateContactForm';
@@ -10,6 +11,7 @@ interface ContactsClientProps {
 }
 
 export function ContactsClient({ clients, children }: ContactsClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -25,9 +27,20 @@ export function ContactsClient({ clients, children }: ContactsClientProps) {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title="Add New Contact"
+        headerActions={
+          <button
+            type="submit"
+            form="create-contact-form"
+            className="btn-save"
+            style={{ boxShadow: 'none' }}
+          >
+            Add Contact
+          </button>
+        }
       >
         <CreateContactForm clients={clients} onSuccess={() => {
             setIsModalOpen(false);
+            router.refresh();
             // Smoothly return to the list view after adding
             setTimeout(() => {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

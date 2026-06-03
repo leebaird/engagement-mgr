@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateFinding, deleteFinding } from '@/app/actions/finding';
+import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 export function FindingDetailButton({ 
   finding: initialFinding, 
@@ -37,9 +38,7 @@ export function FindingDetailButton({
 
     const titleInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
-      if (isEditing && titleInputRef.current) {
-        titleInputRef.current.focus();
-      }
+      if (isEditing) focusEditFieldAtStart(titleInputRef.current);
     }, [isEditing]);
 
   const getSeverityStyle = (severity: string) => {
@@ -247,7 +246,7 @@ export function FindingDetailButton({
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <input ref={titleInputRef} autoFocus type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required />
+                <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
@@ -278,12 +277,12 @@ export function FindingDetailButton({
 
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-              <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }}></textarea>
+              <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
             </div>
 
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-              <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }}></textarea>
+              <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
             </div>
 
             <div>
@@ -294,6 +293,7 @@ export function FindingDetailButton({
                 className="form-input" 
                 rows={4} 
                 style={{ width: '100%' }}
+                onFocus={handleEditFieldFocus}
                 onKeyDown={e => {
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();

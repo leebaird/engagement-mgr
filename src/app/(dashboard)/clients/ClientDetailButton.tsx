@@ -1,8 +1,15 @@
 'use client';
-import { useState, useRef } from 'react';import { useRouter } from 'next/navigation';import { Eye } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateClient, deleteClient } from '@/app/actions/client';
 import { formatPhone } from '@/lib/format';
+import {
+  focusEditFieldAtStart,
+  handleClientEditFieldBlur,
+  handleClientEditFieldFocus,
+} from '@/lib/edit-field-focus';
 
 interface Client {
   id: string;
@@ -67,6 +74,10 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
   };
 
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing) focusEditFieldAtStart(nameInputRef.current);
+  }, [isEditing]);
 
   return (
     <>
@@ -304,7 +315,6 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
                 <input
-                  autoFocus
                   ref={nameInputRef}
                   type="text"
                   value={formData.company}
@@ -312,8 +322,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   className="form-input"
                   style={{ minWidth: '340px', width: '100%' }}
                   maxLength={30}
-                  onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                  onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                  onFocus={handleClientEditFieldFocus}
+                  onBlur={handleClientEditFieldBlur}
                 />
               </div>
               <div>
@@ -325,8 +335,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   className="form-input"
                   style={{ minWidth: '340px', width: '100%' }}
                   maxLength={30}
-                  onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                  onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                  onFocus={handleClientEditFieldFocus}
+                  onBlur={handleClientEditFieldBlur}
                 />
               </div>
               <div>
@@ -340,8 +350,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   title="Only letters and spaces are allowed"
                   style={{ minWidth: '340px', width: '100%' }}
                   maxLength={30}
-                  onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                  onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                  onFocus={handleClientEditFieldFocus}
+                  onBlur={handleClientEditFieldBlur}
                 />
                 {cityError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Only letters and spaces allowed</span>}
               </div>
@@ -357,8 +367,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                     pattern="[A-Za-z]{2}"
                     title="Two letter state code"
                     style={{ textTransform: 'uppercase', maxWidth: '60px' }}
-                    onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                    onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                    onFocus={handleClientEditFieldFocus}
+                    onBlur={handleClientEditFieldBlur}
                   />
                   {stateError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Invalid state code</span>}
                 </div>
@@ -373,8 +383,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                     pattern="^\\d{5}(-\\d{4})?$"
                     title="ZIP code must be 12345 or 12345-6789"
                     style={{ minWidth: '140px', width: '100%' }}
-                    onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                    onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                    onFocus={handleClientEditFieldFocus}
+                    onBlur={handleClientEditFieldBlur}
                   />
                   {zipError && <span className="text-error" style={{ fontSize: '0.7rem' }}>ZIP must be 12345 or 12345-6789</span>}
                 </div>
@@ -391,8 +401,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   onChange={e => setFormData({ ...formData, website: e.target.value })}
                   className="form-input"
                   style={{ width: '70%', marginLeft: 'auto' }}
-                  onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                  onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                  onFocus={handleClientEditFieldFocus}
+                  onBlur={handleClientEditFieldBlur}
                 />
               </div>
               <div>
@@ -403,8 +413,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   className="form-input"
                   style={{ width: '70%', marginLeft: 'auto' }}
-                  onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                  onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                  onFocus={handleClientEditFieldFocus}
+                  onBlur={handleClientEditFieldBlur}
                 />
               </div>
             </div>
@@ -418,8 +428,8 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 className="form-input"
                 rows={4}
                 style={{ width: '100%' }}
-                onFocus={e => e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 102, 255, 0.3)'}
-                onBlur={e => e.currentTarget.style.boxShadow = 'none'}
+                onFocus={handleClientEditFieldFocus}
+                onBlur={handleClientEditFieldBlur}
                 onKeyDown={e => {
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();

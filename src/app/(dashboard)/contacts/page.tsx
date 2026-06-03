@@ -37,10 +37,10 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   return (
     <ContactsClient clients={clients}>
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '220px' }}>
+              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
                 <Link href={getSortHref('name')} style={{ color: 'inherit', textDecoration: 'none' }}>Name{getSortIcon('name')}</Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
@@ -61,8 +61,8 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
           <tbody>
             {contacts.map(c => (
               <tr key={c.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500 }}>{c.name}</td>
-                <td style={{ padding: '0.75rem' }}>{c.title || ''}</td>
+                <td style={{ padding: '0.75rem', fontWeight: 500, width: '170px' }}>{c.name}</td>
+                <td style={{ padding: '0.75rem', width: '170px' }}>{c.title || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{c.client.company}</td>
                 <td style={{ padding: '0.75rem' }}>{c.email || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(c.phone)}</td>

@@ -43,22 +43,34 @@ export function FindingsClient({ initialFindings }: FindingsClientProps) {
       
       <div ref={listRef}>
         <div className="glass-panel" style={{ padding: '2rem' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+            <colgroup>
+              <col />
+              <col style={{ width: '160px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '150px' }} />
+              <col style={{ width: '150px' }} />
+              <col style={{ width: '40px' }} />
+            </colgroup>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Title</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Category</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '120px' }}>Severity</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>Created</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '150px' }}>Updated</th>
-                <th style={{ padding: '0.75rem', width: '40px' }}></th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden' }}>
+                  <span style={{ marginLeft: '2.5rem', display: 'inline-block' }}>Category</span>
+                </th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Severity</th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Created</th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Updated</th>
+                <th style={{ padding: '0.75rem' }}></th>
               </tr>
             </thead>
             <tbody>
               {findings.map((f: any) => (
                 <tr key={f.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                   <td style={{ padding: '0.75rem', fontWeight: 500 }}>{f.title}</td>
-                  <td style={{ padding: '0.75rem' }}>{f.category || ''}</td>
+                  <td style={{ padding: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.category || ''}>
+                    <span style={{ marginLeft: '2.5rem', display: 'inline-block' }}>{f.category || ''}</span>
+                  </td>
                   <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.severity}>
                     <span style={{ 
                       padding: '0.2rem 0.6rem', 
@@ -90,6 +102,16 @@ export function FindingsClient({ initialFindings }: FindingsClientProps) {
         onClose={() => setIsModalOpen(false)} 
         title="Add New Finding"
         maxWidth="1000px"
+        headerActions={
+          <button
+            type="submit"
+            form="create-finding-form"
+            className="btn-save"
+            style={{ boxShadow: 'none' }}
+          >
+            Add Finding
+          </button>
+        }
       >
         <CreateFindingForm onSuccess={() => {
             setIsModalOpen(false);
