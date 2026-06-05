@@ -1,0 +1,696 @@
+'use client';
+
+import { ReactNode, RefObject } from 'react';
+import { ChevronDown } from 'lucide-react';
+
+export type EngagementFormValues = {
+  codeName: string;
+  clientName: string;
+  chargeCode: string;
+  status: string;
+  focus: string;
+  type: string;
+  location: string;
+  kickOffDate: string;
+  startDate: string;
+  endDate: string;
+  objectives: string;
+  targets: string;
+  exclusions: string;
+  notes: string;
+};
+
+export function engagementToFormValues(engagement: {
+  codeName?: string | null;
+  client?: { company: string } | null;
+  chargeCode?: string | null;
+  status?: string | null;
+  focus?: string | null;
+  type?: string | null;
+  location?: string | null;
+  kickOffDate?: string | Date | null;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  objectives?: string | null;
+  targets?: string | null;
+  exclusions?: string | null;
+  notes?: string | null;
+}): EngagementFormValues {
+  const toDate = (d: string | Date | null | undefined) =>
+    d ? new Date(d).toISOString().split('T')[0] : '';
+
+  return {
+    codeName: engagement.codeName || '',
+    clientName: engagement.client?.company || '',
+    chargeCode: engagement.chargeCode || '',
+    status: engagement.status || '',
+    focus: engagement.focus || '',
+    type: engagement.type || '',
+    location: engagement.location || '',
+    kickOffDate: toDate(engagement.kickOffDate),
+    startDate: toDate(engagement.startDate),
+    endDate: toDate(engagement.endDate),
+    objectives: engagement.objectives || '',
+    targets: engagement.targets || '',
+    exclusions: engagement.exclusions || '',
+    notes: engagement.notes || '',
+  };
+}
+
+const selectPickerOnFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
+  try {
+    if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') {
+      (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker();
+    }
+  } catch {
+    /* ignore */
+  }
+};
+
+type EngagementFormFieldsProps = {
+  clients: { id: string; company: string }[];
+  contacts: { id: string; name: string; clientId: string }[];
+  operators: { id: string; name: string; title: string | null }[];
+  selectedOps: string[];
+  setSelectedOps: React.Dispatch<React.SetStateAction<string[]>>;
+  opsOpen: boolean;
+  setOpsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedContacts: string[];
+  setSelectedContacts: React.Dispatch<React.SetStateAction<string[]>>;
+  contactsOpen: boolean;
+  setContactsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedTAs: string[];
+  setSelectedTAs: React.Dispatch<React.SetStateAction<string[]>>;
+  tasOpen: boolean;
+  setTasOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  dropdownRef: RefObject<HTMLDivElement | null>;
+  contactDropdownRef: RefObject<HTMLDivElement | null>;
+  taDropdownRef: RefObject<HTMLDivElement | null>;
+  codeNameRef: RefObject<HTMLInputElement | null>;
+  notesRef: RefObject<HTMLTextAreaElement | null>;
+  contactsTriggerRef: RefObject<HTMLDivElement | null>;
+  taTriggerRef: RefObject<HTMLDivElement | null>;
+  operatorsTriggerRef: RefObject<HTMLDivElement | null>;
+  values?: EngagementFormValues;
+  onFieldChange?: (field: keyof EngagementFormValues, value: string) => void;
+  autoFocusCodeName?: boolean;
+  readOnly?: boolean;
+  footer?: ReactNode;
+  column3Extra?: ReactNode;
+};
+
+export function EngagementFormFields({
+  clients,
+  contacts,
+  operators,
+  selectedOps,
+  setSelectedOps,
+  opsOpen,
+  setOpsOpen,
+  selectedContacts,
+  setSelectedContacts,
+  contactsOpen,
+  setContactsOpen,
+  selectedTAs,
+  setSelectedTAs,
+  tasOpen,
+  setTasOpen,
+  dropdownRef,
+  contactDropdownRef,
+  taDropdownRef,
+  codeNameRef,
+  notesRef,
+  contactsTriggerRef,
+  taTriggerRef,
+  operatorsTriggerRef,
+  values,
+  onFieldChange,
+  autoFocusCodeName = false,
+  readOnly = false,
+  footer,
+  column3Extra,
+}: EngagementFormFieldsProps) {
+  const controlled = values !== undefined && onFieldChange !== undefined;
+  const displayValues = readOnly || controlled;
+
+  const textProps = (field: keyof EngagementFormValues, name: string, extra?: { required?: boolean; autoFocus?: boolean }) => {
+    if (displayValues && values) {
+      return {
+        value: values[field],
+        ...(readOnly
+          ? { readOnly: true as const }
+          : {
+              onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                onFieldChange!(field, e.target.value),
+            }),
+      };
+    }
+    return { name, ...extra };
+  };
+
+  const selectProps = (field: keyof EngagementFormValues, name: string) => {
+    if (displayValues && values) {
+      return {
+        value: values[field],
+        ...(readOnly
+          ? { disabled: true as const }
+          : { onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onFieldChange!(field, e.target.value) }),
+      };
+    }
+    return { name };
+  };
+
+  const dateStyle = {
+    colorScheme: 'dark' as const,
+    paddingTop: '0.25rem',
+    paddingBottom: '0.25rem',
+    ...(readOnly ? { pointerEvents: 'none' as const } : {}),
+  };
+
+  const textareaStyle = {
+    paddingTop: '0.25rem',
+    paddingBottom: '0.25rem',
+    ...(readOnly ? { pointerEvents: 'none' as const } : {}),
+  };
+
+  return (
+    <>
+      <div className="engagement-form-grid">
+      <div className="engagement-col-left engagement-form-col">
+        <div className="form-group">
+          <label className="form-label">Code Name</label>
+          <input
+            ref={codeNameRef}
+            type="text"
+            className="form-input"
+            required={!readOnly}
+            autoFocus={autoFocusCodeName && !readOnly}
+            {...textProps('codeName', 'codeName')}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                setContactsOpen(false);
+                setTasOpen(false);
+                operatorsTriggerRef.current?.focus();
+              }
+            }}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Client</label>
+          <input
+            type="text"
+            className="form-input"
+            required={!readOnly}
+            list={readOnly ? undefined : 'engagement-client-list'}
+            {...textProps('clientName', 'clientName')}
+          />
+          {!readOnly && (
+            <datalist id="engagement-client-list">
+              {clients.map((c) => (
+                <option key={c.id} value={c.company} />
+              ))}
+            </datalist>
+          )}
+        </div>
+        <div className="form-group">
+          <label className="form-label">Charge Code</label>
+          <input type="text" className="form-input" {...textProps('chargeCode', 'chargeCode')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Status</label>
+          <select
+            className="form-input"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+            onFocus={readOnly ? undefined : selectPickerOnFocus}
+            {...selectProps('status', 'status')}
+          >
+            <option value=""></option>
+            <option value="PLANNING">Planning</option>
+            <option value="ROE">ROE</option>
+            <option value="PREP">Prep</option>
+            <option value="LIVE">Live</option>
+            <option value="REPORTING">Reporting</option>
+            <option value="COMPLETE">Complete</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Focus</label>
+          <input type="text" className="form-input" {...textProps('focus', 'focus')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Type</label>
+          <select
+            className="form-input"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+            onFocus={readOnly ? undefined : selectPickerOnFocus}
+            {...selectProps('type', 'type')}
+          >
+            <option value=""></option>
+            <option value="AI">AI</option>
+            <option value="CODE_REVIEW">Code Review</option>
+            <option value="FIREWALL">Firewall</option>
+            <option value="MULTI">Multi</option>
+            <option value="PENTEST">Pentest</option>
+            <option value="PHISHING">Phishing</option>
+            <option value="PHYSICAL">Physical</option>
+            <option value="PURPLE_TEAM">Purple Team</option>
+            <option value="RED_TEAM">Red Team</option>
+            <option value="USB_DROP">USB Drop</option>
+            <option value="VISHING">Vishing</option>
+            <option value="WEB_APP">Web App</option>
+            <option value="WIRELESS">Wireless</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Location</label>
+          <select
+            className="form-input"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+            onFocus={readOnly ? undefined : selectPickerOnFocus}
+            {...selectProps('location', 'location')}
+          >
+            <option value=""></option>
+            <option value="INTERNAL">Internal</option>
+            <option value="EXTERNAL">External</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="engagement-form-grid__main">
+      <div className="engagement-form-col engagement-form-col--middle">
+        <div className="engagement-form-dates">
+          <div className="form-group">
+            <label className="form-label">Kickoff</label>
+            <input
+              type="date"
+              className="form-input"
+              style={dateStyle}
+              {...textProps('kickOffDate', 'kickOffDate')}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Start</label>
+            <input
+              type="date"
+              className="form-input"
+              style={dateStyle}
+              {...textProps('startDate', 'startDate')}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">End</label>
+            <input
+              type="date"
+              className="form-input"
+              style={dateStyle}
+              {...textProps('endDate', 'endDate')}
+            />
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Objectives</label>
+          <textarea
+            className="form-input"
+            rows={8}
+            style={textareaStyle}
+            {...textProps('objectives', 'objectives')}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Targets</label>
+          <textarea
+            className="form-input"
+            rows={2}
+            style={textareaStyle}
+            {...textProps('targets', 'targets')}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Exclusions</label>
+          <textarea
+            className="form-input"
+            rows={2}
+            style={textareaStyle}
+            {...textProps('exclusions', 'exclusions')}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Notes</label>
+          <textarea
+            ref={notesRef}
+            className="form-input"
+            rows={4}
+            style={textareaStyle}
+            {...textProps('notes', 'notes')}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                setTasOpen(false);
+                setContactsOpen(false);
+                contactsTriggerRef.current?.focus();
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="engagement-form-col-right engagement-form-col--relations">
+        <div className="form-group" style={{ position: 'relative' }} ref={contactDropdownRef}>
+          <label className="form-label">Contacts</label>
+          <div
+            ref={contactsTriggerRef}
+            tabIndex={readOnly ? -1 : 0}
+            className="form-input"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              cursor: readOnly ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+              userSelect: 'none',
+              minHeight: '6rem',
+              boxSizing: 'border-box',
+              pointerEvents: readOnly ? 'none' : undefined,
+            }}
+            onClick={readOnly ? undefined : () => setContactsOpen(!contactsOpen)}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setContactsOpen(false);
+                setOpsOpen(false);
+                setTasOpen(false);
+                taTriggerRef.current?.focus();
+              } else if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setContactsOpen(false);
+                notesRef.current?.focus();
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setContactsOpen(!contactsOpen);
+              }
+            }}
+          >
+            <span
+              style={{
+                color: 'var(--text-muted)',
+                lineHeight: 1.5,
+                flex: 1,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {selectedContacts.map((id) => contacts.find((c) => c.id === id)?.name).join(', ')}
+            </span>
+            <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '0.125rem' }} />
+          </div>
+          {!readOnly && contactsOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#1a1a2e',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '8px',
+                marginTop: '0.25rem',
+                zIndex: 10,
+                maxHeight: '200px',
+                overflowY: 'auto',
+                padding: '0.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}
+            >
+              {contacts.map((c) => (
+                <label
+                  key={c.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    background: selectedContacts.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedContacts.includes(c.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedContacts([...selectedContacts, c.id]);
+                      } else {
+                        setSelectedContacts(selectedContacts.filter((id) => id !== c.id));
+                      }
+                    }}
+                    style={{ accentColor: 'var(--primary-color)' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>{c.name}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {clients.find((client) => client.id === c.clientId)?.company}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="form-group" style={{ position: 'relative' }} ref={taDropdownRef}>
+          <label className="form-label">Trusted Agents</label>
+          <div
+            ref={taTriggerRef}
+            tabIndex={readOnly ? -1 : 0}
+            className="form-input"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              cursor: readOnly ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              userSelect: 'none',
+              pointerEvents: readOnly ? 'none' : undefined,
+            }}
+            onClick={readOnly ? undefined : () => setTasOpen(!tasOpen)}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setTasOpen(false);
+                setContactsOpen(false);
+                operatorsTriggerRef.current?.focus();
+              } else if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setTasOpen(false);
+                contactsTriggerRef.current?.focus();
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTasOpen(!tasOpen);
+              }
+            }}
+          >
+            <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {selectedTAs.map((id) => contacts.find((c) => c.id === id)?.name).join(', ')}
+            </span>
+            <ChevronDown size={16} color="var(--text-muted)" />
+          </div>
+          {!readOnly && tasOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#1a1a2e',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '8px',
+                marginTop: '0.25rem',
+                zIndex: 10,
+                maxHeight: '200px',
+                overflowY: 'auto',
+                padding: '0.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}
+            >
+              {contacts.map((c) => (
+                <label
+                  key={c.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    background: selectedTAs.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedTAs.includes(c.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        if (selectedTAs.length < 2) setSelectedTAs([...selectedTAs, c.id]);
+                      } else {
+                        setSelectedTAs(selectedTAs.filter((id) => id !== c.id));
+                      }
+                    }}
+                    style={{ accentColor: 'var(--primary-color)' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>{c.name}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {clients.find((client) => client.id === c.clientId)?.company}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="form-group" style={{ position: 'relative' }} ref={dropdownRef}>
+          <label className="form-label">Operators</label>
+          <div
+            ref={operatorsTriggerRef}
+            tabIndex={readOnly ? -1 : 0}
+            className="form-input engagement-operator-picker__trigger"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              cursor: readOnly ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '0.5rem',
+              userSelect: 'none',
+              boxSizing: 'border-box',
+              pointerEvents: readOnly ? 'none' : undefined,
+            }}
+            onClick={readOnly ? undefined : () => setOpsOpen(!opsOpen)}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                setTasOpen(false);
+                setContactsOpen(false);
+                codeNameRef.current?.focus();
+              } else if (e.key === 'Tab' && e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                taTriggerRef.current?.focus();
+              } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setOpsOpen(!opsOpen);
+              }
+            }}
+          >
+            <div
+              className="engagement-operator-picker__selected"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.125rem',
+                color: 'var(--text-muted)',
+                overflowY: 'auto',
+              }}
+            >
+              {selectedOps.length === 0 ? (
+                <span style={{ lineHeight: 1.5 }} />
+              ) : (
+                selectedOps.map((id) => {
+                  const op = operators.find((o) => o.id === id);
+                  if (!op) return null;
+                  return (
+                    <div key={id} style={{ minHeight: 0, flexShrink: 0 }}>
+                      <div style={{ lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.name}</div>
+                      {op.title ? (
+                        <div style={{ fontSize: '0.7rem', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.title}</div>
+                      ) : null}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '0.125rem' }} />
+          </div>
+          {!readOnly && opsOpen && (
+            <div
+              className="engagement-operator-picker__list"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#1a1a2e',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '8px',
+                marginTop: '0.25rem',
+                zIndex: 10,
+                overflowY: 'auto',
+                padding: '0.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}
+            >
+              {operators.map((o) => (
+                <label
+                  key={o.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    background: selectedOps.includes(o.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedOps.includes(o.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedOps([...selectedOps, o.id]);
+                      } else {
+                        setSelectedOps(selectedOps.filter((id) => id !== o.id));
+                      }
+                    }}
+                    style={{ accentColor: 'var(--primary-color)' }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>{o.name}</span>
+                    {o.title ? <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{o.title}</span> : null}
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {column3Extra ? (
+          <div className="engagement-form-findings-slot">{column3Extra}</div>
+        ) : null}
+      </div>
+      </div>
+      </div>
+
+      {footer ? <div className="engagement-form-footer">{footer}</div> : null}
+    </>
+  );
+}
