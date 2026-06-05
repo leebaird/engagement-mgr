@@ -192,11 +192,11 @@ export function EngagementFindingsPanel({
         <Modal
           isOpen={addOpen}
           onClose={() => setAddOpen(false)}
-          title="Add Finding"
+          title="Add Engagement Finding"
           maxWidth="1000px"
           headerActions={
             <button type="submit" form={addFormId} className="btn-save" style={{ boxShadow: 'none' }}>
-              Add Finding
+              Add Engagement Finding
             </button>
           }
         >
