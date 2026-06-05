@@ -183,6 +183,7 @@ export function EngagementDetailButton({
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         style={{
           background: 'none',

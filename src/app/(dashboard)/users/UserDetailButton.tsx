@@ -72,6 +72,7 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         style={{
           background: 'none',

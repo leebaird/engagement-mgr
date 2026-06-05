@@ -60,6 +60,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         style={{
           background: 'none', border: '1px solid transparent', color: 'var(--text-muted)',

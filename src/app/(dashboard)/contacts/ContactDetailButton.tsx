@@ -91,6 +91,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
   return (
     <>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         style={{
           background: 'none',
