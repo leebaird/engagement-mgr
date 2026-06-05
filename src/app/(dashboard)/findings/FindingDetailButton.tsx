@@ -111,7 +111,7 @@ export function FindingDetailButton({
           isOpen={isOpen} 
           onClose={handleClose} 
           title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
-        maxWidth="1000px"
+        maxWidth="1500px"
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>

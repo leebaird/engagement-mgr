@@ -110,7 +110,7 @@ export function EngagementFindingsPanel({
           isOpen={viewOpen}
           onClose={() => setViewOpen(false)}
           title="Engagement Findings"
-          maxWidth="900px"
+          maxWidth="1500px"
           headerActions={
             <button
               type="button"
@@ -193,7 +193,7 @@ export function EngagementFindingsPanel({
           isOpen={addOpen}
           onClose={() => setAddOpen(false)}
           title="Add Engagement Finding"
-          maxWidth="1000px"
+          maxWidth="1500px"
           headerActions={
             <button type="submit" form={addFormId} className="btn-save" style={{ boxShadow: 'none' }}>
               Add Engagement Finding
