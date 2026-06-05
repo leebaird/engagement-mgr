@@ -111,7 +111,7 @@ export function FindingDetailButton({
           isOpen={isOpen} 
           onClose={handleClose} 
           title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
-        maxWidth="1500px"
+        maxWidth={engagementScoped ? "1500px" : "1000px"}
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
@@ -197,55 +197,53 @@ export function FindingDetailButton({
           // VIEW MODE (form field style)
           <>
             {engagementScoped ? (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                    <input readOnly type="text" value={finding.title} className="form-input" style={{ pointerEvents: 'none' }} />
+                    <input readOnly type="text" value={finding.title} className="form-input" style={{ width: '100%', pointerEvents: 'none' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '160px 120px', gap: '1.25rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                      <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+                      <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                        <option value=""></option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                        <option value="Info">Info</option>
+                      </select>
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+                    <textarea readOnly value={finding.observation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                    <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                      <option value=""></option>
-                      <option value="Critical">Critical</option>
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                      <option value="Info">Info</option>
-                    </select>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+                    <textarea readOnly value={finding.background || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-                      <textarea readOnly value={finding.observation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-                      <textarea readOnly value={finding.background || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+                    <textarea readOnly value={finding.remediation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-                      <textarea readOnly value={finding.remediation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-                      <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
-                      <textarea readOnly value={finding.affectedHosts || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
-                    </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+                    <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+                    <textarea readOnly value={finding.affectedHosts || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
@@ -316,99 +314,97 @@ export function FindingDetailButton({
             {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
 
             {engagementScoped ? (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                    <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
+                    <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} style={{ width: '100%' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '160px 120px', gap: '1.25rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                      <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                        <option value=""></option>
+                        <option value="AI">AI</option>
+                        <option value="Firewall">Firewall</option>
+                        <option value="Host">Host</option>
+                        <option value="OSINT">OSINT</option>
+                        <option value="Physical">Physical</option>
+                        <option value="Social Eng">Social Eng</option>
+                        <option value="Web App">Web App</option>
+                        <option value="Wireless">Wireless</option>
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+                      <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                        <option value=""></option>
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                        <option value="Info">Info</option>
+                      </select>
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
-                      <option value=""></option>
-                      <option value="AI">AI</option>
-                      <option value="Firewall">Firewall</option>
-                      <option value="Host">Host</option>
-                      <option value="OSINT">OSINT</option>
-                      <option value="Physical">Physical</option>
-                      <option value="Social Eng">Social Eng</option>
-                      <option value="Web App">Web App</option>
-                      <option value="Wireless">Wireless</option>
-                    </select>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+                    <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                    <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
-                      <option value=""></option>
-                      <option value="Critical">Critical</option>
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                      <option value="Info">Info</option>
-                    </select>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+                    <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-                      <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-                      <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+                    <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-                      <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-                      <textarea
-                        value={formData.supportingLinks}
-                        onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
-                        className="form-input"
-                        rows={4}
-                        style={{ width: '100%' }}
-                        onFocus={handleEditFieldFocus}
-                        onKeyDown={engagementScoped ? undefined : (e) => {
-                          if (e.key === 'Tab' && !e.shiftKey) {
-                            e.preventDefault();
-                            const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-                            if (modal) {
-                              const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                              if (firstField) firstField.focus();
-                            }
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+                    <textarea
+                      value={formData.supportingLinks}
+                      onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
+                      className="form-input"
+                      rows={4}
+                      style={{ width: '100%' }}
+                      onFocus={handleEditFieldFocus}
+                      onKeyDown={engagementScoped ? undefined : (e) => {
+                        if (e.key === 'Tab' && !e.shiftKey) {
+                          e.preventDefault();
+                          const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                          if (modal) {
+                            const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                            if (firstField) firstField.focus();
                           }
-                        }}
-                      ></textarea>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
-                      <textarea
-                        value={formData.affectedHosts}
-                        onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
-                        className="form-input"
-                        rows={2}
-                        style={{ width: '100%' }}
-                        onFocus={handleEditFieldFocus}
-                        onKeyDown={e => {
-                          if (e.key === 'Tab' && !e.shiftKey) {
-                            e.preventDefault();
-                            const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-                            if (modal) {
-                              const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                              if (firstField) firstField.focus();
-                            }
+                        }
+                      }}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+                    <textarea
+                      value={formData.affectedHosts}
+                      onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
+                      className="form-input"
+                      rows={2}
+                      style={{ width: '100%' }}
+                      onFocus={handleEditFieldFocus}
+                      onKeyDown={e => {
+                        if (e.key === 'Tab' && !e.shiftKey) {
+                          e.preventDefault();
+                          const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                          if (modal) {
+                            const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                            if (firstField) firstField.focus();
                           }
-                        }}
-                      ></textarea>
-                    </div>
+                        }
+                      }}
+                    ></textarea>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>

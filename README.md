@@ -149,7 +149,7 @@ This section documents the architecture, database schema, security measures, and
 
 - **User**: `id`, `username`, `passwordHash`, `role` (ADMIN, USER), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
 
-- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `kickOffDate`, `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `createdAt`, `updatedAt`.
+- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `createdAt`, `updatedAt`.
 
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 

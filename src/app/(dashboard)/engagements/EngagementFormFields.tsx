@@ -11,7 +11,6 @@ export type EngagementFormValues = {
   focus: string;
   type: string;
   location: string;
-  kickOffDate: string;
   startDate: string;
   endDate: string;
   objectives: string;
@@ -28,7 +27,6 @@ export function engagementToFormValues(engagement: {
   focus?: string | null;
   type?: string | null;
   location?: string | null;
-  kickOffDate?: string | Date | null;
   startDate?: string | Date | null;
   endDate?: string | Date | null;
   objectives?: string | null;
@@ -47,7 +45,6 @@ export function engagementToFormValues(engagement: {
     focus: engagement.focus || '',
     type: engagement.type || '',
     location: engagement.location || '',
-    kickOffDate: toDate(engagement.kickOffDate),
     startDate: toDate(engagement.startDate),
     endDate: toDate(engagement.endDate),
     objectives: engagement.objectives || '',
@@ -96,7 +93,7 @@ type EngagementFormFieldsProps = {
   autoFocusCodeName?: boolean;
   readOnly?: boolean;
   footer?: ReactNode;
-  column3Extra?: ReactNode;
+  column2Extra?: ReactNode;
 };
 
 export function EngagementFormFields({
@@ -128,7 +125,7 @@ export function EngagementFormFields({
   autoFocusCodeName = false,
   readOnly = false,
   footer,
-  column3Extra,
+  column2Extra,
 }: EngagementFormFieldsProps) {
   const controlled = values !== undefined && onFieldChange !== undefined;
   const displayValues = readOnly || controlled;
@@ -177,6 +174,26 @@ export function EngagementFormFields({
     <>
       <div className="engagement-form-grid">
       <div className="engagement-col-left engagement-form-col">
+        <div className="engagement-form-dates">
+          <div className="form-group">
+            <label className="form-label">Start</label>
+            <input
+              type="date"
+              className="form-input"
+              style={dateStyle}
+              {...textProps('startDate', 'startDate')}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">End</label>
+            <input
+              type="date"
+              className="form-input"
+              style={dateStyle}
+              {...textProps('endDate', 'endDate')}
+            />
+          </div>
+        </div>
         <div className="form-group">
           <label className="form-label">Code Name</label>
           <input
@@ -279,37 +296,17 @@ export function EngagementFormFields({
       </div>
 
       <div className="engagement-form-grid__main">
-      <div className="engagement-form-col engagement-form-col--middle">
-        <div className="engagement-form-dates">
-          <div className="form-group">
-            <label className="form-label">Kickoff</label>
-            <input
-              type="date"
-              className="form-input"
-              style={dateStyle}
-              {...textProps('kickOffDate', 'kickOffDate')}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Start</label>
-            <input
-              type="date"
-              className="form-input"
-              style={dateStyle}
-              {...textProps('startDate', 'startDate')}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">End</label>
-            <input
-              type="date"
-              className="form-input"
-              style={dateStyle}
-              {...textProps('endDate', 'endDate')}
-            />
-          </div>
+        <div className="engagement-form-findings-slot">
+          {column2Extra ?? (
+            <div
+              className="glass-panel engagement-findings-section engagement-form-findings-spacer"
+              aria-hidden="true"
+            >
+              <div className="engagement-findings-panel" />
+            </div>
+          )}
         </div>
-        <div className="form-group">
+        <div className="form-group engagement-form-objectives">
           <label className="form-label">Objectives</label>
           <textarea
             className="form-input"
@@ -318,6 +315,7 @@ export function EngagementFormFields({
             {...textProps('objectives', 'objectives')}
           />
         </div>
+      <div className="engagement-form-col engagement-form-col--middle">
         <div className="form-group">
           <label className="form-label">Targets</label>
           <textarea
@@ -358,6 +356,7 @@ export function EngagementFormFields({
       </div>
 
       <div className="engagement-form-col-right engagement-form-col--relations">
+        <div className="engagement-form-relations-fields">
         <div className="form-group" style={{ position: 'relative' }} ref={contactDropdownRef}>
           <label className="form-label">Contacts</label>
           <div
@@ -372,7 +371,7 @@ export function EngagementFormFields({
               justifyContent: 'space-between',
               gap: '0.5rem',
               userSelect: 'none',
-              minHeight: '6rem',
+              minHeight: 'calc(0.75rem * 2 + 2 * 1rem * 1.5)',
               boxSizing: 'border-box',
               pointerEvents: readOnly ? 'none' : undefined,
             }}
@@ -400,7 +399,7 @@ export function EngagementFormFields({
                 lineHeight: 1.5,
                 flex: 1,
                 display: '-webkit-box',
-                WebkitLineClamp: 3,
+                WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
               }}
@@ -576,6 +575,7 @@ export function EngagementFormFields({
               justifyContent: 'space-between',
               gap: '0.5rem',
               userSelect: 'none',
+              minHeight: 'calc(0.75rem * 2 + 2 * 1rem * 1.5)',
               boxSizing: 'border-box',
               pointerEvents: readOnly ? 'none' : undefined,
             }}
@@ -682,10 +682,7 @@ export function EngagementFormFields({
             </div>
           )}
         </div>
-
-        {column3Extra ? (
-          <div className="engagement-form-findings-slot">{column3Extra}</div>
-        ) : null}
+        </div>
       </div>
       </div>
       </div>

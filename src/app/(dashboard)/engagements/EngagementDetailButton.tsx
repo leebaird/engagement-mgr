@@ -61,7 +61,6 @@ export function EngagementDetailButton({
     location: initialEngagement.location || '',
     status: initialEngagement.status || '',
     focus: initialEngagement.focus || '',
-    kickOffDate: initialEngagement.kickOffDate ? new Date(initialEngagement.kickOffDate).toISOString().split('T')[0] : '',
     startDate: initialEngagement.startDate ? new Date(initialEngagement.startDate).toISOString().split('T')[0] : '',
     endDate: initialEngagement.endDate ? new Date(initialEngagement.endDate).toISOString().split('T')[0] : '',
     objectives: initialEngagement.objectives || '',
@@ -111,8 +110,8 @@ export function EngagementDetailButton({
   }, [opsOpen, contactsOpen, tasOpen]);
 
   const handleUpdate = async () => {
-    if (!formData.codeName || !formData.clientName || !formData.type || !formData.location) {
-      setError('Required fields missing');
+    if (!formData.codeName.trim() || !formData.clientName.trim()) {
+      setError('Code Name and Client are required.');
       return;
     }
     
@@ -120,6 +119,7 @@ export function EngagementDetailButton({
     setError(null);
     try {
       const data = new FormData();
+      data.append('clientId', engagement.clientId);
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value as string);
       });
@@ -196,7 +196,7 @@ export function EngagementDetailButton({
           isOpen={isOpen} 
           onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
-        maxWidth="1200px"
+        maxWidth="1500px"
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
@@ -214,7 +214,6 @@ export function EngagementDetailButton({
                   location: engagement.location || '',
                   status: engagement.status || '',
                   focus: engagement.focus || '',
-                  kickOffDate: engagement.kickOffDate ? new Date(engagement.kickOffDate).toISOString().split('T')[0] : '',
                   startDate: engagement.startDate ? new Date(engagement.startDate).toISOString().split('T')[0] : '',
                   endDate: engagement.endDate ? new Date(engagement.endDate).toISOString().split('T')[0] : '',
                   objectives: engagement.objectives || '',
@@ -313,7 +312,7 @@ export function EngagementDetailButton({
               contactsTriggerRef={contactsTriggerRef}
               taTriggerRef={taTriggerRef}
               operatorsTriggerRef={operatorsTriggerRef}
-              column3Extra={findingsSection}
+              column2Extra={findingsSection}
               footer={createdUpdatedFooter}
             />
           </div>
@@ -345,7 +344,7 @@ export function EngagementDetailButton({
               operatorsTriggerRef={operatorsTriggerRef}
               values={formData}
               onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
-              column3Extra={findingsSection}
+              column2Extra={findingsSection}
             />
             {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
           </div>

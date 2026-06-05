@@ -110,7 +110,7 @@ export function EngagementFindingsPanel({
           isOpen={viewOpen}
           onClose={() => setViewOpen(false)}
           title="Engagement Findings"
-          maxWidth="1500px"
+          maxWidth="800px"
           headerActions={
             <button
               type="button"

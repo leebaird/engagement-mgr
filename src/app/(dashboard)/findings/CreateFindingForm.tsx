@@ -101,205 +101,355 @@ export function CreateFindingForm({
     <form id={formId} action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {engagementId ? <input type="hidden" name="engagementId" value={engagementId} /> : null}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
-        <div ref={titleWrapRef} style={{ position: 'relative' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-          <input
-            autoFocus
-            type="text"
-            name="title"
-            className="form-input"
-            required
-            value={engagementId ? form.title : undefined}
-            defaultValue={engagementId ? undefined : ''}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (engagementId) {
-                setField('title', value);
-              }
-            }}
-            onFocus={() => {
-              if (engagementId && suggestions.length > 0) setSuggestionsOpen(true);
-            }}
-            autoComplete="off"
-          />
-          {engagementId && suggestionsOpen ? (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                background: '#1a1a2e',
-                border: '1px solid var(--surface-border)',
-                borderRadius: '8px',
-                marginTop: '0.25rem',
-                zIndex: 20,
-                maxHeight: '220px',
-                overflowY: 'auto',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              }}
-            >
-              {searching ? (
-                <div style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  Searching…
-                </div>
-              ) : (
-                suggestions.map((match) => (
-                  <button
-                    key={match.id}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      applyTemplate(match);
-                    }}
+      {engagementId ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+              <div ref={titleWrapRef} style={{ position: 'relative' }}>
+                <input
+                  autoFocus
+                  type="text"
+                  name="title"
+                  className="form-input"
+                  required
+                  value={form.title}
+                  onChange={(e) => setField('title', e.target.value)}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setSuggestionsOpen(true);
+                  }}
+                  autoComplete="off"
+                  style={{ width: '100%' }}
+                />
+                {suggestionsOpen ? (
+                  <div
                     style={{
-                      display: 'block',
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '0.65rem 0.75rem',
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid var(--surface-border)',
-                      color: 'var(--text-main)',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(0, 102, 255, 0.08)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: '#1a1a2e',
+                      border: '1px solid var(--surface-border)',
+                      borderRadius: '8px',
+                      marginTop: '0.25rem',
+                      zIndex: 20,
+                      maxHeight: '220px',
+                      overflowY: 'auto',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                     }}
                   >
-                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{match.title}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                      {[match.category, match.severity].filter(Boolean).join(' · ')}
-                    </div>
-                  </button>
-                ))
-              )}
+                    {searching ? (
+                      <div style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        Searching…
+                      </div>
+                    ) : (
+                      suggestions.map((match) => (
+                        <button
+                          key={match.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            applyTemplate(match);
+                          }}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '0.65rem 0.75rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--surface-border)',
+                            color: 'var(--text-main)',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(0, 102, 255, 0.08)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{match.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                            {[match.category, match.severity].filter(Boolean).join(' · ')}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          ) : null}
+            <div style={{ display: 'grid', gridTemplateColumns: '160px 120px', gap: '1.25rem' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                <select
+                  name="category"
+                  className="form-input"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
+                  value={form.category}
+                  onChange={(e) => setField('category', e.target.value)}
+                >
+                  <option value=""></option>
+                  <option value="AI">AI</option>
+                  <option value="Firewall">Firewall</option>
+                  <option value="Host">Host</option>
+                  <option value="OSINT">OSINT</option>
+                  <option value="Physical">Physical</option>
+                  <option value="Social Eng">Social Eng</option>
+                  <option value="Web App">Web App</option>
+                  <option value="Wireless">Wireless</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+                <select
+                  name="severity"
+                  className="form-input"
+                  value={form.severity}
+                  onChange={(e) => setField('severity', e.target.value)}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
+                  onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
+                >
+                  <option value=""></option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                  <option value="Info">Info</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+              <textarea
+                name="observation"
+                className="form-input"
+                rows={4}
+                style={{ width: '100%' }}
+                value={form.observation}
+                onChange={(e) => setField('observation', e.target.value)}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+              <textarea
+                name="background"
+                className="form-input"
+                rows={4}
+                style={{ width: '100%' }}
+                value={form.background}
+                onChange={(e) => setField('background', e.target.value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+              <textarea
+                name="remediation"
+                className="form-input"
+                rows={4}
+                style={{ width: '100%' }}
+                value={form.remediation}
+                onChange={(e) => setField('remediation', e.target.value)}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+              <textarea
+                name="supportingLinks"
+                className="form-input"
+                rows={4}
+                style={{ width: '100%' }}
+                value={form.supportingLinks}
+                onChange={(e) => setField('supportingLinks', e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                    if (modal) {
+                      const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                      if (firstField) firstField.focus();
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+              <textarea
+                name="affectedHosts"
+                className="form-input"
+                rows={2}
+                style={{ width: '100%' }}
+                value={form.affectedHosts}
+                onChange={(e) => setField('affectedHosts', e.target.value)}
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-          <select
-            name="category"
-            className="form-input"
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
-            value={engagementId ? form.category : undefined}
-            defaultValue={engagementId ? undefined : ''}
-            onChange={engagementId ? (e) => setField('category', e.target.value) : undefined}
-          >
-            <option value=""></option>
-            <option value="AI">AI</option>
-            <option value="Firewall">Firewall</option>
-            <option value="Host">Host</option>
-            <option value="OSINT">OSINT</option>
-            <option value="Physical">Physical</option>
-            <option value="Social Eng">Social Eng</option>
-            <option value="Web App">Web App</option>
-            <option value="Wireless">Wireless</option>
-          </select>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
+          <div ref={titleWrapRef} style={{ position: 'relative' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+            <input
+              autoFocus
+              type="text"
+              name="title"
+              className="form-input"
+              required
+              defaultValue=""
+              onChange={(e) => setField('title', e.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setSuggestionsOpen(true);
+              }}
+              autoComplete="off"
+            />
+            {suggestionsOpen ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: '#1a1a2e',
+                  border: '1px solid var(--surface-border)',
+                  borderRadius: '8px',
+                  marginTop: '0.25rem',
+                  zIndex: 20,
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                }}
+              >
+                {searching ? (
+                  <div style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    Searching…
+                  </div>
+                ) : (
+                  suggestions.map((match) => (
+                    <button
+                      key={match.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyTemplate(match);
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '0.65rem 0.75rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--surface-border)',
+                        color: 'var(--text-main)',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(0, 102, 255, 0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                      }}
+                    >
+                      <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{match.title}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                        {[match.category, match.severity].filter(Boolean).join(' · ')}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            ) : null}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+            <select
+              name="category"
+              className="form-input"
+              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
+              defaultValue=""
+              onChange={(e) => setField('category', e.target.value)}
+            >
+              <option value=""></option>
+              <option value="AI">AI</option>
+              <option value="Firewall">Firewall</option>
+              <option value="Host">Host</option>
+              <option value="OSINT">OSINT</option>
+              <option value="Physical">Physical</option>
+              <option value="Social Eng">Social Eng</option>
+              <option value="Web App">Web App</option>
+              <option value="Wireless">Wireless</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+            <select
+              name="severity"
+              className="form-input"
+              defaultValue=""
+              onChange={(e) => setField('severity', e.target.value)}
+              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
+              onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
+            >
+              <option value=""></option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+              <option value="Info">Info</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-          <select
-            name="severity"
-            className="form-input"
-            value={engagementId ? form.severity : undefined}
-            defaultValue={engagementId ? undefined : ''}
-            onChange={(e) => {
-              if (engagementId) setField('severity', e.target.value);
-            }}
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
-            onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
-          >
-            <option value=""></option>
-            <option value="Critical">Critical</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
-            <option value="Info">Info</option>
-          </select>
-        </div>
-      </div>
+      )}
 
-      {engagementId ? (
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-          <textarea
-            name="observation"
-            className="form-input"
-            rows={4}
-            style={{ width: '100%' }}
-            value={form.observation}
-            onChange={(e) => setField('observation', e.target.value)}
-          />
-        </div>
-      ) : null}
+      {!engagementId ? (
+        <>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+            <textarea
+              name="background"
+              className="form-input"
+              rows={4}
+              style={{ width: '100%' }}
+              defaultValue=""
+            />
+          </div>
 
-      <div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-        <textarea
-          name="background"
-          className="form-input"
-          rows={4}
-          style={{ width: '100%' }}
-          value={engagementId ? form.background : undefined}
-          defaultValue={engagementId ? undefined : ''}
-          onChange={engagementId ? (e) => setField('background', e.target.value) : undefined}
-        />
-      </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+            <textarea
+              name="remediation"
+              className="form-input"
+              rows={4}
+              style={{ width: '100%' }}
+              defaultValue=""
+            />
+          </div>
 
-      <div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-        <textarea
-          name="remediation"
-          className="form-input"
-          rows={4}
-          style={{ width: '100%' }}
-          value={engagementId ? form.remediation : undefined}
-          defaultValue={engagementId ? undefined : ''}
-          onChange={engagementId ? (e) => setField('remediation', e.target.value) : undefined}
-        />
-      </div>
-
-      <div>
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-        <textarea
-          name="supportingLinks"
-          className="form-input"
-          rows={4}
-          style={{ width: '100%' }}
-          value={engagementId ? form.supportingLinks : undefined}
-          defaultValue={engagementId ? undefined : ''}
-          onChange={engagementId ? (e) => setField('supportingLinks', e.target.value) : undefined}
-          onKeyDown={e => {
-            if (e.key === 'Tab' && !e.shiftKey) {
-              e.preventDefault();
-              const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-              if (modal) {
-                const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                if (firstField) firstField.focus();
-              }
-            }
-          }}
-        />
-      </div>
-
-      {engagementId ? (
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
-          <textarea
-            name="affectedHosts"
-            className="form-input"
-            rows={2}
-            style={{ width: '100%' }}
-            value={form.affectedHosts}
-            onChange={(e) => setField('affectedHosts', e.target.value)}
-          />
-        </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+            <textarea
+              name="supportingLinks"
+              className="form-input"
+              rows={4}
+              style={{ width: '100%' }}
+              defaultValue=""
+              onKeyDown={e => {
+                if (e.key === 'Tab' && !e.shiftKey) {
+                  e.preventDefault();
+                  const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                  if (modal) {
+                    const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                    if (firstField) firstField.focus();
+                  }
+                }
+              }}
+            />
+          </div>
+        </>
       ) : null}
 
       {state?.error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{state.error}</div>}

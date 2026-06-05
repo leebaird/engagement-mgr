@@ -30,9 +30,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### Database & Schema Changes
 - Every change to `prisma/schema.prisma` must be followed by **in this order**:
-  1. `npx prisma db push` (or `npx prisma migrate dev`) — to update the database
-  2. `npx prisma generate` — to update the Prisma Client types
-- **Schema Drift**: Be vigilant about database drift. Ensure pending Prisma migrations or local schema changes are completely synchronized before testing new UI or queries.
+  1. `npx prisma migrate dev --name <descriptive_name>` — preferred; creates a migration file and applies it to the database
+  2. `npx prisma generate` — updates Prisma Client types (`migrate dev` usually runs this automatically; run again if unsure)
+- Use `npx prisma db push` only for quick local prototyping when migration history does not matter. For normal work, use migrations.
+- After schema changes, run `npx prisma migrate status` and confirm **Database schema is up to date!** before testing UI or server actions.
+- **Schema drift**: If `migrate dev` reports drift, do not apply schema changes with ad-hoc SQL alone. Resolve drift (align DB with migrations, or reset in dev if appropriate), then migrate.
+- **Manual DB change already applied**: If the database already matches the schema but a migration was never recorded (e.g. column dropped via `prisma db execute`), mark it applied: `npx prisma migrate resolve --applied <migration_folder_name>`, then `npx prisma generate`, then verify with `npx prisma migrate status`.
+- Remove the field from `schema.prisma`, forms, server actions, and types — not UI only.
 - After schema changes, always run `npx tsc --noEmit` to catch type errors.
 - Never assume a field removal or addition is only UI — always confirm with the user.
 - Whenever `prisma/schema.prisma` is modified (add/remove/rename fields, models, enums, or relations), immediately update the **Database Schema** list in `README.md` (Implementation Plan & Architecture section) to keep documentation in sync with the live schema.

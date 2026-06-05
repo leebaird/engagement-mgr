@@ -32,7 +32,6 @@ model Engagement {
   focus                String?
   type                 EngagementType?
   location             Location?
-  kickOffDate          DateTime?
   startDate            DateTime?
   endDate              DateTime?
   objectives           String?

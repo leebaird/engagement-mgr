@@ -276,16 +276,58 @@ select.form-input {
 .engagement-form-grid__main {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto 1fr;
   gap: 1.5rem;
   align-items: stretch;
   min-width: 0;
 }
 
+.engagement-form-findings-slot {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  flex-shrink: 0;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.engagement-form-findings-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.engagement-form-objectives {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.engagement-form-col--middle {
+  grid-column: 1;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .engagement-form-col-right {
+  grid-column: 2;
+  grid-row: 3;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+  align-self: stretch;
+  position: relative;
+  min-height: 0;
+}
+
+.engagement-form-col--relations {
+  flex: 1;
+}
+
+.engagement-form-relations-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .engagement-form-grid .form-input {
@@ -305,14 +347,10 @@ select.form-input {
 
 .engagement-form-dates {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
-}
-
-.engagement-form-findings-slot {
-  margin-top: auto;
-  flex-shrink: 0;
   width: 100%;
+  min-width: 0;
 }
 
 .engagement-form-footer {
@@ -410,13 +448,13 @@ select.form-input {
   box-sizing: border-box;
 }
 
-/* ~3 operator rows (name + optional title) in picker trigger and dropdown */
+/* 2 rows — match Contacts field height */
 .engagement-operator-picker__trigger {
-  min-height: calc(0.75rem * 2 + 3 * (1.5rem + 0.85rem + 0.125rem));
+  min-height: calc(0.75rem * 2 + 2 * 1rem * 1.5);
 }
 
 .engagement-operator-picker__selected {
-  max-height: calc(3 * (1.5rem + 0.85rem + 0.125rem));
+  max-height: calc(2 * 1rem * 1.5);
 }
 
 .engagement-operator-picker__list {
