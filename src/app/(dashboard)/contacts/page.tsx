@@ -11,14 +11,24 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  let orderBy: any = { [sortCol]: sortDir };
+  type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
+
+  let orderBy: ContactOrderBy;
   if (sortCol === 'client') {
     orderBy = { client: { company: sortDir } };
+  } else if (sortCol === 'phoneNumber') {
+    orderBy = { phone: sortDir };
+  } else if (sortCol === 'name') {
+    orderBy = { name: sortDir };
+  } else if (sortCol === 'title') {
+    orderBy = { title: sortDir };
+  } else {
+    orderBy = { email: sortDir };
   }
 
-  const contacts = await prisma.contact.findMany({ 
+  const contacts = await prisma.contact.findMany({
     include: { client: true },
-    orderBy: orderBy
+    orderBy,
   });
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
 

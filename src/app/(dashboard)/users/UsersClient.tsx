@@ -1,11 +1,9 @@
 'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Database, Upload, Download, Trash2 } from 'lucide-react';
-import { PageHeader } from '@/components/PageHeader';
+import { Database, Upload, Download, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CreateUserForm } from './CreateUserForm';
-
 
 interface UsersClientProps {
   children: React.ReactNode;
@@ -16,23 +14,27 @@ export function UsersClient({ children }: UsersClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [importPending, setImportPending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null);
   const dbBusy = importPending || deletePending;
   const listRef = useRef<HTMLDivElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const sectionWidth = '600px';
 
   const handleExportDb = () => {
     window.location.href = '/api/db/export';
   };
 
-  const handleDeleteDb = async () => {
-    if (
-      !confirm(
-        'Reset will permanently remove all database records and uploaded screenshots, then recreate the default admin account (username: admin, password: admin). Continue?'
-      )
-    ) {
-      return;
-    }
+  const closeResetModal = () => {
+    setResetModalOpen(false);
+    setResetConfirmText('');
+  };
 
+  const handleDeleteDb = async () => {
     setDeletePending(true);
     try {
       const res = await fetch('/api/db/delete', { method: 'POST' });
@@ -46,6 +48,7 @@ export function UsersClient({ children }: UsersClientProps) {
       alert('Reset failed');
     } finally {
       setDeletePending(false);
+      closeResetModal();
     }
   };
 
@@ -53,20 +56,9 @@ export function UsersClient({ children }: UsersClientProps) {
     importInputRef.current?.click();
   };
 
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    if (
-      !confirm(
-        'Restore will replace all database data and uploaded screenshots with this backup. Continue?'
-      )
-    ) {
-      return;
-    }
-
+  const runRestore = async (file: File) => {
     setImportPending(true);
+    setRestoreSuccess(null);
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -76,23 +68,39 @@ export function UsersClient({ children }: UsersClientProps) {
         alert(data.error || 'Restore failed');
         return;
       }
+      setRestoreSuccess('Database restored successfully.');
       router.refresh();
     } catch {
       alert('Restore failed');
     } finally {
       setImportPending(false);
+      setRestoreConfirmOpen(false);
+      setPendingRestoreFile(null);
+    }
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setPendingRestoreFile(file);
+    setRestoreConfirmOpen(true);
+  };
+
+  const confirmRestore = () => {
+    if (pendingRestoreFile) {
+      runRestore(pendingRestoreFile);
     }
   };
 
   return (
     <div
       style={{
-        maxWidth: '600px',
         margin: '0 auto',
         minHeight: 'calc(100vh - 4rem)',
         display: 'flex',
-        flexDirection: 'column',
         justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <input
@@ -102,60 +110,192 @@ export function UsersClient({ children }: UsersClientProps) {
         style={{ display: 'none' }}
         onChange={handleImportFile}
       />
-      <section className="glass-panel" style={{ marginBottom: '2rem', padding: '2rem' }}>
-        <div className="db-panel-header">
-          <div className="db-panel-icon">
-            <Database size={28} color="#0066ff" />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '2rem',
+          alignItems: 'flex-start',
+        }}
+      >
+        <section className="glass-panel" style={{ padding: '2rem', width: sectionWidth, maxWidth: sectionWidth, flexShrink: 0 }}>
+          <div className="db-panel-header">
+            <div className="db-panel-icon">
+              <Database size={28} color="#0066ff" />
+            </div>
+            <div>
+              <h2 className="db-panel-title">Database</h2>
+            </div>
           </div>
-          <div>
-            <h2 className="db-panel-title">Database</h2>
+          {restoreSuccess ? (
+            <div
+              style={{
+                color: '#4ade80',
+                fontSize: '0.875rem',
+                marginBottom: '1rem',
+                padding: '0.75rem 1rem',
+                background: 'rgba(74, 222, 128, 0.1)',
+                border: '1px solid rgba(74, 222, 128, 0.25)',
+                borderRadius: '8px',
+              }}
+            >
+              {restoreSuccess}
+            </div>
+          ) : null}
+          <div className="db-action-grid">
+            <button
+              type="button"
+              className="db-action-btn"
+              onClick={handleExportDb}
+              disabled={dbBusy}
+            >
+              <Upload size={22} color="#0066ff" />
+              <span className="db-action-btn-label">Backup</span>
+              <span className="db-action-btn-desc">Export a full backup zip.</span>
+            </button>
+            <button
+              type="button"
+              className="db-action-btn"
+              onClick={handleImportDbClick}
+              disabled={dbBusy}
+            >
+              <Download size={22} color="#0066ff" />
+              <span className="db-action-btn-label">{importPending ? 'Restoring backup...' : 'Restore'}</span>
+              <span className="db-action-btn-desc">Import from a previous backup zip.</span>
+            </button>
+            <button
+              type="button"
+              className="db-action-btn db-action-btn--danger"
+              onClick={() => setResetModalOpen(true)}
+              disabled={dbBusy}
+            >
+              <Trash2 size={22} color="#ff3366" />
+              <span className="db-action-btn-label">{deletePending ? 'Resetting...' : 'Reset'}</span>
+              <span className="db-action-btn-desc">Wipe all records and restore default creds.</span>
+            </button>
           </div>
-        </div>
-        <div className="db-action-grid">
-          <button
-            type="button"
-            className="db-action-btn"
-            onClick={handleExportDb}
-            disabled={dbBusy}
-          >
-            <Upload size={22} color="#0066ff" />
-            <span className="db-action-btn-label">Backup</span>
-            <span className="db-action-btn-desc">Export a full backup zip.</span>
-          </button>
-          <button
-            type="button"
-            className="db-action-btn"
-            onClick={handleImportDbClick}
-            disabled={dbBusy}
-          >
-            <Download size={22} color="#0066ff" />
-            <span className="db-action-btn-label">{importPending ? 'Restoring backup...' : 'Restore'}</span>
-            <span className="db-action-btn-desc">Import from a previous backup zip.</span>
-          </button>
-          <button
-            type="button"
-            className="db-action-btn db-action-btn--danger"
-            onClick={handleDeleteDb}
-            disabled={dbBusy}
-          >
-            <Trash2 size={22} color="#ff3366" />
-            <span className="db-action-btn-label">{deletePending ? 'Resetting...' : 'Reset'}</span>
-            <span className="db-action-btn-desc">Wipe all records and restore default creds.</span>
-          </button>
-        </div>
-      </section>
+        </section>
 
-      <div>
-        <PageHeader title="Users" onAddClick={() => setIsModalOpen(true)} />
+        <section className="glass-panel" style={{ padding: '2rem', width: sectionWidth, maxWidth: sectionWidth, flexShrink: 0 }}>
+          <div className="db-panel-header" style={{ marginBottom: '1.5rem' }}>
+            <div className="db-panel-icon">
+              <Users size={28} color="#0066ff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h2 className="db-panel-title">Users</h2>
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ padding: '0.6rem 1.2rem', width: 'fit-content', flexShrink: 0 }}
+              onClick={() => setIsModalOpen(true)}
+            >
+              New User
+            </button>
+          </div>
 
-        <div ref={listRef}>
-          {children}
-        </div>
+          <div ref={listRef}>
+            {children}
+          </div>
+        </section>
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={restoreConfirmOpen}
+        onClose={() => {
+          setRestoreConfirmOpen(false);
+          setPendingRestoreFile(null);
+        }}
+        title="Restore backup"
+        maxWidth="480px"
+        headerActions={
+          <>
+            <button
+              type="button"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+              disabled={importPending}
+              onClick={confirmRestore}
+            >
+              {importPending ? 'Restoring...' : 'Restore'}
+            </button>
+            <button
+              type="button"
+              className="btn-cancel"
+              style={{ boxShadow: 'none' }}
+              disabled={importPending}
+              onClick={() => {
+                setRestoreConfirmOpen(false);
+                setPendingRestoreFile(null);
+              }}
+            >
+              Cancel
+            </button>
+          </>
+        }
+      >
+        <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          Restore will replace all database data and uploaded screenshots with
+          {pendingRestoreFile ? (
+            <> <strong style={{ color: 'var(--text-main)' }}>{pendingRestoreFile.name}</strong></>
+          ) : (
+            ' this backup'
+          )}
+          . This cannot be undone.
+        </p>
+      </Modal>
+
+      <Modal
+        isOpen={resetModalOpen}
+        onClose={closeResetModal}
+        title="Reset database"
+        maxWidth="480px"
+        headerActions={
+          <>
+            <button
+              type="button"
+              className="btn-save"
+              style={{ boxShadow: 'none', borderColor: '#ff3366', color: '#ff3366' }}
+              disabled={resetConfirmText !== 'RESET' || deletePending}
+              onClick={handleDeleteDb}
+            >
+              {deletePending ? 'Resetting...' : 'Reset'}
+            </button>
+            <button
+              type="button"
+              className="btn-cancel"
+              style={{ boxShadow: 'none' }}
+              disabled={deletePending}
+              onClick={closeResetModal}
+            >
+              Cancel
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            This will permanently remove all database records and uploaded screenshots, then recreate the default admin account (username: admin, password: admin).
+          </p>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Type <strong style={{ color: 'var(--text-main)' }}>RESET</strong> to confirm
+            </div>
+            <input
+              type="text"
+              className="form-input"
+              value={resetConfirmText}
+              onChange={e => setResetConfirmText(e.target.value)}
+              autoComplete="off"
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title="Add New User"
         maxWidth="450px"
         headerActions={
@@ -186,7 +326,6 @@ export function UsersClient({ children }: UsersClientProps) {
         <CreateUserForm onSuccess={() => {
             setIsModalOpen(false);
             router.refresh();
-            // Smoothly return to the list view after adding
             setTimeout(() => {
               listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 120);

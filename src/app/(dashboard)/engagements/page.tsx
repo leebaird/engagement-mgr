@@ -6,19 +6,50 @@ import { EngagementDetailButton } from './EngagementDetailButton';
 export default async function EngagementsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
 
-  const validSortColumns = ['codeName', 'client', 'type', 'startDate'];
+  const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startDate', 'endDate'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  let orderBy: any = { [sortCol]: sortDir };
+  const statusOrder: Record<string, number> = {
+    PLANNING: 1,
+    ROE: 2,
+    PREP: 3,
+    LIVE: 4,
+    REPORTING: 5,
+    COMPLETE: 6,
+  };
+
+  type EngagementOrderBy = NonNullable<Parameters<typeof prisma.engagement.findMany>[0]>['orderBy'];
+
+  let orderBy: EngagementOrderBy | undefined;
   if (sortCol === 'client') {
     orderBy = { client: { company: sortDir } };
+  } else if (sortCol === 'status') {
+    orderBy = undefined;
+  } else if (sortCol === 'codeName') {
+    orderBy = { codeName: sortDir };
+  } else if (sortCol === 'focus') {
+    orderBy = { focus: sortDir };
+  } else if (sortCol === 'type') {
+    orderBy = { type: sortDir };
+  } else if (sortCol === 'startDate') {
+    orderBy = { startDate: sortDir };
+  } else {
+    orderBy = { endDate: sortDir };
   }
 
-  const engagements = await prisma.engagement.findMany({
+  let engagements = await prisma.engagement.findMany({
     include: { client: true, trustedAgents: true, operators: true, contacts: true },
-    orderBy: orderBy
+    orderBy,
   });
+
+  if (sortCol === 'status') {
+    engagements.sort((a, b) => {
+      const valA = a.status ? statusOrder[a.status] ?? 99 : 100;
+      const valB = b.status ? statusOrder[b.status] ?? 99 : 100;
+      return sortDir === 'asc' ? valA - valB : valB - valA;
+    });
+  }
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
@@ -48,15 +79,21 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
                 <Link href={getSortHref('client')} style={{ color: 'inherit', textDecoration: 'none' }}>Client{getSortIcon('client')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Status</th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Focus</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                <Link href={getSortHref('status')} style={{ color: 'inherit', textDecoration: 'none' }}>Status{getSortIcon('status')}</Link>
+              </th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                <Link href={getSortHref('focus')} style={{ color: 'inherit', textDecoration: 'none' }}>Focus{getSortIcon('focus')}</Link>
+              </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
                 <Link href={getSortHref('type')} style={{ color: 'inherit', textDecoration: 'none' }}>Type{getSortIcon('type')}</Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
                 <Link href={getSortHref('startDate')} style={{ color: 'inherit', textDecoration: 'none' }}>Start{getSortIcon('startDate')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>End</th>
+              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                <Link href={getSortHref('endDate')} style={{ color: 'inherit', textDecoration: 'none' }}>End{getSortIcon('endDate')}</Link>
+              </th>
               <th style={{ padding: '0.75rem', width: '40px' }}></th>
             </tr>
           </thead>

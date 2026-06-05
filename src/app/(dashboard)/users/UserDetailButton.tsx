@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateUser, deleteUser } from '@/app/actions/user';
@@ -15,7 +16,8 @@ interface User {
   lastPasswordChange: any;
 }
 
-export function UserDetailButton({ user: initialUser }: { user: User }) {
+export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { user: User; isLastAdmin?: boolean }) {
+  const router = useRouter();
   const [user, setUser] = useState(initialUser);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -143,26 +145,32 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
             </button>
             <button
               onClick={async () => {
+                if (isLastAdmin) return;
                 if (!confirm('Are you sure you want to delete this user?')) return;
                 const result = await deleteUser(user.id);
-                if (result && !result.success && result.error) {
+                if (result?.error) {
                   alert(result.error);
                 } else {
                   setIsOpen(false);
+                  router.refresh();
                 }
               }}
+              disabled={isLastAdmin}
+              title={isLastAdmin ? 'Cannot delete the last admin account' : undefined}
               style={{
                 background: 'none',
                 border: '1px solid var(--surface-border)',
                 color: 'var(--text-main)',
-                cursor: 'pointer',
+                cursor: isLastAdmin ? 'not-allowed' : 'pointer',
                 padding: '0.6rem 1.2rem',
                 borderRadius: '8px',
                 fontSize: '1rem',
                 fontWeight: 600,
                 transition: 'all 0.2s ease',
+                opacity: isLastAdmin ? 0.5 : 1,
               }}
               onMouseEnter={e => {
+                if (isLastAdmin) return;
                 e.currentTarget.style.borderColor = '#ff3366';
                 e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
               }}
@@ -216,7 +224,10 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
             {isEditing ? (
               <select
                 value={formData.role}
-                onChange={e => setFormData({ ...formData, role: e.target.value })}
+                onChange={e => {
+                  if (isLastAdmin && e.target.value === 'USER') return;
+                  setFormData({ ...formData, role: e.target.value });
+                }}
                 className="form-input"
                 required
                 tabIndex={2}
@@ -245,7 +256,7 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 }}
               >
                 <option value="ADMIN">Admin</option>
-                <option value="USER">User</option>
+                <option value="USER" disabled={isLastAdmin}>User</option>
               </select>
             ) : (
               <input
@@ -291,6 +302,12 @@ export function UserDetailButton({ user: initialUser }: { user: User }) {
                 <br />
                 Password must be at least 16 characters, with one uppercase, one number, and one symbol.
               </div>
+            </div>
+          ) : null}
+
+          {isEditing && isLastAdmin ? (
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              This is the only admin account. Role cannot be changed to User.
             </div>
           ) : null}
 

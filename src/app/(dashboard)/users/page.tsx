@@ -21,6 +21,8 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     orderBy: { [sortCol]: sortDir }
   });
 
+  const adminCount = users.filter(u => u.role === 'ADMIN').length;
+
   const getSortHref = (col: string) => {
     if (sortCol === col) {
       return `/users?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
@@ -35,7 +37,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <UsersClient>
-      <div className="glass-panel" style={{ padding: '2rem' }}>
+      {users.length === 0 ? (
+        <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+          No users yet. Click <strong style={{ color: 'var(--text-main)' }}>New User</strong> to add one.
+        </p>
+      ) : (
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
@@ -77,13 +83,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
                 </td>
                 <td style={{ padding: '0.25rem', display: 'flex', justifyContent: 'flex-end', width: '40px' }}>
-                  <UserDetailButton user={user} />
+                  <UserDetailButton
+                    user={user}
+                    isLastAdmin={user.role === 'ADMIN' && adminCount <= 1}
+                  />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      )}
     </UsersClient>
   );
 }

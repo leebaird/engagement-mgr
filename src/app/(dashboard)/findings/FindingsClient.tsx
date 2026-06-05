@@ -9,9 +9,11 @@ import { FindingDetailButton } from './FindingDetailButton';
 
 interface FindingsClientProps {
   initialFindings: any[];
+  sortCol: string;
+  sortDir: 'asc' | 'desc';
 }
 
-export function FindingsClient({ initialFindings }: FindingsClientProps) {
+export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [findings, setFindings] = useState(initialFindings);
@@ -37,6 +39,20 @@ export function FindingsClient({ initialFindings }: FindingsClientProps) {
     setFindings(prev => prev.filter(f => f.id !== id));
   };
 
+  const getSortHref = (col: string) => {
+    if (sortCol === col) {
+      return `/findings?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
+    }
+    return `/findings?sort=${col}&dir=asc`;
+  };
+
+  const getSortIcon = (col: string) => {
+    if (sortCol !== col) return null;
+    return sortDir === 'asc' ? ' ↑' : ' ↓';
+  };
+
+  const sortLinkStyle = { color: 'inherit', textDecoration: 'none' as const };
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <PageHeader title="Findings" onAddClick={() => setIsModalOpen(true)} />
@@ -54,13 +70,31 @@ export function FindingsClient({ initialFindings }: FindingsClientProps) {
             </colgroup>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Title</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden' }}>
-                  <span style={{ marginLeft: '2.5rem', display: 'inline-block' }}>Category</span>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Link href={getSortHref('title')} style={sortLinkStyle}>
+                    Title{getSortIcon('title')}
+                  </Link>
                 </th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Severity</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Created</th>
-                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>Updated</th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden' }}>
+                  <Link href={getSortHref('category')} style={{ ...sortLinkStyle, marginLeft: '2.5rem', display: 'inline-block' }}>
+                    Category{getSortIcon('category')}
+                  </Link>
+                </th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Link href={getSortHref('severity')} style={sortLinkStyle}>
+                    Severity{getSortIcon('severity')}
+                  </Link>
+                </th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Link href={getSortHref('createdAt')} style={sortLinkStyle}>
+                    Created{getSortIcon('createdAt')}
+                  </Link>
+                </th>
+                <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
+                  <Link href={getSortHref('updatedAt')} style={sortLinkStyle}>
+                    Updated{getSortIcon('updatedAt')}
+                  </Link>
+                </th>
                 <th style={{ padding: '0.75rem' }}></th>
               </tr>
             </thead>

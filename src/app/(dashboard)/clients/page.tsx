@@ -11,8 +11,11 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'company';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  const clients = await prisma.client.findMany({ 
-    orderBy: { [sortCol]: sortDir } 
+  let orderBy: { company?: 'asc' | 'desc'; website?: 'asc' | 'desc'; phone?: 'asc' | 'desc' } =
+    sortCol === 'phoneNumber' ? { phone: sortDir } : { [sortCol]: sortDir };
+
+  const clients = await prisma.client.findMany({
+    orderBy,
   });
 
   const getSortHref = (col: string) => {

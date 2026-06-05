@@ -3,11 +3,12 @@ import React from 'react';
 interface PageHeaderProps {
   title: string;
   showAddButton?: boolean;
+  addButtonLabel?: string;
   onAddClick?: () => void;
   extraActions?: React.ReactNode;
 }
 
-export function PageHeader({ title, showAddButton = true, onAddClick, extraActions }: PageHeaderProps) {
+export function PageHeader({ title, showAddButton = true, addButtonLabel = 'New Record', onAddClick, extraActions }: PageHeaderProps) {
   return (
     <div style={{ 
       display: 'flex', 
@@ -24,7 +25,7 @@ export function PageHeader({ title, showAddButton = true, onAddClick, extraActio
             style={{ padding: '0.6rem 1.2rem', width: 'fit-content' }}
             onClick={onAddClick}
           >
-            New Record
+            {addButtonLabel}
           </button>
         )}
       </div>

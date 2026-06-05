@@ -6,6 +6,15 @@ import { getSession } from '@/lib/auth/session';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 import { revalidatePath } from 'next/cache';
 
+async function wouldRemoveLastAdmin(userId: string, newRole: 'ADMIN' | 'USER'): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!user || user.role !== 'ADMIN' || newRole === 'ADMIN') {
+    return false;
+  }
+  const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+  return adminCount <= 1;
+}
+
 export async function createUser(prevState: any, formData: FormData) {
   const session = await getSession();
   if (!session || session.role !== 'ADMIN') {
@@ -63,6 +72,10 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
     return { error: 'Username and Role are required.' };
   }
 
+  if (await wouldRemoveLastAdmin(id, role)) {
+    return { error: 'Cannot remove the last admin account.' };
+  }
+
   try {
     const existing = await prisma.user.findFirst({ where: { username, NOT: { id } } });
     if (existing) {
@@ -106,6 +119,10 @@ export async function deleteUser(id: string) {
   // Prevent users from deleting themselves
   if (session.userId === id) {
     return { error: 'You cannot delete yourself.' };
+  }
+
+  if (await wouldRemoveLastAdmin(id, 'USER')) {
+    return { error: 'Cannot delete the last admin account.' };
   }
 
   try {
