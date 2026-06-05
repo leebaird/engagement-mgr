@@ -2,7 +2,15 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { createFinding } from '@/app/actions/finding';
 
-export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateFindingForm({
+  onSuccess,
+  engagementId,
+  formId = 'create-finding-form',
+}: {
+  onSuccess?: () => void;
+  engagementId?: string;
+  formId?: string;
+}) {
   const [state, formAction] = useActionState(createFinding, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [severity, setSeverity] = useState('');
@@ -27,7 +35,8 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <form id="create-finding-form" action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form id={formId} action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {engagementId ? <input type="hidden" name="engagementId" value={engagementId} /> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
         <div>

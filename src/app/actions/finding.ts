@@ -32,6 +32,9 @@ export async function createFinding(prevState: any, formData: FormData) {
       data,
     });
     revalidatePath('/findings');
+    if (engagementId) {
+      revalidatePath('/engagements');
+    }
     return { success: 'Finding created successfully.' };
   } catch (e) {
     console.error('Create Finding error:', e);
@@ -68,6 +71,9 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
       data,
     });
     revalidatePath('/findings');
+    if (engagementId) {
+      revalidatePath('/engagements');
+    }
     return { success: 'Finding updated successfully.' };
   } catch (e) {
     console.error('Update Finding error:', e);
@@ -82,8 +88,15 @@ export async function deleteFinding(id: string) {
       const filePath = join(process.cwd(), 'uploads', snap.filePath);
       await unlink(filePath).catch(() => {});
     }
+    const finding = await prisma.finding.findUnique({
+      where: { id },
+      select: { engagementId: true },
+    });
     await prisma.finding.delete({ where: { id } });
     revalidatePath('/findings');
+    if (finding?.engagementId) {
+      revalidatePath('/engagements');
+    }
     return { success: true };
   } catch (e) {
     return { error: 'Failed to delete finding.' };

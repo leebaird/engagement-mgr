@@ -39,7 +39,26 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
   }
 
   let engagements = await prisma.engagement.findMany({
-    include: { client: true, trustedAgents: true, operators: true, contacts: true },
+    include: {
+      client: true,
+      trustedAgents: true,
+      operators: true,
+      contacts: true,
+      findings: {
+        select: {
+          id: true,
+          title: true,
+          severity: true,
+          category: true,
+          background: true,
+          remediation: true,
+          supportingData: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { title: 'asc' },
+      },
+    },
     orderBy,
   });
 

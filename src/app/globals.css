@@ -248,11 +248,25 @@ select.form-input {
 
 .engagement-form-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 1.5rem;
   align-items: start;
-  min-height: 620px;
   width: 100%;
+}
+
+.engagement-form-grid__main {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.engagement-form-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .engagement-form-grid .form-input {
@@ -266,10 +280,6 @@ select.form-input {
   min-width: 0;
 }
 
-.engagement-form-col--relations {
-  gap: 0.75rem;
-}
-
 .engagement-form-col--relations .form-group {
   margin-bottom: 0;
 }
@@ -280,9 +290,90 @@ select.form-input {
   gap: 0.75rem;
 }
 
+.engagement-form-findings-slot {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+}
+
 .engagement-form-footer {
   margin-top: 1rem;
   width: 100%;
+}
+
+
+
+.engagement-findings-section {
+  padding: 1.25rem;
+  min-height: 6.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.engagement-findings-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  flex: 1;
+  width: 100%;
+  min-height: 4.5rem;
+}
+
+.engagement-findings-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.engagement-findings-panel__total {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.engagement-findings-panel__total-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.engagement-findings-panel__total-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.engagement-findings-panel__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.engagement-findings-panel__count {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.engagement-findings-panel__count-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  min-width: 1.25rem;
+  text-align: right;
+}
+
+.engagement-findings-panel__actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .engagement-create-form .form-group {

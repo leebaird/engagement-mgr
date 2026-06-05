@@ -1,11 +1,14 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
 import { focusEditFieldAtStart } from '@/lib/edit-field-focus';
 import { EngagementFormFields, engagementToFormValues } from './EngagementFormFields';
+import {
+  EngagementFindingsPanel,
+  type EngagementFindingSummary,
+} from './EngagementFindingsPanel';
 
 const noop = () => {};
 
@@ -20,8 +23,15 @@ export function EngagementDetailButton({
   contacts: { id: string, name: string, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[]
 }) {
-  const router = useRouter();
   const [engagement, setEngagement] = useState(initialEngagement);
+  const [findings, setFindings] = useState<EngagementFindingSummary[]>(
+    initialEngagement.findings || []
+  );
+
+  useEffect(() => {
+    setEngagement(initialEngagement);
+    setFindings(initialEngagement.findings || []);
+  }, [initialEngagement]);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -126,6 +136,32 @@ export function EngagementDetailButton({
       setIsPending(false);
     }
   };
+
+  const findingsSection = (
+    <section className="glass-panel engagement-findings-section">
+      <EngagementFindingsPanel
+        findings={findings}
+        onFindingsChange={setFindings}
+      />
+    </section>
+  );
+
+  const createdUpdatedFooter = !isEditing ? (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'max-content 1fr',
+        fontSize: '0.8rem',
+        color: 'var(--text-muted)',
+        gap: '0 0.25rem',
+      }}
+    >
+      <div>Created</div>
+      <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
+      <div>Updated</div>
+      <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
+    </div>
+  ) : undefined;
 
   return (
     <>
@@ -278,14 +314,8 @@ export function EngagementDetailButton({
               contactsTriggerRef={contactsTriggerRef}
               taTriggerRef={taTriggerRef}
               operatorsTriggerRef={operatorsTriggerRef}
-              footer={
-                <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
-                  <div>Created</div>
-                  <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
-                  <div>Updated</div>
-                  <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
-                </div>
-              }
+              column3Extra={findingsSection}
+              footer={createdUpdatedFooter}
             />
           </div>
         ) : (
@@ -316,6 +346,7 @@ export function EngagementDetailButton({
               operatorsTriggerRef={operatorsTriggerRef}
               values={formData}
               onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
+              column3Extra={findingsSection}
             />
             {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
           </div>
