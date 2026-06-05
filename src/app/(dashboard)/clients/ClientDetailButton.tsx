@@ -301,9 +301,9 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
             <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{client.createdAt.toLocaleDateString()}</div>
+                <div>{new Date(client.createdAt).toLocaleDateString()}</div>
                 <div>Updated</div>
-                <div>{client.updatedAt.toLocaleDateString()}</div>
+                <div>{new Date(client.updatedAt).toLocaleDateString()}</div>
               </div>
             </div>
           </div>
