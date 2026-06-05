@@ -90,34 +90,22 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
         <Eye size={16} />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={() => { setIsOpen(false); setIsEditing(false); }} 
-        title={isEditing ? "Edit Client" : "Client Details"} 
-        headerActions={isEditing ? (
-          <>
-            <button 
-              key="save"
-              onClick={async () => {
-                if (cityError || stateError || zipError) {
-                  alert('Please fix the highlighted fields before saving.');
-                  return;
-                }
+      {isOpen && (
+        <Modal 
+          isOpen={isOpen} 
+          onClose={() => { setIsOpen(false); setIsEditing(false); }} 
+          title={isEditing ? "Edit Client" : "Client Details"} 
+          headerActions={isEditing ? (
+            <>
+              <button 
+                key="save"
+                onClick={async () => {
+                  if (cityError || stateError || zipError) {
+                    alert('Please fix the highlighted fields before saving.');
+                    return;
+                  }
 
-                const result = await updateClient(client.id, {
-                  company: formData.company,
-                  address: formData.address || null,
-                  city: formData.city || null,
-                  state: formData.state || null,
-                  zip: formData.zip || null,
-                  website: formData.website || null,
-                  phone: formData.phone || null,
-                  notes: formData.notes || null,
-                });
-
-                if (result.success) {
-                  setClient(prev => ({
-                    ...prev,
+                  const result = await updateClient(client.id, {
                     company: formData.company,
                     address: formData.address || null,
                     city: formData.city || null,
@@ -126,112 +114,125 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                     website: formData.website || null,
                     phone: formData.phone || null,
                     notes: formData.notes || null,
-                  }));
+                  });
+
+                  if (result.success) {
+                    setClient(prev => ({
+                      ...prev,
+                      company: formData.company,
+                      address: formData.address || null,
+                      city: formData.city || null,
+                      state: formData.state || null,
+                      zip: formData.zip || null,
+                      website: formData.website || null,
+                      phone: formData.phone || null,
+                      notes: formData.notes || null,
+                    }));
+                    setIsEditing(false);
+                  } else {
+                    alert(result.error || 'Failed to save changes');
+                  }
+                }}
+                className="btn-save"
+                style={{ boxShadow: 'none' }}
+              >
+                Save
+              </button>
+              <button 
+                key="cancel"
+                onClick={() => {
+                  setFormData({
+                    company: client.company,
+                    address: client.address || "",
+                    city: client.city || "",
+                    state: client.state || "",
+                    zip: client.zip || "",
+                    website: client.website || "",
+                    phone: client.phone || "",
+                    notes: client.notes || "",
+                  });
                   setIsEditing(false);
-                } else {
-                  alert(result.error || 'Failed to save changes');
-                }
-              }}
-              className="btn-save"
-              style={{ boxShadow: 'none' }}
-            >
-              Save
-            </button>
-            <button 
-              key="cancel"
-              onClick={() => {
-                setFormData({
-                  company: client.company,
-                  address: client.address || "",
-                  city: client.city || "",
-                  state: client.state || "",
-                  zip: client.zip || "",
-                  website: client.website || "",
-                  phone: client.phone || "",
-                  notes: client.notes || "",
-                });
-                setIsEditing(false);
-              }}
-              className="btn-cancel"
-              style={{ boxShadow: 'none' }}
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => {
-                setFormData({
-                  company: client.company,
-                  address: client.address || '',
-                  city: client.city || '',
-                  state: client.state || '',
-                  zip: client.zip || '',
-                  website: client.website || '',
-                  phone: client.phone || '',
-                  notes: client.notes || '',
-                });
-                setIsEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#0066ff';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              Edit
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete this client?')) return;
-                const result = await deleteClient(client.id);
-                if (result.success) {
-                  setIsOpen(false);
-                } else {
-                  alert(result.error || 'Failed to delete client');
-                }
-              }}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#ff3366';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              Delete
-            </button>
-          </>
-        )}
-      >
-        {!isEditing ? (
+                }}
+                className="btn-cancel"
+                style={{ boxShadow: 'none' }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  setFormData({
+                    company: client.company,
+                    address: client.address || '',
+                    city: client.city || '',
+                    state: client.state || '',
+                    zip: client.zip || '',
+                    website: client.website || '',
+                    phone: client.phone || '',
+                    notes: client.notes || '',
+                  });
+                  setIsEditing(true);
+                }}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--surface-border)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = '#0066ff';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--surface-border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Edit
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('Are you sure you want to delete this client?')) return;
+                  const result = await deleteClient(client.id);
+                  if (result.success) {
+                    setIsOpen(false);
+                  } else {
+                    alert(result.error || 'Failed to delete client');
+                  }
+                }}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--surface-border)',
+                  color: 'var(--text-main)',
+                  cursor: 'pointer',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = '#ff3366';
+                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--surface-border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Delete
+              </button>
+            </>
+          )}
+        >
+          {!isEditing ? (
           // VIEW MODE - matching edit layout & typography
           <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             {/* Left column - Name, Address, City, State, Zip */}
@@ -431,6 +432,7 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
           </div>
         )}
       </Modal>
+      )}
     </>
   );
 }

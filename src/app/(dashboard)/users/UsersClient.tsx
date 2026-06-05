@@ -293,44 +293,46 @@ export function UsersClient({ children }: UsersClientProps) {
         </div>
       </Modal>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add New User"
-        maxWidth="450px"
-        headerActions={
-          <button
-            type="submit"
-            form="create-user-form"
-            className="btn-save"
-            tabIndex={4}
-            onKeyDown={(e) => {
-              const modal = e.currentTarget.closest('.glass-panel');
-              if (modal) {
-                if (e.key === 'Tab' && !e.shiftKey) {
-                  e.preventDefault();
-                  const first = modal.querySelector('[tabindex="1"]') as HTMLElement;
-                  if (first) first.focus();
-                } else if (e.key === 'Tab' && e.shiftKey) {
-                  e.preventDefault();
-                  const last = modal.querySelector('[tabindex="3"]') as HTMLElement;
-                  if (last) last.focus();
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Add New User"
+          maxWidth="450px"
+          headerActions={
+            <button
+              type="submit"
+              form="create-user-form"
+              className="btn-save"
+              tabIndex={4}
+              onKeyDown={(e) => {
+                const modal = e.currentTarget.closest('.glass-panel');
+                if (modal) {
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    const first = modal.querySelector('[tabindex="1"]') as HTMLElement;
+                    if (first) first.focus();
+                  } else if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    const last = modal.querySelector('[tabindex="3"]') as HTMLElement;
+                    if (last) last.focus();
+                  }
                 }
-              }
-            }}
-          >
-            Add User
-          </button>
-        }
-      >
-        <CreateUserForm onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} />
-      </Modal>
+              }}
+            >
+              Add User
+            </button>
+          }
+        >
+          <CreateUserForm onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} />
+        </Modal>
+      )}
     </div>
   );
 }

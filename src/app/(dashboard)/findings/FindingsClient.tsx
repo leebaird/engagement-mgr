@@ -133,30 +133,32 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
         </div>
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Add New Finding"
-        maxWidth="1000px"
-        headerActions={
-          <button
-            type="submit"
-            form="create-finding-form"
-            className="btn-save"
-            style={{ boxShadow: 'none' }}
-          >
-            Add Finding
-          </button>
-        }
-      >
-        <CreateFindingForm onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} />
-      </Modal>
+      {isModalOpen && (
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          title="Add New Finding"
+          maxWidth="1000px"
+          headerActions={
+            <button
+              type="submit"
+              form="create-finding-form"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+            >
+              Add Finding
+            </button>
+          }
+        >
+          <CreateFindingForm onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} />
+        </Modal>
+      )}
     </div>
   );
 }

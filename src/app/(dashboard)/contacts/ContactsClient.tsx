@@ -23,30 +23,32 @@ export function ContactsClient({ clients, children }: ContactsClientProps) {
         {children}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Add New Contact"
-        headerActions={
-          <button
-            type="submit"
-            form="create-contact-form"
-            className="btn-save"
-            style={{ boxShadow: 'none' }}
-          >
-            Add Contact
-          </button>
-        }
-      >
-        <CreateContactForm clients={clients} onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            // Smoothly return to the list view after adding
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} />
-      </Modal>
+      {isModalOpen && (
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          title="Add New Contact"
+          headerActions={
+            <button
+              type="submit"
+              form="create-contact-form"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+            >
+              Add Contact
+            </button>
+          }
+        >
+          <CreateContactForm clients={clients} onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              // Smoothly return to the list view after adding
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} />
+        </Modal>
+      )}
     </div>
   );
 }

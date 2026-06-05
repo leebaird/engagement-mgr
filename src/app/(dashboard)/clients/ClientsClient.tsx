@@ -22,30 +22,32 @@ export function ClientsClient({ children }: ClientsClientProps) {
         {children}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Add New Client"
-        headerActions={
-          <button
-            type="submit"
-            form="create-client-form"
-            className="btn-save"
-            style={{ boxShadow: 'none' }}
-          >
-            Add Client
-          </button>
-        }
-      >
-        <CreateClientForm onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            // Smoothly return to the list view after adding
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} />
-      </Modal>
+      {isModalOpen && (
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          title="Add New Client"
+          headerActions={
+            <button
+              type="submit"
+              form="create-client-form"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+            >
+              Add Client
+            </button>
+          }
+        >
+          <CreateClientForm onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              // Smoothly return to the list view after adding
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} />
+        </Modal>
+      )}
     </div>
   );
 }

@@ -191,10 +191,11 @@ export function EngagementDetailButton({
         <Eye size={16} />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
-        title={isEditing ? "Edit Engagement" : "Engagement Details"} 
+      {isOpen && (
+        <Modal 
+          isOpen={isOpen} 
+          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+          title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
         headerActions={isEditing ? (
           <>
@@ -350,6 +351,7 @@ export function EngagementDetailButton({
           </div>
         )}
       </Modal>
+      )}
     </>
   );
 }

@@ -68,10 +68,11 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
         <Eye size={16} />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
-        title={isEditing ? "Edit Operator" : "Operator Details"} 
+      {isOpen && (
+        <Modal 
+          isOpen={isOpen} 
+          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+          title={isEditing ? "Edit Operator" : "Operator Details"} 
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
@@ -285,6 +286,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
           </div>
         )}
       </Modal>
+      )}
     </>
   );
 }

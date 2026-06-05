@@ -22,30 +22,32 @@ export function OperatorsClient({ children }: OperatorsClientProps) {
         {children}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Add New Operator"
-        headerActions={
-          <button
-            type="submit"
-            form="create-operator-form"
-            className="btn-save"
-            style={{ boxShadow: 'none' }}
-          >
-            Add Operator
-          </button>
-        }
-      >
-        <CreateOperatorForm onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            // Smoothly return to the list view after adding
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} />
-      </Modal>
+      {isModalOpen && (
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          title="Add New Operator"
+          headerActions={
+            <button
+              type="submit"
+              form="create-operator-form"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+            >
+              Add Operator
+            </button>
+          }
+        >
+          <CreateOperatorForm onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              // Smoothly return to the list view after adding
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} />
+        </Modal>
+      )}
     </div>
   );
 }

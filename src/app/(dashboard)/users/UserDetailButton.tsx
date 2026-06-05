@@ -80,10 +80,11 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
         <Eye size={16} />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
-        title={isEditing ? "Edit User" : "User Details"}
+      {isOpen && (
+        <Modal 
+          isOpen={isOpen} 
+          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+          title={isEditing ? "Edit User" : "User Details"}
         maxWidth="450px"
         headerActions={isEditing ? (
           <>
@@ -308,6 +309,7 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
           ) : null}
         </div>
       </Modal>
+      )}
     </>
   );
 }

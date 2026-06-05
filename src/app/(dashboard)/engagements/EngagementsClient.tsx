@@ -25,36 +25,38 @@ export function EngagementsClient({ clients, contacts, operators, children }: En
         {children}
       </div>
 
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title="Add New Engagement"
-        maxWidth="1500px"
-        headerActions={
-          <button
-            type="submit"
-            form="create-engagement-form"
-            className="btn-save"
-            style={{ boxShadow: 'none' }}
-          >
-            Add Engagement
-          </button>
-        }
-      >
-        <CreateEngagementForm 
-          clients={clients} 
-          contacts={contacts} 
-          operators={operators} 
-          onSuccess={() => {
-            setIsModalOpen(false);
-            router.refresh();
-            // Smoothly return to the list view after adding
-            setTimeout(() => {
-              listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 120);
-          }} 
-        />
-      </Modal>
+      {isModalOpen && (
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          title="Add New Engagement"
+          maxWidth="1500px"
+          headerActions={
+            <button
+              type="submit"
+              form="create-engagement-form"
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+            >
+              Add Engagement
+            </button>
+          }
+        >
+          <CreateEngagementForm 
+            clients={clients} 
+            contacts={contacts} 
+            operators={operators} 
+            onSuccess={() => {
+              setIsModalOpen(false);
+              router.refresh();
+              // Smoothly return to the list view after adding
+              setTimeout(() => {
+                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 120);
+            }} 
+          />
+        </Modal>
+      )}
     </div>
   );
 }

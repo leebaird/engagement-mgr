@@ -106,10 +106,11 @@ export function FindingDetailButton({
         <Eye size={16} />
       </button>
 
-      <Modal 
-        isOpen={isOpen} 
-        onClose={handleClose} 
-        title={isEditing ? "Edit Finding" : "Finding Details"} 
+      {isOpen && (
+        <Modal 
+          isOpen={isOpen} 
+          onClose={handleClose} 
+          title={isEditing ? "Edit Finding" : "Finding Details"} 
         maxWidth="1000px"
         headerActions={isEditing ? (
           <>
@@ -359,6 +360,7 @@ export function FindingDetailButton({
           </div>
         )}
       </Modal>
+      )}
     </>
   );
 }
