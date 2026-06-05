@@ -42,6 +42,7 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
               <p style={{ whiteSpace: 'pre-wrap' }}>{finding.supportingData}</p>
             </div>
           )}
+
         </div>
 
         <div>

@@ -8,10 +8,12 @@ import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-fo
 
 export function FindingDetailButton({ 
   finding: initialFinding, 
-  onOptimisticDelete 
+  onOptimisticDelete,
+  engagementScoped = false,
 }: { 
   finding: any; 
   onOptimisticDelete?: (id: string) => void;
+  engagementScoped?: boolean;
 }) {
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
@@ -29,12 +31,22 @@ export function FindingDetailButton({
 
   const [formData, setFormData] = useState({
     title: initialFinding.title,
+    observation: initialFinding.observation || '',
     category: initialFinding.category || '',
     severity: initialFinding.severity || '',
     background: initialFinding.background || '',
     remediation: initialFinding.remediation || '',
     supportingLinks: initialFinding.supportingLinks || '',
+    affectedHosts: initialFinding.affectedHosts || '',
   });
+
+  const appendEngagementScopedFields = (data: FormData) => {
+    if (engagementScoped) {
+      data.append('engagementScoped', 'true');
+      data.append('observation', formData.observation);
+      data.append('affectedHosts', formData.affectedHosts);
+    }
+  };
 
     const titleInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
@@ -63,8 +75,10 @@ export function FindingDetailButton({
     try {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
+        if (!engagementScoped && (key === 'observation' || key === 'affectedHosts')) return;
         data.append(key, value as string);
       });
+      appendEngagementScopedFields(data);
 
       const result = await updateFinding(finding.id, {}, data);
       
@@ -121,11 +135,13 @@ export function FindingDetailButton({
               onClick={() => {
                 setFormData({
                   title: finding.title,
+                  observation: engagementScoped ? (finding.observation || '') : '',
                   category: finding.category || '',
                   severity: finding.severity || '',
                   background: finding.background || '',
                   remediation: finding.remediation || '',
                   supportingLinks: finding.supportingLinks || '',
+                  affectedHosts: engagementScoped ? (finding.affectedHosts || '') : '',
                 });
                 setIsEditing(true);
                 setError(null);
@@ -214,6 +230,13 @@ export function FindingDetailButton({
               </div>
             </div>
 
+            {engagementScoped ? (
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+                <textarea readOnly value={finding.observation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
+              </div>
+            ) : null}
+
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
               <textarea readOnly value={finding.background || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
@@ -228,6 +251,13 @@ export function FindingDetailButton({
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
               <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
             </div>
+
+            {engagementScoped ? (
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+                <textarea readOnly value={finding.affectedHosts || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
+              </div>
+            ) : null}
 
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
@@ -275,6 +305,13 @@ export function FindingDetailButton({
               </div>
             </div>
 
+            {engagementScoped ? (
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+                <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+              </div>
+            ) : null}
+
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
               <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
@@ -287,14 +324,14 @@ export function FindingDetailButton({
 
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-              <textarea 
-                value={formData.supportingLinks} 
-                onChange={e => setFormData({...formData, supportingLinks: e.target.value})} 
-                className="form-input" 
-                rows={4} 
+              <textarea
+                value={formData.supportingLinks}
+                onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
+                className="form-input"
+                rows={4}
                 style={{ width: '100%' }}
                 onFocus={handleEditFieldFocus}
-                onKeyDown={e => {
+                onKeyDown={engagementScoped ? undefined : (e) => {
                   if (e.key === 'Tab' && !e.shiftKey) {
                     e.preventDefault();
                     const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
@@ -306,6 +343,30 @@ export function FindingDetailButton({
                 }}
               ></textarea>
             </div>
+
+            {engagementScoped ? (
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+                <textarea
+                  value={formData.affectedHosts}
+                  onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
+                  className="form-input"
+                  rows={2}
+                  style={{ width: '100%' }}
+                  onFocus={handleEditFieldFocus}
+                  onKeyDown={e => {
+                    if (e.key === 'Tab' && !e.shiftKey) {
+                      e.preventDefault();
+                      const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                      if (modal) {
+                        const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                        if (firstField) firstField.focus();
+                      }
+                    }
+                  }}
+                ></textarea>
+              </div>
+            ) : null}
 
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }} />
           </div>

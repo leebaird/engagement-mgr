@@ -1,6 +1,17 @@
 'use client';
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { createFinding } from '@/app/actions/finding';
+import { createFinding, searchFindingsByTitle, type FindingTemplateMatch } from '@/app/actions/finding';
+
+const emptyForm = {
+  title: '',
+  category: '',
+  severity: '',
+  background: '',
+  remediation: '',
+  supportingLinks: '',
+  observation: '',
+  affectedHosts: '',
+};
 
 export function CreateFindingForm({
   onSuccess,
@@ -13,25 +24,77 @@ export function CreateFindingForm({
 }) {
   const [state, formAction] = useActionState(createFinding, null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [severity, setSeverity] = useState('');
+  const titleWrapRef = useRef<HTMLDivElement>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [suggestions, setSuggestions] = useState<FindingTemplateMatch[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setSuggestions([]);
+    setSuggestionsOpen(false);
+  };
 
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
-      setSeverity('');
+      resetForm();
       onSuccess?.();
     }
   }, [state, onSuccess]);
 
-  const getSeverityStyle = (s: string) => {
-    switch (s) {
-      case 'Critical': return { color: '#b366ff', background: 'rgba(179,102,255,0.1)', border: '1px solid rgba(179,102,255,0.3)' };
-      case 'High': return { color: '#ff4d4d', background: 'rgba(255,77,77,0.1)', border: '1px solid rgba(255,77,77,0.3)' };
-      case 'Medium': return { color: '#ffa64d', background: 'rgba(255,166,77,0.1)', border: '1px solid rgba(255,166,77,0.3)' };
-      case 'Low': return { color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)' };
-      case 'Info': return { color: '#66b3ff', background: 'rgba(102,179,255,0.1)', border: '1px solid rgba(102,179,255,0.3)' };
-      default: return { color: 'var(--text-main)', backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-color)' };
+  useEffect(() => {
+    if (!engagementId) return;
+
+    const q = form.title.trim();
+    if (q.length < 1) {
+      setSuggestions([]);
+      setSuggestionsOpen(false);
+      return;
     }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const matches = await searchFindingsByTitle(q);
+        setSuggestions(matches);
+        setSuggestionsOpen(matches.length > 0);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [engagementId, form.title]);
+
+  useEffect(() => {
+    if (!engagementId) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      if (titleWrapRef.current && !titleWrapRef.current.contains(e.target as Node)) {
+        setSuggestionsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [engagementId]);
+
+  const applyTemplate = (match: FindingTemplateMatch) => {
+    setForm((prev) => ({
+      ...prev,
+      title: match.title,
+      category: match.category || '',
+      severity: match.severity || '',
+      background: match.background || '',
+      remediation: match.remediation || '',
+      supportingLinks: match.supportingLinks || '',
+    }));
+    setSuggestionsOpen(false);
+  };
+
+  const setField = (field: keyof typeof emptyForm, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -39,13 +102,95 @@ export function CreateFindingForm({
       {engagementId ? <input type="hidden" name="engagementId" value={engagementId} /> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
-        <div>
+        <div ref={titleWrapRef} style={{ position: 'relative' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-          <input autoFocus type="text" name="title" className="form-input" required />
+          <input
+            autoFocus
+            type="text"
+            name="title"
+            className="form-input"
+            required
+            value={engagementId ? form.title : undefined}
+            defaultValue={engagementId ? undefined : ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (engagementId) {
+                setField('title', value);
+              }
+            }}
+            onFocus={() => {
+              if (engagementId && suggestions.length > 0) setSuggestionsOpen(true);
+            }}
+            autoComplete="off"
+          />
+          {engagementId && suggestionsOpen ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                background: '#1a1a2e',
+                border: '1px solid var(--surface-border)',
+                borderRadius: '8px',
+                marginTop: '0.25rem',
+                zIndex: 20,
+                maxHeight: '220px',
+                overflowY: 'auto',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              }}
+            >
+              {searching ? (
+                <div style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  Searching…
+                </div>
+              ) : (
+                suggestions.map((match) => (
+                  <button
+                    key={match.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyTemplate(match);
+                    }}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.65rem 0.75rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid var(--surface-border)',
+                      color: 'var(--text-main)',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(0, 102, 255, 0.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{match.title}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                      {[match.category, match.severity].filter(Boolean).join(' · ')}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          ) : null}
         </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-          <select name="category" className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+          <select
+            name="category"
+            className="form-input"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
+            value={engagementId ? form.category : undefined}
+            defaultValue={engagementId ? undefined : ''}
+            onChange={engagementId ? (e) => setField('category', e.target.value) : undefined}
+          >
             <option value=""></option>
             <option value="AI">AI</option>
             <option value="Firewall">Firewall</option>
@@ -59,13 +204,16 @@ export function CreateFindingForm({
         </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-          <select 
-            name="severity" 
-            className="form-input" 
-            value={severity}
-            onChange={(e) => setSeverity(e.target.value)}
+          <select
+            name="severity"
+            className="form-input"
+            value={engagementId ? form.severity : undefined}
+            defaultValue={engagementId ? undefined : ''}
+            onChange={(e) => {
+              if (engagementId) setField('severity', e.target.value);
+            }}
             style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
-            onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}
+            onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
           >
             <option value=""></option>
             <option value="Critical">Critical</option>
@@ -77,23 +225,56 @@ export function CreateFindingForm({
         </div>
       </div>
 
+      {engagementId ? (
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
+          <textarea
+            name="observation"
+            className="form-input"
+            rows={4}
+            style={{ width: '100%' }}
+            value={form.observation}
+            onChange={(e) => setField('observation', e.target.value)}
+          />
+        </div>
+      ) : null}
+
       <div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-        <textarea name="background" className="form-input" rows={4} style={{ width: '100%' }}></textarea>
+        <textarea
+          name="background"
+          className="form-input"
+          rows={4}
+          style={{ width: '100%' }}
+          value={engagementId ? form.background : undefined}
+          defaultValue={engagementId ? undefined : ''}
+          onChange={engagementId ? (e) => setField('background', e.target.value) : undefined}
+        />
       </div>
 
       <div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-        <textarea name="remediation" className="form-input" rows={4} style={{ width: '100%' }}></textarea>
+        <textarea
+          name="remediation"
+          className="form-input"
+          rows={4}
+          style={{ width: '100%' }}
+          value={engagementId ? form.remediation : undefined}
+          defaultValue={engagementId ? undefined : ''}
+          onChange={engagementId ? (e) => setField('remediation', e.target.value) : undefined}
+        />
       </div>
 
       <div>
         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-        <textarea 
-          name="supportingLinks" 
-          className="form-input" 
-          rows={4} 
+        <textarea
+          name="supportingLinks"
+          className="form-input"
+          rows={4}
           style={{ width: '100%' }}
+          value={engagementId ? form.supportingLinks : undefined}
+          defaultValue={engagementId ? undefined : ''}
+          onChange={engagementId ? (e) => setField('supportingLinks', e.target.value) : undefined}
           onKeyDown={e => {
             if (e.key === 'Tab' && !e.shiftKey) {
               e.preventDefault();
@@ -104,8 +285,22 @@ export function CreateFindingForm({
               }
             }
           }}
-        ></textarea>
+        />
       </div>
+
+      {engagementId ? (
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+          <textarea
+            name="affectedHosts"
+            className="form-input"
+            rows={2}
+            style={{ width: '100%' }}
+            value={form.affectedHosts}
+            onChange={(e) => setField('affectedHosts', e.target.value)}
+          />
+        </div>
+      ) : null}
 
       {state?.error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{state.error}</div>}
     </form>

@@ -43,6 +43,7 @@ model Engagement {
   contacts             Contact[]     @relation("EngagementContacts")
   trustedAgents        Contact[]     @relation("TrustedAgents")
   findings             Finding[]
+  findingContexts      EngagementFindingContext[]
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 }
@@ -119,8 +120,23 @@ model Finding {
   remediation          String?
   supportingData       String?       @map("supportingLinks")
   screenshots          Screenshot[]
+  engagementContext    EngagementFindingContext?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+}
+
+model EngagementFindingContext {
+  id             String     @id @default(uuid())
+  engagementId   String
+  findingId      String     @unique
+  engagement     Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  finding        Finding    @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  observation    String?
+  affectedHosts  String?    @map("affected_hosts")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([engagementId, findingId])
 }
 
 model Screenshot {

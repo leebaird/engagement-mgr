@@ -45,16 +45,8 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
       operators: true,
       contacts: true,
       findings: {
-        select: {
-          id: true,
-          title: true,
-          severity: true,
-          category: true,
-          background: true,
-          remediation: true,
-          supportingData: true,
-          createdAt: true,
-          updatedAt: true,
+        include: {
+          engagementContext: true,
         },
         orderBy: { title: 'asc' },
       },

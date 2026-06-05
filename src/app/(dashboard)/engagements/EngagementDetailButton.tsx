@@ -12,6 +12,22 @@ import {
 
 const noop = () => {};
 
+function mapEngagementFindings(findings: any[] = []): EngagementFindingSummary[] {
+  return findings.map((f) => ({
+    id: f.id,
+    title: f.title,
+    severity: f.severity,
+    category: f.category,
+    background: f.background,
+    remediation: f.remediation,
+    supportingData: f.supportingData,
+    createdAt: f.createdAt,
+    updatedAt: f.updatedAt,
+    observation: f.engagementContext?.observation ?? null,
+    affectedHosts: f.engagementContext?.affectedHosts ?? null,
+  }));
+}
+
 export function EngagementDetailButton({
   engagement: initialEngagement,
   clients,
@@ -25,12 +41,12 @@ export function EngagementDetailButton({
 }) {
   const [engagement, setEngagement] = useState(initialEngagement);
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
-    initialEngagement.findings || []
+    mapEngagementFindings(initialEngagement.findings)
   );
 
   useEffect(() => {
     setEngagement(initialEngagement);
-    setFindings(initialEngagement.findings || []);
+    setFindings(mapEngagementFindings(initialEngagement.findings));
   }, [initialEngagement]);
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -140,6 +156,7 @@ export function EngagementDetailButton({
   const findingsSection = (
     <section className="glass-panel engagement-findings-section">
       <EngagementFindingsPanel
+        engagementId={engagement.id}
         findings={findings}
         onFindingsChange={setFindings}
       />

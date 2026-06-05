@@ -4,33 +4,100 @@ import { revalidatePath } from 'next/cache';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 
+export type FindingTemplateMatch = {
+  id: string;
+  title: string;
+  category: string | null;
+  severity: string;
+  background: string | null;
+  remediation: string | null;
+  supportingLinks: string;
+};
+
+export async function searchFindingsByTitle(query: string): Promise<FindingTemplateMatch[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const findings = await prisma.finding.findMany({
+    where: {
+      title: { contains: trimmed, mode: 'insensitive' },
+    },
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      severity: true,
+      background: true,
+      remediation: true,
+      supportingData: true,
+    },
+    orderBy: { title: 'asc' },
+    take: 10,
+  });
+
+  return findings.map((f) => ({
+    id: f.id,
+    title: f.title,
+    category: f.category,
+    severity: f.severity,
+    background: f.background,
+    remediation: f.remediation,
+    supportingLinks: f.supportingData ?? '',
+  }));
+}
+
 export async function createFinding(prevState: any, formData: FormData) {
   const engagementId = formData.get('engagementId') as string;
   const title = formData.get('title') as string;
+  const observation = formData.get('observation') as string;
   const category = formData.get('category') as string;
   const severity = formData.get('severity') as string;
   const background = formData.get('background') as string;
   const remediation = formData.get('remediation') as string;
   const supportingData = formData.get('supportingLinks') as string;
+  const affectedHosts = formData.get('affectedHosts') as string;
 
   if (!title) {
     return { error: 'Title is required' };
   }
 
   try {
-    const data: any = {
+    const findingData: {
+      title: string;
+      category: string;
+      severity: string;
+      background: string;
+      remediation: string;
+      supportingData: string;
+      engagementId?: string;
+      engagementContext?: {
+        create: {
+          engagementId: string;
+          observation: string | null;
+          affectedHosts: string | null;
+        };
+      };
+    } = {
       title,
       category,
       severity: severity || '',
       background,
       remediation,
-      supportingData
+      supportingData,
     };
-    if (engagementId) data.engagementId = engagementId;
 
-    await prisma.finding.create({
-      data,
-    });
+    if (engagementId) {
+      findingData.engagementId = engagementId;
+      findingData.engagementContext = {
+        create: {
+          engagementId,
+          observation: observation || null,
+          affectedHosts: affectedHosts || null,
+        },
+      };
+    }
+
+    await prisma.finding.create({ data: findingData });
     revalidatePath('/findings');
     if (engagementId) {
       revalidatePath('/engagements');
@@ -44,34 +111,68 @@ export async function createFinding(prevState: any, formData: FormData) {
 
 export async function updateFinding(id: string, prevState: any, formData: FormData) {
   const engagementId = formData.get('engagementId') as string;
+  const engagementScoped = formData.get('engagementScoped') === 'true';
   const title = formData.get('title') as string;
+  const observation = formData.get('observation') as string;
   const category = formData.get('category') as string;
   const severity = formData.get('severity') as string;
   const background = formData.get('background') as string;
   const remediation = formData.get('remediation') as string;
   const supportingData = formData.get('supportingLinks') as string;
+  const affectedHosts = formData.get('affectedHosts') as string;
 
   if (!title) {
     return { error: 'Title is required' };
   }
 
   try {
-    const data: any = {
+    const data: {
+      title: string;
+      category: string;
+      severity: string;
+      background: string;
+      remediation: string;
+      supportingData: string;
+      engagementId?: string;
+    } = {
       title,
       category,
       severity: severity || '',
       background,
       remediation,
-      supportingData
+      supportingData,
     };
     if (engagementId) data.engagementId = engagementId;
+
+    const existing = await prisma.finding.findUnique({
+      where: { id },
+      select: { engagementId: true },
+    });
 
     await prisma.finding.update({
       where: { id },
       data,
     });
+
+    const scopedEngagementId = engagementId || existing?.engagementId;
+    if (engagementScoped && scopedEngagementId) {
+      await prisma.engagementFindingContext.upsert({
+        where: { findingId: id },
+        create: {
+          engagementId: scopedEngagementId,
+          findingId: id,
+          observation: observation || null,
+          affectedHosts: affectedHosts || null,
+        },
+        update: {
+          observation: observation || null,
+          affectedHosts: affectedHosts || null,
+        },
+      });
+    }
+
     revalidatePath('/findings');
-    if (engagementId) {
+    if (scopedEngagementId) {
       revalidatePath('/engagements');
     }
     return { success: 'Finding updated successfully.' };
