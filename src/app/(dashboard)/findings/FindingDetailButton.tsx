@@ -110,7 +110,7 @@ export function FindingDetailButton({
         <Modal 
           isOpen={isOpen} 
           onClose={handleClose} 
-          title={isEditing ? "Edit Finding" : "Finding Details"} 
+          title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
         maxWidth="1000px"
         headerActions={isEditing ? (
           <>
