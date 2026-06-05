@@ -196,7 +196,7 @@ export function EngagementDetailButton({
           isOpen={isOpen} 
           onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
-        maxWidth="1500px"
+        maxWidth="1200px"
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
