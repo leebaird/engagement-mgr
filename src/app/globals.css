@@ -154,6 +154,25 @@ select.form-input {
   box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
 }
 
+/* Detail view icon buttons (eye icons in list views) - hover effect via CSS for cross-browser reliability (Safari etc.) */
+.detail-icon-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.detail-icon-btn:hover {
+  color: #0066ff;
+  border-color: #0066ff;
+  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.4);
+}
+
 .db-panel-header {
   display: flex;
   align-items: center;

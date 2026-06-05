@@ -184,28 +184,8 @@ export function EngagementDetailButton({
     <>
       <button
         type="button"
+        className="detail-icon-btn"
         onClick={() => setIsOpen(true)}
-        style={{
-          background: 'none',
-          border: '1px solid transparent',
-          color: 'var(--text-muted)',
-          cursor: 'pointer',
-          padding: '0.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          borderRadius: '4px',
-          transition: 'all 0.2s ease',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.color = '#0066ff';
-          e.currentTarget.style.borderColor = '#0066ff';
-          e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.color = 'var(--text-muted)';
-          e.currentTarget.style.borderColor = 'transparent';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
         title="View details"
       >
         <Eye size={16} />
