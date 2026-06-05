@@ -105,16 +105,18 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
                   <td style={{ padding: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.category || ''}>
                     <span style={{ marginLeft: '2.5rem', display: 'inline-block' }}>{f.category || ''}</span>
                   </td>
-                  <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.severity}>
-                    <span style={{ 
-                      padding: '0.2rem 0.6rem', 
-                      borderRadius: '4px', 
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      ...getSeverityStyle(f.severity)
-                    }}>
-                      {f.severity}
-                    </span>
+                  <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={f.severity || undefined}>
+                    {f.severity ? (
+                      <span style={{
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        ...getSeverityStyle(f.severity),
+                      }}>
+                        {f.severity}
+                      </span>
+                    ) : null}
                   </td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(f.createdAt).toLocaleDateString()}</td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(f.updatedAt).toLocaleDateString()}</td>

@@ -30,7 +30,7 @@ export function FindingDetailButton({
   const [formData, setFormData] = useState({
     title: initialFinding.title,
     category: initialFinding.category || '',
-    severity: initialFinding.severity,
+    severity: initialFinding.severity || '',
     background: initialFinding.background || '',
     remediation: initialFinding.remediation || '',
     supportingLinks: initialFinding.supportingLinks || '',
@@ -53,8 +53,8 @@ export function FindingDetailButton({
   };
 
   const handleUpdate = async () => {
-    if (!formData.title || !formData.severity) {
-      setError('Title and Severity are required');
+    if (!formData.title) {
+      setError('Title is required');
       return;
     }
     
@@ -122,7 +122,7 @@ export function FindingDetailButton({
                 setFormData({
                   title: finding.title,
                   category: finding.category || '',
-                  severity: finding.severity,
+                  severity: finding.severity || '',
                   background: finding.background || '',
                   remediation: finding.remediation || '',
                   supportingLinks: finding.supportingLinks || '',
@@ -264,7 +264,7 @@ export function FindingDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" required style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                   <option value=""></option>
                   <option value="Critical">Critical</option>
                   <option value="High">High</option>

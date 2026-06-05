@@ -53,7 +53,6 @@ export function CreateFindingForm({ onSuccess }: { onSuccess?: () => void }) {
           <select 
             name="severity" 
             className="form-input" 
-            required 
             value={severity}
             onChange={(e) => setSeverity(e.target.value)}
             style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}

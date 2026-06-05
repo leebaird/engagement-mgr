@@ -13,15 +13,15 @@ export async function createFinding(prevState: any, formData: FormData) {
   const remediation = formData.get('remediation') as string;
   const supportingData = formData.get('supportingLinks') as string;
 
-  if (!title || !severity) {
-    return { error: 'Title and Severity are required' };
+  if (!title) {
+    return { error: 'Title is required' };
   }
 
   try {
     const data: any = {
       title,
       category,
-      severity,
+      severity: severity || '',
       background,
       remediation,
       supportingData
@@ -48,15 +48,15 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
   const remediation = formData.get('remediation') as string;
   const supportingData = formData.get('supportingLinks') as string;
 
-  if (!title || !severity) {
-    return { error: 'Title and Severity are required' };
+  if (!title) {
+    return { error: 'Title is required' };
   }
 
   try {
     const data: any = {
       title,
       category,
-      severity,
+      severity: severity || '',
       background,
       remediation,
       supportingData
