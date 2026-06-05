@@ -37,6 +37,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Never assume a field removal or addition is only UI — always confirm with the user.
 - Whenever `prisma/schema.prisma` is modified (add/remove/rename fields, models, enums, or relations), immediately update the **Database Schema** list in `README.md` (Implementation Plan & Architecture section) to keep documentation in sync with the live schema.
 
+### Git & New Files
+
+- Whenever new files are created (components, API routes, libraries, Prisma migrations, etc.), run `git status` to detect untracked files.
+- New files must be committed and pushed to the remote repository at these checkpoints:
+  1. When the user-requested feature or change is complete and working.
+  2. As soon as any committed code imports or depends on the new files (a fresh clone must not break).
+  3. Before the user would reasonably pull/clone or test on another machine.
+- Group related new files into a small number of logical commits (typically 1-3) with descriptive messages.
+- Stage the files, commit, then push with `git push origin main`.
+- Surface the list of files and proposed commit messages/grouping to the user for approval before committing and pushing (unless the user has previously instructed "you take care of it").
+
 ### Authentication & Security
 - All protected routes go through `src/proxy.ts`.
 - Sessions use `HttpOnly`, `SameSite=Lax` cookies with `jose` JWTs.
@@ -65,6 +76,7 @@ The running server caches environment variables — changes are not live until r
 After any meaningful change:
 - Check terminal logs for errors.
 - Run `npx tsc --noEmit`.
+- Run `git status`. If new untracked application files exist, commit and push them following the "Git & New Files" rules above.
 - If schema was changed: clear `.next` cache if issues arise (`rm -rf .next`).
 - Test the affected functionality when practical.
 
