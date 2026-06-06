@@ -39,6 +39,18 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
+.modal-panel {
+  background: #171a21;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.modal-panel .glass-panel {
+  background: #1e2128;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* Forms */
 .form-group {
   display: flex;
@@ -286,7 +298,7 @@ select.form-input {
   grid-column: 1 / -1;
   grid-row: 1;
   flex-shrink: 0;
-  width: 100%;
+  width: 50%;
   margin-bottom: 0;
 }
 

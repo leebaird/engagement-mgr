@@ -37,8 +37,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: '#0f1115',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -46,7 +45,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       padding: maxWidth ? '0.5rem' : '1rem'
     }} onMouseDown={onClose} onClick={onClose}>
       <div 
-        className="glass-panel" 
+        className="glass-panel modal-panel"
         style={{ 
           width: maxWidth ? maxWidth : '100%',
           minWidth: maxWidth || undefined,

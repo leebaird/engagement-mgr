@@ -20,7 +20,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### UI & Styling
 - Use **only vanilla CSS** (no Tailwind, no CSS-in-JS, no external libraries).
-- Maintain the existing dark glassmorphism aesthetic.
+- Maintain the existing dark glassmorphism aesthetic for **page panels** (lists, dashboard cards, login forms, etc.) via the shared `.glass-panel` class in `globals.css`.
+- **Modals must be fully opaque** — no transparency, no backdrop blur on the dialog itself.
+  - All modals go through `src/components/Modal.tsx`, which applies `modal-panel` alongside `glass-panel`.
+  - `.modal-panel` in `globals.css` overrides the glass effect with a solid `#171a21` background.
+  - The modal backdrop is solid `#0f1115` (not a blurred semi-transparent overlay).
+  - Any nested `.glass-panel` inside a modal (e.g. the engagement findings section) is also opaque (`#1e2128`) via `.modal-panel .glass-panel`.
+  - Do not revert modals to glassmorphism or add transparency when creating or editing modal UI.
 - When fixing layout issues (e.g. form field alignment), use clean **CSS Grid** or **Flexbox** and make the right edges align precisely as requested.
 
 ### Next.js App Router & Server Actions
