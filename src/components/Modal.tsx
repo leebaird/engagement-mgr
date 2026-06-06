@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -10,11 +13,18 @@ interface ModalProps {
   onDelete?: () => void;
   hideHeaderActions?: boolean;
   maxWidth?: string;
+  zIndex?: number;
   headerExtra?: React.ReactNode;
   headerActions?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, headerExtra, headerActions }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, zIndex = 1000, headerExtra, headerActions }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -29,9 +39,9 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -42,7 +52,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex,
       padding: maxWidth ? '0.5rem' : '1rem'
     }} onMouseDown={onClose} onClick={onClose}>
       <div 
@@ -138,6 +148,7 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

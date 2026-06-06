@@ -73,35 +73,36 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
             />
             {cityError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Only letters and spaces allowed</span>}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
-              <input 
-                type="text" 
-                name="state" 
-                className={`form-input ${stateError ? 'field-error' : ''}`} 
-                maxLength={2} 
-                pattern="[A-Za-z]{2}" 
-                title="Two letter state code" 
-                style={{ textTransform: 'uppercase', maxWidth: '60px' }} 
-                onChange={handleStateChange}
-              />
-              {stateError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Invalid state code</span>}
+          <div>
+            <div className="client-state-zip-row">
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
+                <input 
+                  type="text" 
+                  name="state" 
+                  className={`form-input ${stateError ? 'field-error' : ''}`} 
+                  maxLength={2} 
+                  pattern="[A-Za-z]{2}" 
+                  title="Two letter state code" 
+                  style={{ textTransform: 'uppercase', maxWidth: '60px' }} 
+                  onChange={handleStateChange}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
+                <input 
+                  type="text" 
+                  name="zip" 
+                  className={`form-input client-zip-input ${zipError ? 'field-error' : ''}`} 
+                  maxLength={10} 
+                  pattern="^\\d{5}(-\\d{4})?$" 
+                  title="ZIP code must be 12345 or 12345-6789" 
+                  onChange={handleZipChange}
+                />
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
-              <input 
-                type="text" 
-                name="zip" 
-                className={`form-input ${zipError ? 'field-error' : ''}`} 
-                maxLength={10} 
-                pattern="^\\d{5}(-\\d{4})?$" 
-                title="ZIP code must be 12345 or 12345-6789" 
-                style={{ minWidth: '140px', width: '100%' }}
-                onChange={handleZipChange}
-              />
-              {zipError && <span className="text-error" style={{ fontSize: '0.7rem' }}>ZIP must be 12345 or 12345-6789</span>}
-            </div>
+            {stateError ? <span className="text-error" style={{ fontSize: '0.7rem' }}>Invalid state code</span> : null}
+            {zipError ? <span className="text-error" style={{ fontSize: '0.7rem', display: 'block' }}>ZIP must be 12345 or 12345-6789</span> : null}
           </div>
         </div>
 

@@ -127,7 +127,24 @@ body {
   background: rgba(0, 0, 0, 0.4);
 }
 
+.client-state-zip-row {
+  display: flex;
+  gap: 0.25rem;
+  align-items: flex-start;
+  width: fit-content;
+}
+
+.client-zip-input.form-input {
+  width: 10ch;
+  max-width: 10ch;
+  min-width: 0;
+  box-sizing: content-box;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
 textarea.form-input[rows="4"],
+textarea.form-input[rows="5"],
 textarea.form-input[rows="8"] {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
@@ -330,7 +347,7 @@ select.form-input {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
   width: 100%;
 }
 
@@ -401,12 +418,47 @@ select.form-input {
   min-width: 0;
 }
 
-.engagement-form-footer {
-  margin-top: 1rem;
-  width: 100%;
+.engagement-form-timestamps {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  gap: 0 0.25rem;
+  width: fit-content;
+  margin-top: auto;
 }
 
+.engagement-finding-detail-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
 
+.engagement-finding-detail-form__header,
+.engagement-finding-detail-form__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.engagement-finding-detail-form__left-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.engagement-finding-detail-form__meta {
+  display: grid;
+  grid-template-columns: 160px 120px;
+  gap: 1.25rem;
+}
+
+.engagement-finding-detail-field__label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
 
 .engagement-findings-section {
   padding: 1rem 1.25rem;

@@ -153,6 +153,15 @@ export function EngagementDetailButton({
     }
   };
 
+  const timestampsFooter = (
+    <div className="engagement-form-timestamps">
+      <div>Created</div>
+      <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
+      <div>Updated</div>
+      <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
+    </div>
+  );
+
   const findingsSection = (
     <section className="glass-panel engagement-findings-section">
       <EngagementFindingsPanel
@@ -296,6 +305,7 @@ export function EngagementDetailButton({
               contactsTriggerRef={contactsTriggerRef}
               taTriggerRef={taTriggerRef}
               operatorsTriggerRef={operatorsTriggerRef}
+              footer={timestampsFooter}
             />
           </div>
         ) : (

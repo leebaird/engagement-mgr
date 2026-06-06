@@ -285,6 +285,7 @@ export function EngagementFormFields({
             <option value="EXTERNAL">External</option>
           </select>
         </div>
+        {footer}
       </div>
 
       <div className="engagement-form-grid__main">
@@ -665,7 +666,6 @@ export function EngagementFormFields({
       </div>
       </div>
 
-      {footer ? <div className="engagement-form-footer">{footer}</div> : null}
     </>
   );
 }

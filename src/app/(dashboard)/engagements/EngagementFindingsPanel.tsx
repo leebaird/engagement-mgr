@@ -110,6 +110,7 @@ export function EngagementFindingsPanel({
           onClose={() => setViewOpen(false)}
           title="Engagement Findings"
           maxWidth="600px"
+          zIndex={1100}
           headerActions={
             <button
               type="button"
@@ -167,6 +168,7 @@ export function EngagementFindingsPanel({
                     <td style={{ padding: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
                       <FindingDetailButton
                         engagementScoped
+                        zIndex={1200}
                         finding={{
                           ...f,
                           supportingLinks: f.supportingData ?? '',
@@ -193,9 +195,10 @@ export function EngagementFindingsPanel({
           onClose={() => setAddOpen(false)}
           title="Add Engagement Finding"
           maxWidth="1500px"
+          zIndex={1100}
           headerActions={
             <button type="submit" form={addFormId} className="btn-save" style={{ boxShadow: 'none' }}>
-              Add Engagement Finding
+              Add
             </button>
           }
         >

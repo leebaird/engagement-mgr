@@ -249,14 +249,14 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>City</div>
                 <input readOnly type="text" value={client.city || ''} className="form-input" style={{ minWidth: '340px', width: '100%', pointerEvents: 'none' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div className="client-state-zip-row">
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
                   <input readOnly type="text" value={client.state || ''} className="form-input" style={{ textTransform: 'uppercase', maxWidth: '60px', pointerEvents: 'none' }} />
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
-                  <input readOnly type="text" value={client.zip || ''} className="form-input" style={{ minWidth: '140px', width: '100%', pointerEvents: 'none' }} />
+                  <input readOnly type="text" value={client.zip || ''} className="form-input client-zip-input" style={{ pointerEvents: 'none' }} />
                 </div>
               </div>
             </div>
@@ -337,39 +337,40 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 />
                 {cityError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Only letters and spaces allowed</span>}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={handleStateChange}
-                    className={`form-input ${stateError ? 'field-error' : ''}`}
-                    maxLength={2}
-                    pattern="[A-Za-z]{2}"
-                    title="Two letter state code"
-                    style={{ textTransform: 'uppercase', maxWidth: '60px' }}
-                    onFocus={handleClientEditFieldFocus}
-                    onBlur={handleClientEditFieldBlur}
-                  />
-                  {stateError && <span className="text-error" style={{ fontSize: '0.7rem' }}>Invalid state code</span>}
+              <div>
+                <div className="client-state-zip-row">
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
+                    <input
+                      type="text"
+                      value={formData.state}
+                      onChange={handleStateChange}
+                      className={`form-input ${stateError ? 'field-error' : ''}`}
+                      maxLength={2}
+                      pattern="[A-Za-z]{2}"
+                      title="Two letter state code"
+                      style={{ textTransform: 'uppercase', maxWidth: '60px' }}
+                      onFocus={handleClientEditFieldFocus}
+                      onBlur={handleClientEditFieldBlur}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
+                    <input
+                      type="text"
+                      value={formData.zip}
+                      onChange={handleZipChange}
+                      className={`form-input client-zip-input ${zipError ? 'field-error' : ''}`}
+                      maxLength={10}
+                      pattern="^\\d{5}(-\\d{4})?$"
+                      title="ZIP code must be 12345 or 12345-6789"
+                      onFocus={handleClientEditFieldFocus}
+                      onBlur={handleClientEditFieldBlur}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
-                  <input
-                    type="text"
-                    value={formData.zip}
-                    onChange={handleZipChange}
-                    className={`form-input ${zipError ? 'field-error' : ''}`}
-                    maxLength={10}
-                    pattern="^\\d{5}(-\\d{4})?$"
-                    title="ZIP code must be 12345 or 12345-6789"
-                    style={{ minWidth: '140px', width: '100%' }}
-                    onFocus={handleClientEditFieldFocus}
-                    onBlur={handleClientEditFieldBlur}
-                  />
-                  {zipError && <span className="text-error" style={{ fontSize: '0.7rem' }}>ZIP must be 12345 or 12345-6789</span>}
-                </div>
+                {stateError ? <span className="text-error" style={{ fontSize: '0.7rem' }}>Invalid state code</span> : null}
+                {zipError ? <span className="text-error" style={{ fontSize: '0.7rem', display: 'block' }}>ZIP must be 12345 or 12345-6789</span> : null}
               </div>
             </div>
 

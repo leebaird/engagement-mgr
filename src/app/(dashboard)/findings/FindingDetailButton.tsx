@@ -10,10 +10,12 @@ export function FindingDetailButton({
   finding: initialFinding, 
   onOptimisticDelete,
   engagementScoped = false,
+  zIndex,
 }: { 
   finding: any; 
   onOptimisticDelete?: (id: string) => void;
   engagementScoped?: boolean;
+  zIndex?: number;
 }) {
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
@@ -100,7 +102,10 @@ export function FindingDetailButton({
       <button
         type="button"
         className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(true);
+        }}
         title="View details"
       >
         <Eye size={16} />
@@ -112,6 +117,7 @@ export function FindingDetailButton({
           onClose={handleClose} 
           title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
         maxWidth={engagementScoped ? "1500px" : "1000px"}
+        zIndex={zIndex}
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
@@ -197,50 +203,64 @@ export function FindingDetailButton({
           // VIEW MODE (form field style)
           <>
             {engagementScoped ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                    <input readOnly type="text" value={finding.title} className="form-input" style={{ width: '100%', pointerEvents: 'none' }} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '160px 120px', gap: '1.25rem' }}>
+              <div className="engagement-finding-detail-form">
+                <div className="engagement-finding-detail-form__header">
+                  <div className="engagement-finding-detail-form__left-header">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                      <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                      <div className="engagement-finding-detail-field__label">Title</div>
+                      <input readOnly type="text" value={finding.title} className="form-input" style={{ width: '100%', pointerEvents: 'none' }} />
                     </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                      <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                        <option value=""></option>
-                        <option value="Critical">Critical</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                        <option value="Info">Info</option>
-                      </select>
+                    <div className="engagement-finding-detail-form__meta">
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Category</div>
+                        <select disabled value={finding.category || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                          <option value=""></option>
+                          <option value="AI">AI</option>
+                          <option value="Firewall">Firewall</option>
+                          <option value="Host">Host</option>
+                          <option value="OSINT">OSINT</option>
+                          <option value="Physical">Physical</option>
+                          <option value="Social Eng">Social Eng</option>
+                          <option value="Web App">Web App</option>
+                          <option value="Wireless">Wireless</option>
+                        </select>
+                      </div>
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Severity</div>
+                        <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                          <option value=""></option>
+                          <option value="Critical">Critical</option>
+                          <option value="High">High</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Low">Low</option>
+                          <option value="Info">Info</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-                    <textarea readOnly value={finding.observation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-                    <textarea readOnly value={finding.background || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
+                    <div className="engagement-finding-detail-field__label">Remediation</div>
+                    <textarea readOnly value={finding.remediation || ''} className="form-input" rows={5} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="engagement-finding-detail-form__pair">
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-                    <textarea readOnly value={finding.remediation || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
+                    <div className="engagement-finding-detail-field__label">Observation</div>
+                    <textarea readOnly value={finding.observation || ''} className="form-input" rows={5} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-                    <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={4} style={{ width: '100%', pointerEvents: 'none' }} />
+                    <div className="engagement-finding-detail-field__label">See Also</div>
+                    <textarea readOnly value={finding.supportingLinks || ''} className="form-input" rows={5} style={{ width: '100%', pointerEvents: 'none' }} />
+                  </div>
+                </div>
+                <div className="engagement-finding-detail-form__pair">
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Background</div>
+                    <textarea readOnly value={finding.background || ''} className="form-input" rows={5} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
-                    <textarea readOnly value={finding.affectedHosts || ''} className="form-input" rows={2} style={{ width: '100%', pointerEvents: 'none' }} />
+                    <div className="engagement-finding-detail-field__label">Affected Hosts</div>
+                    <textarea readOnly value={finding.affectedHosts || ''} className="form-input" rows={5} style={{ width: '100%', pointerEvents: 'none' }} />
                   </div>
                 </div>
               </div>
@@ -253,7 +273,17 @@ export function FindingDetailButton({
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                    <select disabled value={finding.category || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                      <option value=""></option>
+                      <option value="AI">AI</option>
+                      <option value="Firewall">Firewall</option>
+                      <option value="Host">Host</option>
+                      <option value="OSINT">OSINT</option>
+                      <option value="Physical">Physical</option>
+                      <option value="Social Eng">Social Eng</option>
+                      <option value="Web App">Web App</option>
+                      <option value="Wireless">Wireless</option>
+                    </select>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
@@ -299,7 +329,7 @@ export function FindingDetailButton({
               </div>
             )}
 
-            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+            <div style={{ marginTop: engagementScoped ? '1rem' : '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
                 <div>{new Date(finding.createdAt).toLocaleDateString()}</div>
@@ -308,87 +338,78 @@ export function FindingDetailButton({
               </div>
             </div>
           </>
-        ) : (
-          // EDIT MODE
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
-
-            {engagementScoped ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                    <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} style={{ width: '100%' }} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '160px 120px', gap: '1.25rem' }}>
+        ) : engagementScoped ? (
+          // EDIT MODE (engagement-scoped — same structure as view for matching height)
+          <>
+            <div className="engagement-finding-detail-form">
+                <div className="engagement-finding-detail-form__header">
+                  <div className="engagement-finding-detail-form__left-header">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                      <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
-                        <option value=""></option>
-                        <option value="AI">AI</option>
-                        <option value="Firewall">Firewall</option>
-                        <option value="Host">Host</option>
-                        <option value="OSINT">OSINT</option>
-                        <option value="Physical">Physical</option>
-                        <option value="Social Eng">Social Eng</option>
-                        <option value="Web App">Web App</option>
-                        <option value="Wireless">Wireless</option>
-                      </select>
+                      <div className="engagement-finding-detail-field__label">Title</div>
+                      <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} style={{ width: '100%' }} />
                     </div>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                      <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
-                        <option value=""></option>
-                        <option value="Critical">Critical</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                        <option value="Info">Info</option>
-                      </select>
+                    <div className="engagement-finding-detail-form__meta">
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Category</div>
+                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                          <option value=""></option>
+                          <option value="AI">AI</option>
+                          <option value="Firewall">Firewall</option>
+                          <option value="Host">Host</option>
+                          <option value="OSINT">OSINT</option>
+                          <option value="Physical">Physical</option>
+                          <option value="Social Eng">Social Eng</option>
+                          <option value="Web App">Web App</option>
+                          <option value="Wireless">Wireless</option>
+                        </select>
+                      </div>
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Severity</div>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                          <option value=""></option>
+                          <option value="Critical">Critical</option>
+                          <option value="High">High</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Low">Low</option>
+                          <option value="Info">Info</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-                    <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-                    <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                    <div className="engagement-finding-detail-field__label">Remediation</div>
+                    <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="engagement-finding-detail-form__pair">
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-                    <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                    <div className="engagement-finding-detail-field__label">Observation</div>
+                    <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+                    <div className="engagement-finding-detail-field__label">See Also</div>
                     <textarea
                       value={formData.supportingLinks}
                       onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
                       className="form-input"
-                      rows={4}
+                      rows={5}
                       style={{ width: '100%' }}
                       onFocus={handleEditFieldFocus}
-                      onKeyDown={engagementScoped ? undefined : (e) => {
-                        if (e.key === 'Tab' && !e.shiftKey) {
-                          e.preventDefault();
-                          const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-                          if (modal) {
-                            const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                            if (firstField) firstField.focus();
-                          }
-                        }
-                      }}
                     ></textarea>
                   </div>
+                </div>
+                <div className="engagement-finding-detail-form__pair">
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
+                    <div className="engagement-finding-detail-field__label">Background</div>
+                    <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  </div>
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Affected Hosts</div>
                     <textarea
                       value={formData.affectedHosts}
                       onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
                       className="form-input"
-                      rows={2}
+                      rows={5}
                       style={{ width: '100%' }}
                       onFocus={handleEditFieldFocus}
                       onKeyDown={e => {
@@ -405,107 +426,83 @@ export function FindingDetailButton({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                    <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
-                      <option value=""></option>
-                      <option value="AI">AI</option>
-                      <option value="Firewall">Firewall</option>
-                      <option value="Host">Host</option>
-                      <option value="OSINT">OSINT</option>
-                      <option value="Physical">Physical</option>
-                      <option value="Social Eng">Social Eng</option>
-                      <option value="Web App">Web App</option>
-                      <option value="Wireless">Wireless</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                    <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
-                      <option value=""></option>
-                      <option value="Critical">Critical</option>
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                      <option value="Info">Info</option>
-                    </select>
-                  </div>
-                </div>
-
-                {engagementScoped ? (
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Observation</div>
-                    <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
-                  </div>
-                ) : null}
-
+            <div style={{ marginTop: '1rem', height: '2.5rem' }}>
+              {error ? <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.85rem' }}>{error}</div> : null}
+            </div>
+          </>
+        ) : (
+          // EDIT MODE (global findings — same structure as view for matching height)
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
-                  <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+                  <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
                 </div>
-
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
-                  <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                    <option value=""></option>
+                    <option value="AI">AI</option>
+                    <option value="Firewall">Firewall</option>
+                    <option value="Host">Host</option>
+                    <option value="OSINT">OSINT</option>
+                    <option value="Physical">Physical</option>
+                    <option value="Social Eng">Social Eng</option>
+                    <option value="Web App">Web App</option>
+                    <option value="Wireless">Wireless</option>
+                  </select>
                 </div>
-
                 <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
-                  <textarea
-                    value={formData.supportingLinks}
-                    onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
-                    className="form-input"
-                    rows={4}
-                    style={{ width: '100%' }}
-                    onFocus={handleEditFieldFocus}
-                    onKeyDown={engagementScoped ? undefined : (e) => {
-                      if (e.key === 'Tab' && !e.shiftKey) {
-                        e.preventDefault();
-                        const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-                        if (modal) {
-                          const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                          if (firstField) firstField.focus();
-                        }
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                    <option value=""></option>
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Info">Info</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+                <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+                <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+                <textarea
+                  value={formData.supportingLinks}
+                  onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
+                  className="form-input"
+                  rows={4}
+                  style={{ width: '100%' }}
+                  onFocus={handleEditFieldFocus}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Tab' && !e.shiftKey) {
+                      e.preventDefault();
+                      const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                      if (modal) {
+                        const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                        if (firstField) firstField.focus();
                       }
-                    }}
-                  ></textarea>
-                </div>
-
-                {engagementScoped ? (
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Affected Hosts</div>
-                    <textarea
-                      value={formData.affectedHosts}
-                      onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
-                      className="form-input"
-                      rows={2}
-                      style={{ width: '100%' }}
-                      onFocus={handleEditFieldFocus}
-                      onKeyDown={e => {
-                        if (e.key === 'Tab' && !e.shiftKey) {
-                          e.preventDefault();
-                          const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
-                          if (modal) {
-                            const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
-                            if (firstField) firstField.focus();
-                          }
-                        }
-                      }}
-                    ></textarea>
-                  </div>
-                ) : null}
+                    }
+                  }}
+                ></textarea>
               </div>
-            )}
+            </div>
 
-            <div style={{ marginTop: '0.5rem', height: '2.5rem' }} />
-          </div>
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+              {error ? <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.85rem' }}>{error}</div> : null}
+            </div>
+          </>
         )}
       </Modal>
       )}
