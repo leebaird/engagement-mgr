@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from '../findings/CreateFindingForm';
 import { FindingDetailButton } from '../findings/FindingDetailButton';
@@ -66,21 +67,9 @@ export function EngagementFindingsPanel({
   return (
     <>
       <div className="engagement-findings-panel">
-        <div className="engagement-findings-panel__header">
-          <div className="engagement-findings-panel__total">
-            <span className="engagement-findings-panel__total-label">Total Findings</span>
-            <span className="engagement-findings-panel__total-value">{counts.total}</span>
-          </div>
-          <div className="engagement-findings-panel__actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-              onClick={() => setViewOpen(true)}
-            >
-              View Findings
-            </button>
-          </div>
+        <div className="engagement-findings-panel__total">
+          <span className="engagement-findings-panel__total-label">Total Findings</span>
+          <span className="engagement-findings-panel__total-value">{counts.total}</span>
         </div>
         <div className="engagement-findings-panel__counts">
           {SEVERITY_LABELS.map((label) => (
@@ -103,6 +92,16 @@ export function EngagementFindingsPanel({
             </div>
           ))}
         </div>
+        <div className="engagement-findings-panel__actions">
+          <button
+            type="button"
+            className="detail-icon-btn"
+            onClick={() => setViewOpen(true)}
+            title="View findings"
+          >
+            <Eye size={16} />
+          </button>
+        </div>
       </div>
 
       {viewOpen && (
@@ -110,7 +109,7 @@ export function EngagementFindingsPanel({
           isOpen={viewOpen}
           onClose={() => setViewOpen(false)}
           title="Engagement Findings"
-          maxWidth="800px"
+          maxWidth="600px"
           headerActions={
             <button
               type="button"

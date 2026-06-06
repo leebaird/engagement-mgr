@@ -51,6 +51,48 @@ body {
   -webkit-backdrop-filter: none;
 }
 
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header__title {
+  font-size: 1.25rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.modal-header__extra {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.modal-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.modal-header__extra .engagement-findings-section {
+  padding: 0.35rem 0.65rem;
+  width: fit-content;
+}
+
+.modal-header__extra .engagement-findings-panel {
+  gap: 0.5rem;
+}
+
+.modal-header__extra .engagement-findings-panel__counts {
+  gap: 0.4rem;
+}
+
 /* Forms */
 .form-group {
   display: flex;
@@ -83,6 +125,13 @@ body {
   border-color: #0066ff;
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.3);
   background: rgba(0, 0, 0, 0.4);
+}
+
+textarea.form-input[rows="4"],
+textarea.form-input[rows="8"] {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  line-height: 1.55;
 }
 
 .field-error {
@@ -288,33 +337,20 @@ select.form-input {
 .engagement-form-grid__main {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto 1fr;
   gap: 1.5rem;
   align-items: stretch;
   min-width: 0;
 }
 
-.engagement-form-findings-slot {
-  grid-column: 1 / -1;
-  grid-row: 1;
-  flex-shrink: 0;
-  width: 50%;
-  margin-bottom: 0;
-}
-
-.engagement-form-findings-spacer {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 .engagement-form-objectives {
   grid-column: 1 / -1;
-  grid-row: 2;
+  grid-row: 1;
 }
 
 .engagement-form-col--middle {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -322,7 +358,7 @@ select.form-input {
 
 .engagement-form-col-right {
   grid-column: 2;
-  grid-row: 3;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -373,8 +409,7 @@ select.form-input {
 
 
 .engagement-findings-section {
-  padding: 1.25rem;
-  min-height: 6.75rem;
+  padding: 1rem 1.25rem;
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -383,27 +418,19 @@ select.form-input {
 
 .engagement-findings-panel {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: space-between;
-  flex: 1;
-  width: 100%;
-  min-height: 4.5rem;
-}
-
-.engagement-findings-panel__header {
-  display: flex;
-  justify-content: space-between;
+  flex-direction: row;
   align-items: center;
-  gap: 0.75rem;
-  width: 100%;
+  gap: 1rem;
+  width: auto;
+  min-width: 0;
 }
 
 .engagement-findings-panel__total {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  min-width: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .engagement-findings-panel__total-label {
@@ -420,8 +447,10 @@ select.form-input {
 
 .engagement-findings-panel__counts {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .engagement-findings-panel__count {

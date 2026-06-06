@@ -10,10 +10,11 @@ interface ModalProps {
   onDelete?: () => void;
   hideHeaderActions?: boolean;
   maxWidth?: string;
+  headerExtra?: React.ReactNode;
   headerActions?: React.ReactNode;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, headerActions }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, headerExtra, headerActions }: ModalProps) {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -58,9 +59,10 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
         onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{title}</h2>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="modal-header">
+          <h2 className="modal-header__title">{title}</h2>
+          {headerExtra ? <div className="modal-header__extra">{headerExtra}</div> : null}
+          <div className="modal-header__actions">
             {headerActions ? headerActions : (
               <>
                 {!hideHeaderActions && onEdit && (

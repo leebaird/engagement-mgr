@@ -163,23 +163,6 @@ export function EngagementDetailButton({
     </section>
   );
 
-  const createdUpdatedFooter = !isEditing ? (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'max-content 1fr',
-        fontSize: '0.8rem',
-        color: 'var(--text-muted)',
-        gap: '0 0.25rem',
-      }}
-    >
-      <div>Created</div>
-      <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
-      <div>Updated</div>
-      <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
-    </div>
-  ) : undefined;
-
   return (
     <>
       <button
@@ -197,6 +180,7 @@ export function EngagementDetailButton({
           onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
+        headerExtra={findingsSection}
         headerActions={isEditing ? (
           <>
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
@@ -312,8 +296,6 @@ export function EngagementDetailButton({
               contactsTriggerRef={contactsTriggerRef}
               taTriggerRef={taTriggerRef}
               operatorsTriggerRef={operatorsTriggerRef}
-              column2Extra={findingsSection}
-              footer={createdUpdatedFooter}
             />
           </div>
         ) : (
@@ -344,7 +326,6 @@ export function EngagementDetailButton({
               operatorsTriggerRef={operatorsTriggerRef}
               values={formData}
               onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
-              column2Extra={findingsSection}
             />
             {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
           </div>

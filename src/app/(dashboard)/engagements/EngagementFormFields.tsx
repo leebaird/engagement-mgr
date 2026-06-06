@@ -93,7 +93,6 @@ type EngagementFormFieldsProps = {
   autoFocusCodeName?: boolean;
   readOnly?: boolean;
   footer?: ReactNode;
-  column2Extra?: ReactNode;
 };
 
 export function EngagementFormFields({
@@ -125,7 +124,6 @@ export function EngagementFormFields({
   autoFocusCodeName = false,
   readOnly = false,
   footer,
-  column2Extra,
 }: EngagementFormFieldsProps) {
   const controlled = values !== undefined && onFieldChange !== undefined;
   const displayValues = readOnly || controlled;
@@ -159,12 +157,6 @@ export function EngagementFormFields({
 
   const dateStyle = {
     colorScheme: 'dark' as const,
-    paddingTop: '0.25rem',
-    paddingBottom: '0.25rem',
-    ...(readOnly ? { pointerEvents: 'none' as const } : {}),
-  };
-
-  const textareaStyle = {
     paddingTop: '0.25rem',
     paddingBottom: '0.25rem',
     ...(readOnly ? { pointerEvents: 'none' as const } : {}),
@@ -296,22 +288,11 @@ export function EngagementFormFields({
       </div>
 
       <div className="engagement-form-grid__main">
-        <div className="engagement-form-findings-slot">
-          {column2Extra ?? (
-            <div
-              className="glass-panel engagement-findings-section engagement-form-findings-spacer"
-              aria-hidden="true"
-            >
-              <div className="engagement-findings-panel" />
-            </div>
-          )}
-        </div>
         <div className="form-group engagement-form-objectives">
           <label className="form-label">Objectives</label>
           <textarea
             className="form-input"
             rows={8}
-            style={textareaStyle}
             {...textProps('objectives', 'objectives')}
           />
         </div>
@@ -320,8 +301,7 @@ export function EngagementFormFields({
           <label className="form-label">Targets</label>
           <textarea
             className="form-input"
-            rows={2}
-            style={textareaStyle}
+            rows={4}
             {...textProps('targets', 'targets')}
           />
         </div>
@@ -329,8 +309,7 @@ export function EngagementFormFields({
           <label className="form-label">Exclusions</label>
           <textarea
             className="form-input"
-            rows={2}
-            style={textareaStyle}
+            rows={4}
             {...textProps('exclusions', 'exclusions')}
           />
         </div>
@@ -340,7 +319,6 @@ export function EngagementFormFields({
             ref={notesRef}
             className="form-input"
             rows={4}
-            style={textareaStyle}
             {...textProps('notes', 'notes')}
             onKeyDown={readOnly ? undefined : (e) => {
               if (e.key === 'Tab' && !e.shiftKey) {
