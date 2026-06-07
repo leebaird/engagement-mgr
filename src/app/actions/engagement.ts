@@ -170,6 +170,7 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
       },
     });
     revalidatePath('/engagements');
+    revalidatePath('/');
     return { success: true };
   } catch (e) {
     console.error(e);

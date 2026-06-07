@@ -77,54 +77,12 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
             {headerActions ? headerActions : (
               <>
                 {!hideHeaderActions && onEdit && (
-                  <button
-                    onClick={onEdit}
-                    style={{
-                      background: 'none',
-                      border: '1px solid var(--surface-border)',
-                      color: 'var(--text-main)',
-                      cursor: 'pointer',
-                      padding: '0.35rem 0.9rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = '#0066ff';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'var(--surface-border)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
+                  <button type="button" onClick={onEdit} className="modal-action-btn">
                     Edit
                   </button>
                 )}
                 {!hideHeaderActions && onDelete && (
-                  <button
-                    onClick={onDelete}
-                    style={{
-                      background: 'none',
-                      border: '1px solid var(--surface-border)',
-                      color: 'var(--text-main)',
-                      cursor: 'pointer',
-                      padding: '0.35rem 0.9rem',
-                      borderRadius: '4px',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                      transition: 'all 0.2s ease',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = '#ff3366';
-                      e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = 'var(--surface-border)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
+                  <button type="button" onClick={onDelete} className="modal-action-btn modal-action-btn--danger">
                     Delete
                   </button>
                 )}

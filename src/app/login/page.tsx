@@ -69,7 +69,7 @@ export default function LoginPage() {
                 (usernameRef.current as HTMLInputElement | null)?.focus();
               }
             }}
-            style={{ padding: '0.6rem 1.2rem', width: 'fit-content', margin: '0 auto', display: 'block', outline: 'none' }}
+            style={{ width: 'fit-content', margin: '0 auto', display: 'block', outline: 'none' }}
           >
             {isPending ? 'Authenticating...' : 'Sign In'}
           </button>

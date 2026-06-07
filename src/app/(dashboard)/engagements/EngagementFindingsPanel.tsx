@@ -23,18 +23,6 @@ export type EngagementFindingSummary = {
 
 const SEVERITY_LABELS = ['Critical', 'High', 'Medium', 'Low', 'Info'] as const;
 
-const modalHeaderBtnStyle = {
-  background: 'none',
-  border: '1px solid var(--surface-border)',
-  color: 'var(--text-main)',
-  cursor: 'pointer',
-  padding: '0.6rem 1.2rem',
-  borderRadius: '8px',
-  fontSize: '1rem',
-  fontWeight: 600,
-  transition: 'all 0.2s ease',
-} as const;
-
 export function EngagementFindingsPanel({
   engagementId,
   findings,
@@ -100,19 +88,7 @@ export function EngagementFindingsPanel({
           maxWidth="600px"
           zIndex={1100}
           headerActions={
-            <button
-              type="button"
-              style={modalHeaderBtnStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#0066ff';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-              onClick={() => setAddOpen(true)}
-            >
+            <button type="button" className="modal-action-btn" onClick={() => setAddOpen(true)}>
               Add
             </button>
           }

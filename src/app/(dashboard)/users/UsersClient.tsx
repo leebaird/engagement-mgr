@@ -187,7 +187,7 @@ export function UsersClient({ children }: UsersClientProps) {
             <button
               type="button"
               className="btn-secondary"
-              style={{ padding: '0.6rem 1.2rem', width: 'fit-content', flexShrink: 0 }}
+              style={{ width: 'fit-content', flexShrink: 0 }}
               onClick={() => setIsModalOpen(true)}
             >
               New User

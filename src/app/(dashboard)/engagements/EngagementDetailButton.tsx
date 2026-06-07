@@ -265,30 +265,14 @@ export function EngagementDetailButton({
           <>
             <button
               type="button"
+              className="modal-action-btn"
               onClick={() => setIsScheduleOpen(true)}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#0066ff';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
             >
               Schedule
             </button>
             <button
+              type="button"
+              className="modal-action-btn"
               onClick={() => {
                 setFormData({
                   codeName: engagement.codeName,
@@ -311,29 +295,12 @@ export function EngagementDetailButton({
                 setIsEditing(true);
                 setError(null);
               }}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#0066ff';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
             >
               Edit
             </button>
             <button
+              type="button"
+              className="modal-action-btn modal-action-btn--danger"
               onClick={async () => {
                 if (!confirm('Are you sure you want to delete this engagement?')) return;
                 const result = await deleteEngagement(engagement.id);
@@ -342,25 +309,6 @@ export function EngagementDetailButton({
                 } else {
                   alert(result.error || 'Failed to delete engagement');
                 }
-              }}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#ff3366';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               Delete
@@ -436,29 +384,11 @@ export function EngagementDetailButton({
           ) : (
             <button
               type="button"
+              className="modal-action-btn"
               onClick={() => {
                 setScheduleFormData(engagementToScheduleValues(engagement));
                 setScheduleError(null);
                 setIsScheduleEditing(true);
-              }}
-              style={{
-                background: 'none',
-                border: '1px solid var(--surface-border)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                fontWeight: 600,
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = '#0066ff';
-                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'var(--surface-border)';
-                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               Edit

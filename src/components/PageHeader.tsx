@@ -23,7 +23,7 @@ export function PageHeader({ title, showAddButton = true, addButtonLabel = 'New 
           <button 
             type="button"
             className="btn-secondary" 
-            style={{ padding: '0.6rem 1.2rem', width: 'fit-content' }}
+            style={{ width: 'fit-content' }}
             onClick={onAddClick}
           >
             {addButtonLabel}
