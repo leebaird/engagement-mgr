@@ -16,9 +16,10 @@ interface ModalProps {
   zIndex?: number;
   headerExtra?: React.ReactNode;
   headerActions?: React.ReactNode;
+  alignTop?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, zIndex = 1000, headerExtra, headerActions }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, zIndex = 1000, headerExtra, headerActions, alignTop = false }: ModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -50,13 +51,13 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       bottom: 0,
       backgroundColor: '#0f1115',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: alignTop ? 'flex-start' : 'center',
       justifyContent: 'center',
       zIndex,
       padding: maxWidth ? '0.5rem' : '1rem'
     }} onMouseDown={onClose} onClick={onClose}>
       <div 
-        className="glass-panel modal-panel"
+        className={`glass-panel modal-panel${headerExtra ? ' modal-panel--has-centered-extra' : ''}`}
         style={{ 
           width: maxWidth ? maxWidth : '100%',
           minWidth: maxWidth || undefined,
@@ -69,9 +70,9 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
         onMouseDown={e => e.stopPropagation()}
         onClick={e => e.stopPropagation()}
       >
+        {headerExtra ? <div className="modal-panel__centered-extra">{headerExtra}</div> : null}
         <div className="modal-header">
           <h2 className="modal-header__title">{title}</h2>
-          {headerExtra ? <div className="modal-header__extra">{headerExtra}</div> : null}
           <div className="modal-header__actions">
             {headerActions ? headerActions : (
               <>

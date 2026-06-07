@@ -254,6 +254,7 @@ export function EngagementDetailButton({
           onClose={() => { setIsOpen(false); setIsScheduleOpen(false); setIsScheduleEditing(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
+        alignTop
         headerExtra={findingsSection}
         headerActions={isEditing ? (
           <>
@@ -367,69 +368,40 @@ export function EngagementDetailButton({
           </>
         )}
       >
-        {!isEditing ? (
-          <div className="engagement-create-form">
-            <EngagementFormFields
-              readOnly
-              values={engagementToFormValues(engagement)}
-              clients={clients}
-              contacts={contacts}
-              operators={operators}
-              selectedOps={engagement.operators?.map((o: any) => o.id) || []}
-              setSelectedOps={noop}
-              opsOpen={false}
-              setOpsOpen={noop}
-              selectedContacts={engagement.contacts?.map((c: any) => c.id) || []}
-              setSelectedContacts={noop}
-              contactsOpen={false}
-              setContactsOpen={noop}
-              selectedTAs={engagement.trustedAgents?.map((t: any) => t.id) || []}
-              setSelectedTAs={noop}
-              tasOpen={false}
-              setTasOpen={noop}
-              dropdownRef={dropdownRef}
-              contactDropdownRef={contactDropdownRef}
-              taDropdownRef={taDropdownRef}
-              codeNameRef={codeNameInputRef}
-              notesRef={notesRef}
-              contactsTriggerRef={contactsTriggerRef}
-              taTriggerRef={taTriggerRef}
-              operatorsTriggerRef={operatorsTriggerRef}
-              footer={timestampsFooter}
-            />
-          </div>
-        ) : (
-          <div className="engagement-create-form">
-            <EngagementFormFields
-              clients={clients}
-              contacts={contacts}
-              operators={operators}
-              selectedOps={selectedOps}
-              setSelectedOps={setSelectedOps}
-              opsOpen={opsOpen}
-              setOpsOpen={setOpsOpen}
-              selectedContacts={selectedContacts}
-              setSelectedContacts={setSelectedContacts}
-              contactsOpen={contactsOpen}
-              setContactsOpen={setContactsOpen}
-              selectedTAs={selectedTAs}
-              setSelectedTAs={setSelectedTAs}
-              tasOpen={tasOpen}
-              setTasOpen={setTasOpen}
-              dropdownRef={dropdownRef}
-              contactDropdownRef={contactDropdownRef}
-              taDropdownRef={taDropdownRef}
-              codeNameRef={codeNameInputRef}
-              notesRef={notesRef}
-              contactsTriggerRef={contactsTriggerRef}
-              taTriggerRef={taTriggerRef}
-              operatorsTriggerRef={operatorsTriggerRef}
-              values={formData}
-              onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
-            />
-            {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
-          </div>
-        )}
+        <div className="engagement-create-form">
+          <EngagementFormFields
+            readOnly={!isEditing}
+            values={isEditing ? formData : engagementToFormValues(engagement)}
+            onFieldChange={isEditing ? (field, value) => setFormData((prev) => ({ ...prev, [field]: value })) : undefined}
+            clients={clients}
+            contacts={contacts}
+            operators={operators}
+            selectedOps={isEditing ? selectedOps : (engagement.operators?.map((o: any) => o.id) || [])}
+            setSelectedOps={isEditing ? setSelectedOps : noop}
+            opsOpen={isEditing ? opsOpen : false}
+            setOpsOpen={isEditing ? setOpsOpen : noop}
+            selectedContacts={isEditing ? selectedContacts : (engagement.contacts?.map((c: any) => c.id) || [])}
+            setSelectedContacts={isEditing ? setSelectedContacts : noop}
+            contactsOpen={isEditing ? contactsOpen : false}
+            setContactsOpen={isEditing ? setContactsOpen : noop}
+            selectedTAs={isEditing ? selectedTAs : (engagement.trustedAgents?.map((t: any) => t.id) || [])}
+            setSelectedTAs={isEditing ? setSelectedTAs : noop}
+            tasOpen={isEditing ? tasOpen : false}
+            setTasOpen={isEditing ? setTasOpen : noop}
+            dropdownRef={dropdownRef}
+            contactDropdownRef={contactDropdownRef}
+            taDropdownRef={taDropdownRef}
+            codeNameRef={codeNameInputRef}
+            notesRef={notesRef}
+            contactsTriggerRef={contactsTriggerRef}
+            taTriggerRef={taTriggerRef}
+            operatorsTriggerRef={operatorsTriggerRef}
+            footer={timestampsFooter}
+          />
+          {isEditing && error ? (
+            <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>
+          ) : null}
+        </div>
       </Modal>
       )}
 
@@ -438,7 +410,7 @@ export function EngagementDetailButton({
           isOpen={isScheduleOpen}
           onClose={() => { setIsScheduleOpen(false); setIsScheduleEditing(false); setScheduleError(null); }}
           title={isScheduleEditing ? 'Edit Engagement Schedule' : 'Engagement Schedule'}
-          maxWidth="520px"
+          maxWidth="560px"
           zIndex={1100}
           headerActions={isScheduleEditing ? (
             <>

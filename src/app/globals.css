@@ -51,6 +51,27 @@ body {
   -webkit-backdrop-filter: none;
 }
 
+.modal-panel__centered-extra {
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.modal-panel__centered-extra > * {
+  pointer-events: auto;
+}
+
+.modal-panel--has-centered-extra .modal-header {
+  min-height: 2.75rem;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -64,14 +85,6 @@ body {
   flex-shrink: 0;
 }
 
-.modal-header__extra {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 0;
-}
-
 .modal-header__actions {
   display: flex;
   gap: 0.5rem;
@@ -80,15 +93,18 @@ body {
   margin-left: auto;
 }
 
+.modal-panel__centered-extra .engagement-findings-section,
 .modal-header__extra .engagement-findings-section {
   padding: 0.35rem 0.65rem;
   width: fit-content;
 }
 
+.modal-panel__centered-extra .engagement-findings-panel,
 .modal-header__extra .engagement-findings-panel {
   gap: 0.5rem;
 }
 
+.modal-panel__centered-extra .engagement-findings-panel__counts,
 .modal-header__extra .engagement-findings-panel__counts {
   gap: 0.4rem;
 }
@@ -424,6 +440,8 @@ select.form-input {
 
 .engagement-form-dates .form-input {
   width: 175px;
+  height: calc(0.75rem * 2 + 1rem * 1.5);
+  min-height: calc(0.75rem * 2 + 1rem * 1.5);
   box-sizing: border-box;
 }
 
@@ -454,6 +472,7 @@ select.form-input {
 
 .engagement-schedule-grid .form-input {
   width: 175px;
+  min-height: calc(0.75rem * 2 + 1rem * 1.5);
   box-sizing: border-box;
 }
 

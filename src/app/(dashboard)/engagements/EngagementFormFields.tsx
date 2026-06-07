@@ -169,18 +169,23 @@ export function EngagementFormFields({
     return new Date(year, month - 1, day).toLocaleDateString();
   };
 
+  const testingDateInputStyle = {
+    height: 'calc(0.75rem * 2 + 1rem * 1.5)',
+    boxSizing: 'border-box' as const,
+  };
+
   const testingDateProps = (field: 'startTesting' | 'endTesting', name: string) => {
     if (readOnly && values) {
       return {
         type: 'text' as const,
         readOnly: true as const,
         value: formatTestingDate(values[field]),
-        style: { pointerEvents: 'none' as const },
+        style: { pointerEvents: 'none' as const, ...testingDateInputStyle },
       };
     }
     return {
       type: 'date' as const,
-      style: dateStyle,
+      style: { ...dateStyle, ...testingDateInputStyle },
       ...textProps(field, name),
     };
   };
