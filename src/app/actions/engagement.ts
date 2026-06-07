@@ -153,6 +153,30 @@ export async function updateEngagement(id: string, prevState: any, formData: For
   }
 }
 
+export async function updateEngagementSchedule(id: string, formData: FormData) {
+  try {
+    await prisma.engagement.update({
+      where: { id },
+      data: {
+        startPlanning: parseOptionalDate(formData.get('startPlanning')),
+        endPlanning: parseOptionalDate(formData.get('endPlanning')),
+        startPrep: parseOptionalDate(formData.get('startPrep')),
+        endPrep: parseOptionalDate(formData.get('endPrep')),
+        startTesting: parseOptionalDate(formData.get('startTesting')),
+        endTesting: parseOptionalDate(formData.get('endTesting')),
+        startReporting: parseOptionalDate(formData.get('startReporting')),
+        endReporting: parseOptionalDate(formData.get('endReporting')),
+        outbrief: parseOptionalDate(formData.get('outbrief')),
+      },
+    });
+    revalidatePath('/engagements');
+    return { success: true };
+  } catch (e) {
+    console.error(e);
+    return { error: 'Failed to update engagement schedule.' };
+  }
+}
+
 export async function deleteEngagement(id: string) {
   try {
     await prisma.engagement.delete({ where: { id } });

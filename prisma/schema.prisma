@@ -32,12 +32,19 @@ model Engagement {
   focus                String?
   type                 EngagementType?
   location             Location?
-  startTesting         DateTime?
-  endTesting           DateTime?
   objectives           String?
   targets              String?
   exclusions           String?
   notes                String?
+  startPlanning        DateTime?
+  endPlanning          DateTime?
+  startPrep            DateTime?
+  endPrep              DateTime?
+  startTesting         DateTime?
+  endTesting           DateTime?
+  startReporting       DateTime?
+  endReporting         DateTime?
+  outbrief             DateTime?
   operators            Operator[]    // Implicit M:N
   contacts             Contact[]     @relation("EngagementContacts")
   trustedAgents        Contact[]     @relation("TrustedAgents")

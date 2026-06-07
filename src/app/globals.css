@@ -427,6 +427,36 @@ select.form-input {
   box-sizing: border-box;
 }
 
+.engagement-schedule-grid {
+  display: grid;
+  grid-template-columns: max-content 175px 175px;
+  column-gap: 1.25rem;
+  row-gap: 0.75rem;
+  align-items: center;
+}
+
+.engagement-schedule-grid__header {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.engagement-schedule-grid__row {
+  display: contents;
+}
+
+.engagement-schedule-grid__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding-right: 0.5rem;
+}
+
+.engagement-schedule-grid .form-input {
+  width: 175px;
+  box-sizing: border-box;
+}
+
 .engagement-form-timestamps {
   display: grid;
   grid-template-columns: max-content 1fr;

@@ -2,7 +2,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
+import { updateEngagement, updateEngagementSchedule, deleteEngagement } from '@/app/actions/engagement';
+import {
+  EngagementScheduleFields,
+  engagementToScheduleValues,
+  type EngagementScheduleValues,
+} from './EngagementScheduleFields';
 import { focusEditFieldAtStart } from '@/lib/edit-field-focus';
 import { EngagementFormFields, engagementToFormValues } from './EngagementFormFields';
 import {
@@ -43,15 +48,30 @@ export function EngagementDetailButton({
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
     mapEngagementFindings(initialEngagement.findings)
   );
+  const [isOpen, setIsOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isScheduleEditing, setIsScheduleEditing] = useState(false);
+  const [isSchedulePending, setIsSchedulePending] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [scheduleFormData, setScheduleFormData] = useState<EngagementScheduleValues>(
+    engagementToScheduleValues(initialEngagement)
+  );
+  const [isEditing, setIsEditing] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setEngagement(initialEngagement);
     setFindings(mapEngagementFindings(initialEngagement.findings));
+    setScheduleFormData(engagementToScheduleValues(initialEngagement));
   }, [initialEngagement]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isScheduleOpen) {
+      setScheduleFormData(engagementToScheduleValues(engagement));
+      setScheduleError(null);
+    }
+  }, [isScheduleOpen, engagement]);
 
   const [formData, setFormData] = useState({
     codeName: initialEngagement.codeName,
@@ -153,6 +173,51 @@ export function EngagementDetailButton({
     }
   };
 
+  const handleScheduleSave = async () => {
+    setIsSchedulePending(true);
+    setScheduleError(null);
+    try {
+      const data = new FormData();
+      Object.entries(scheduleFormData).forEach(([key, value]) => {
+        data.append(key, value);
+      });
+      const result = await updateEngagementSchedule(engagement.id, data);
+      if (result?.error) {
+        setScheduleError(result.error);
+      } else {
+        const toNullableDate = (iso: string) => (iso ? new Date(iso) : null);
+        setEngagement({
+          ...engagement,
+          startPlanning: toNullableDate(scheduleFormData.startPlanning),
+          endPlanning: toNullableDate(scheduleFormData.endPlanning),
+          startPrep: toNullableDate(scheduleFormData.startPrep),
+          endPrep: toNullableDate(scheduleFormData.endPrep),
+          startTesting: toNullableDate(scheduleFormData.startTesting),
+          endTesting: toNullableDate(scheduleFormData.endTesting),
+          startReporting: toNullableDate(scheduleFormData.startReporting),
+          endReporting: toNullableDate(scheduleFormData.endReporting),
+          outbrief: toNullableDate(scheduleFormData.outbrief),
+        });
+        setFormData((prev) => ({
+          ...prev,
+          startTesting: scheduleFormData.startTesting,
+          endTesting: scheduleFormData.endTesting,
+        }));
+        setIsScheduleEditing(false);
+      }
+    } catch {
+      setScheduleError('An error occurred while saving the schedule.');
+    } finally {
+      setIsSchedulePending(false);
+    }
+  };
+
+  const handleScheduleCancel = () => {
+    setScheduleFormData(engagementToScheduleValues(engagement));
+    setScheduleError(null);
+    setIsScheduleEditing(false);
+  };
+
   const timestampsFooter = (
     <div className="engagement-form-timestamps">
       <div>Created</div>
@@ -186,7 +251,7 @@ export function EngagementDetailButton({
       {isOpen && (
         <Modal 
           isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+          onClose={() => { setIsOpen(false); setIsScheduleOpen(false); setIsScheduleEditing(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
         headerExtra={findingsSection}
@@ -197,6 +262,31 @@ export function EngagementDetailButton({
           </>
         ) : (
           <>
+            <button
+              type="button"
+              onClick={() => setIsScheduleOpen(true)}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Schedule
+            </button>
             <button
               onClick={() => {
                 setFormData({
@@ -341,6 +431,81 @@ export function EngagementDetailButton({
           </div>
         )}
       </Modal>
+      )}
+
+      {isScheduleOpen && (
+        <Modal
+          isOpen={isScheduleOpen}
+          onClose={() => { setIsScheduleOpen(false); setIsScheduleEditing(false); setScheduleError(null); }}
+          title={isScheduleEditing ? 'Edit Engagement Schedule' : 'Engagement Schedule'}
+          maxWidth="520px"
+          zIndex={1100}
+          headerActions={isScheduleEditing ? (
+            <>
+              <button
+                type="button"
+                onClick={handleScheduleSave}
+                className="btn-save"
+                style={{ boxShadow: 'none' }}
+                disabled={isSchedulePending}
+              >
+                {isSchedulePending ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                type="button"
+                onClick={handleScheduleCancel}
+                className="btn-cancel"
+                style={{ boxShadow: 'none' }}
+                disabled={isSchedulePending}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setScheduleFormData(engagementToScheduleValues(engagement));
+                setScheduleError(null);
+                setIsScheduleEditing(true);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--surface-border)',
+                color: 'var(--text-main)',
+                cursor: 'pointer',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                fontWeight: 600,
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#0066ff';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 102, 255, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--surface-border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              Edit
+            </button>
+          )}
+        >
+          <EngagementScheduleFields
+            values={scheduleFormData}
+            readOnly={!isScheduleEditing}
+            onFieldChange={(field, value) =>
+              setScheduleFormData((prev) => ({ ...prev, [field]: value }))
+            }
+          />
+          {scheduleError ? (
+            <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.75rem', fontSize: '0.85rem' }}>
+              {scheduleError}
+            </div>
+          ) : null}
+        </Modal>
       )}
     </>
   );
