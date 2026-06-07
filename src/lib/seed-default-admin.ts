@@ -9,7 +9,7 @@ export async function seedDefaultAdminUser(): Promise<void> {
     data: {
       username: 'admin',
       passwordHash,
-      role: 'ADMIN',
+      role: 'Admin',
     },
   });
 }

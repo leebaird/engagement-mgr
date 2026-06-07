@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth/session';
 
 export async function requireAdmin() {
   const session = await getSession();
-  if (!session || session.role !== 'ADMIN') {
+  if (!session || session.role !== 'Admin') {
     return null;
   }
   return session;

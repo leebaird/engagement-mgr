@@ -207,7 +207,7 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
               <select
                 value={formData.role}
                 onChange={e => {
-                  if (isLastAdmin && e.target.value === 'USER') return;
+                  if (isLastAdmin && e.target.value === 'User') return;
                   setFormData({ ...formData, role: e.target.value });
                 }}
                 className="form-input"
@@ -237,14 +237,14 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
                   }
                 }}
               >
-                <option value="ADMIN">Admin</option>
-                <option value="USER" disabled={isLastAdmin}>User</option>
+                <option value="Admin">Admin</option>
+                <option value="User" disabled={isLastAdmin}>User</option>
               </select>
             ) : (
               <input
                 readOnly
                 type="text"
-                value={user.role === 'ADMIN' ? 'Admin' : 'User'}
+                value={user.role === 'Admin' ? 'Admin' : 'User'}
                 className="form-input"
                 style={{ pointerEvents: 'none' }}
               />

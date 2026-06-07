@@ -8,7 +8,7 @@ import { UserDetailButton } from './UserDetailButton';
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
   const session = await getSession();
-  if (session?.role !== 'ADMIN') {
+  if (session?.role !== 'Admin') {
     redirect('/');
   }
 
@@ -21,7 +21,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     orderBy: { [sortCol]: sortDir }
   });
 
-  const adminCount = users.filter(u => u.role === 'ADMIN').length;
+  const adminCount = users.filter(u => u.role === 'Admin').length;
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
@@ -71,12 +71,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   <span style={{
                     padding: '0.25rem 0.5rem',
                     borderRadius: '4px',
-                    background: user.role === 'ADMIN' ? 'var(--sidebar-active-bg)' : 'rgba(255,255,255,0.1)',
-                    color: user.role === 'ADMIN' ? 'var(--sidebar-active)' : 'var(--text-main)',
+                    background: user.role === 'Admin' ? 'var(--sidebar-active-bg)' : 'rgba(255,255,255,0.1)',
+                    color: user.role === 'Admin' ? 'var(--sidebar-active)' : 'var(--text-main)',
                     fontSize: '0.8rem',
                     fontWeight: 600
                   }}>
-                    {user.role === 'ADMIN' ? 'Admin' : 'User'}
+                    {user.role === 'Admin' ? 'Admin' : 'User'}
                   </span>
                 </td>
                 <td style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -85,7 +85,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 <td style={{ padding: '0.25rem', display: 'flex', justifyContent: 'flex-end', width: '40px' }}>
                   <UserDetailButton
                     user={user}
-                    isLastAdmin={user.role === 'ADMIN' && adminCount <= 1}
+                    isLastAdmin={user.role === 'Admin' && adminCount <= 1}
                   />
                 </td>
               </tr>

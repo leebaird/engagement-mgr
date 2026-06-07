@@ -12,10 +12,10 @@ export default async function DashboardHome() {
     operatorCount,
   ] = await Promise.all([
     prisma.engagement.count({
-      where: { status: { notIn: ['PLANNING', 'COMPLETE'] } },
+      where: { status: { notIn: ['Planning', 'Complete'] } },
     }),
-    prisma.engagement.count({ where: { status: 'PLANNING' } }),
-    prisma.engagement.count({ where: { status: 'COMPLETE' } }),
+    prisma.engagement.count({ where: { status: 'Planning' } }),
+    prisma.engagement.count({ where: { status: 'Complete' } }),
     prisma.client.count(),
     prisma.contact.count(),
     prisma.finding.count(),

@@ -6,17 +6,16 @@ import { EngagementDetailButton } from './EngagementDetailButton';
 export default async function EngagementsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
 
-  const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startDate', 'endDate'];
+  const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
   const statusOrder: Record<string, number> = {
-    PLANNING: 1,
-    ROE: 2,
-    PREP: 3,
-    LIVE: 4,
-    REPORTING: 5,
-    COMPLETE: 6,
+    Planning: 1,
+    Prep: 2,
+    Testing: 3,
+    Reporting: 4,
+    Complete: 5,
   };
 
   type EngagementOrderBy = NonNullable<Parameters<typeof prisma.engagement.findMany>[0]>['orderBy'];
@@ -32,10 +31,10 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
     orderBy = { focus: sortDir };
   } else if (sortCol === 'type') {
     orderBy = { type: sortDir };
-  } else if (sortCol === 'startDate') {
-    orderBy = { startDate: sortDir };
+  } else if (sortCol === 'startTesting') {
+    orderBy = { startTesting: sortDir };
   } else {
-    orderBy = { endDate: sortDir };
+    orderBy = { endTesting: sortDir };
   }
 
   let engagements = await prisma.engagement.findMany({
@@ -100,10 +99,10 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                 <Link href={getSortHref('type')} style={{ color: 'inherit', textDecoration: 'none' }}>Type{getSortIcon('type')}</Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('startDate')} style={{ color: 'inherit', textDecoration: 'none' }}>Start{getSortIcon('startDate')}</Link>
+                <Link href={getSortHref('startTesting')} style={{ color: 'inherit', textDecoration: 'none' }}>Start{getSortIcon('startTesting')}</Link>
               </th>
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('endDate')} style={{ color: 'inherit', textDecoration: 'none' }}>End{getSortIcon('endDate')}</Link>
+                <Link href={getSortHref('endTesting')} style={{ color: 'inherit', textDecoration: 'none' }}>End{getSortIcon('endTesting')}</Link>
               </th>
               <th style={{ padding: '0.75rem', width: '40px' }}></th>
             </tr>
@@ -114,12 +113,12 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{eng.codeName}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.client.company}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>
-                  {eng.status ? eng.status.charAt(0).toUpperCase() + eng.status.slice(1).toLowerCase() : ''}
+                  {eng.status ?? ''}
                 </td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || ''}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? eng.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startDate?.toLocaleDateString() || ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endDate?.toLocaleDateString() || ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} />
                 </td>

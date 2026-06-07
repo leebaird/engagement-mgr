@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth/session';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const isAdmin = session?.role === 'ADMIN';
+  const isAdmin = session?.role === 'Admin';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>

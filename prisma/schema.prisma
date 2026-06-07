@@ -10,7 +10,7 @@ model User {
   id                   String        @id @default(uuid())
   username             String        @unique
   passwordHash         String
-  role                 Role          @default(USER)
+  role                 Role          @default(User)
   lastPasswordChange   DateTime      @default(now())
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
@@ -18,8 +18,8 @@ model User {
 }
 
 enum Role {
-  ADMIN
-  USER
+  Admin
+  User
 }
 
 model Engagement {
@@ -32,8 +32,8 @@ model Engagement {
   focus                String?
   type                 EngagementType?
   location             Location?
-  startDate            DateTime?
-  endDate              DateTime?
+  startTesting         DateTime?
+  endTesting           DateTime?
   objectives           String?
   targets              String?
   exclusions           String?
@@ -48,12 +48,11 @@ model Engagement {
 }
 
 enum EngagementStatus {
-  PLANNING
-  ROE
-  PREP
-  LIVE
-  REPORTING
-  COMPLETE
+  Planning
+  Prep
+  Testing
+  Reporting
+  Complete
 }
 
 enum EngagementType {
@@ -73,8 +72,8 @@ enum EngagementType {
 }
 
 enum Location {
-  INTERNAL
-  EXTERNAL
+  Internal
+  External
 }
 
 model Client {

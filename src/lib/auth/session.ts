@@ -6,7 +6,7 @@ const encodedKey = new TextEncoder().encode(secretKey);
 
 export interface SessionPayload {
   userId: string;
-  role: 'ADMIN' | 'USER';
+  role: 'Admin' | 'User';
   lastPasswordChange: string;
 }
 

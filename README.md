@@ -137,8 +137,8 @@ This section documents the architecture, database schema, security measures, and
 
 ### Database Schema
 
-- **User**: `id`, `username`, `passwordHash`, `role` (ADMIN, USER), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
-- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (PLANNING, ROE, PREP, LIVE, REPORTING, COMPLETE), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (INTERNAL, EXTERNAL), `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
+- **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
+- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Planning, Prep, Testing, Reporting, Complete), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (Internal, External), `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
 - **Finding**: `id`, `engagementId` (optional), `title`, `category`, `severity`, `background`, `remediation`, `supportingData` (DB column: `supportingLinks`), `screenshots`, `engagementContext`, `createdAt`, `updatedAt`.
@@ -171,7 +171,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `ADMIN` roles can access the `/users` endpoint to create new accounts (the UI dynamically hides the Users navigation button from non-admins). Only admins can back up, restore, or reset the database from the Users page.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `Admin` roles can access the `/users` endpoint to create new accounts (the UI dynamically hides the Users navigation button from non-admins). Only admins can back up, restore, or reset the database from the Users page.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

@@ -52,8 +52,8 @@ export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
             onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}
           >
             <option value=""></option>
-            <option value="ADMIN">Admin</option>
-            <option value="USER">User</option>
+            <option value="Admin">Admin</option>
+            <option value="User">User</option>
           </select>
         </div>
 

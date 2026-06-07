@@ -6,24 +6,24 @@ import { getSession } from '@/lib/auth/session';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 import { revalidatePath } from 'next/cache';
 
-async function wouldRemoveLastAdmin(userId: string, newRole: 'ADMIN' | 'USER'): Promise<boolean> {
+async function wouldRemoveLastAdmin(userId: string, newRole: 'Admin' | 'User'): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-  if (!user || user.role !== 'ADMIN' || newRole === 'ADMIN') {
+  if (!user || user.role !== 'Admin' || newRole === 'Admin') {
     return false;
   }
-  const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
+  const adminCount = await prisma.user.count({ where: { role: 'Admin' } });
   return adminCount <= 1;
 }
 
 export async function createUser(prevState: any, formData: FormData) {
   const session = await getSession();
-  if (!session || session.role !== 'ADMIN') {
+  if (!session || session.role !== 'Admin') {
     return { error: 'Unauthorized: Only admins can create users.' };
   }
 
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
-  const role = formData.get('role') as 'ADMIN' | 'USER';
+  const role = formData.get('role') as 'Admin' | 'User';
 
   if (!username || !password || !role) {
     return { error: 'All fields are required.', fields: { username, role } };
@@ -60,13 +60,13 @@ export async function createUser(prevState: any, formData: FormData) {
 
 export async function updateUser(id: string, prevState: any, formData: FormData) {
   const session = await getSession();
-  if (!session || session.role !== 'ADMIN') {
+  if (!session || session.role !== 'Admin') {
     return { error: 'Unauthorized: Only admins can update users.' };
   }
 
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
-  const role = formData.get('role') as 'ADMIN' | 'USER';
+  const role = formData.get('role') as 'Admin' | 'User';
 
   if (!username || !role) {
     return { error: 'Username and Role are required.' };
@@ -112,7 +112,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
 
 export async function deleteUser(id: string) {
   const session = await getSession();
-  if (!session || session.role !== 'ADMIN') {
+  if (!session || session.role !== 'Admin') {
     return { error: 'Unauthorized' };
   }
 
@@ -121,7 +121,7 @@ export async function deleteUser(id: string) {
     return { error: 'You cannot delete yourself.' };
   }
 
-  if (await wouldRemoveLastAdmin(id, 'USER')) {
+  if (await wouldRemoveLastAdmin(id, 'User')) {
     return { error: 'Cannot delete the last admin account.' };
   }
 

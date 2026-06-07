@@ -11,8 +11,8 @@ export type EngagementFormValues = {
   focus: string;
   type: string;
   location: string;
-  startDate: string;
-  endDate: string;
+  startTesting: string;
+  endTesting: string;
   objectives: string;
   targets: string;
   exclusions: string;
@@ -27,8 +27,8 @@ export function engagementToFormValues(engagement: {
   focus?: string | null;
   type?: string | null;
   location?: string | null;
-  startDate?: string | Date | null;
-  endDate?: string | Date | null;
+  startTesting?: string | Date | null;
+  endTesting?: string | Date | null;
   objectives?: string | null;
   targets?: string | null;
   exclusions?: string | null;
@@ -45,8 +45,8 @@ export function engagementToFormValues(engagement: {
     focus: engagement.focus || '',
     type: engagement.type || '',
     location: engagement.location || '',
-    startDate: toDate(engagement.startDate),
-    endDate: toDate(engagement.endDate),
+    startTesting: toDate(engagement.startTesting),
+    endTesting: toDate(engagement.endTesting),
     objectives: engagement.objectives || '',
     targets: engagement.targets || '',
     exclusions: engagement.exclusions || '',
@@ -162,6 +162,29 @@ export function EngagementFormFields({
     ...(readOnly ? { pointerEvents: 'none' as const } : {}),
   };
 
+  const formatTestingDate = (iso: string) => {
+    if (!iso) return '';
+    const [year, month, day] = iso.split('-').map(Number);
+    if (!year || !month || !day) return '';
+    return new Date(year, month - 1, day).toLocaleDateString();
+  };
+
+  const testingDateProps = (field: 'startTesting' | 'endTesting', name: string) => {
+    if (readOnly && values) {
+      return {
+        type: 'text' as const,
+        readOnly: true as const,
+        value: formatTestingDate(values[field]),
+        style: { pointerEvents: 'none' as const },
+      };
+    }
+    return {
+      type: 'date' as const,
+      style: dateStyle,
+      ...textProps(field, name),
+    };
+  };
+
   return (
     <>
       <div className="engagement-form-grid">
@@ -170,19 +193,15 @@ export function EngagementFormFields({
           <div className="form-group">
             <label className="form-label">Start</label>
             <input
-              type="date"
               className="form-input"
-              style={dateStyle}
-              {...textProps('startDate', 'startDate')}
+              {...testingDateProps('startTesting', 'startTesting')}
             />
           </div>
           <div className="form-group">
             <label className="form-label">End</label>
             <input
-              type="date"
               className="form-input"
-              style={dateStyle}
-              {...textProps('endDate', 'endDate')}
+              {...testingDateProps('endTesting', 'endTesting')}
             />
           </div>
         </div>
@@ -236,12 +255,11 @@ export function EngagementFormFields({
             {...selectProps('status', 'status')}
           >
             <option value=""></option>
-            <option value="PLANNING">Planning</option>
-            <option value="ROE">ROE</option>
-            <option value="PREP">Prep</option>
-            <option value="LIVE">Live</option>
-            <option value="REPORTING">Reporting</option>
-            <option value="COMPLETE">Complete</option>
+            <option value="Planning">Planning</option>
+            <option value="Prep">Prep</option>
+            <option value="Testing">Testing</option>
+            <option value="Reporting">Reporting</option>
+            <option value="Complete">Complete</option>
           </select>
         </div>
         <div className="form-group">
@@ -281,8 +299,8 @@ export function EngagementFormFields({
             {...selectProps('location', 'location')}
           >
             <option value=""></option>
-            <option value="INTERNAL">Internal</option>
-            <option value="EXTERNAL">External</option>
+            <option value="Internal">Internal</option>
+            <option value="External">External</option>
           </select>
         </div>
         {footer}
