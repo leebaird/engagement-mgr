@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from '../findings/CreateFindingForm';
 import { FindingDetailButton } from '../findings/FindingDetailButton';
@@ -66,43 +65,32 @@ export function EngagementFindingsPanel({
 
   return (
     <>
-      <div className="engagement-findings-panel">
-        <div className="engagement-findings-panel__total">
+      <button
+        type="button"
+        className="engagement-findings-panel"
+        onClick={() => setViewOpen(true)}
+        aria-label="View engagement findings"
+      >
+        <span className="engagement-findings-panel__total">
           <span className="engagement-findings-panel__total-label">Total Findings</span>
           <span className="engagement-findings-panel__total-value">{counts.total}</span>
-        </div>
-        <div className="engagement-findings-panel__counts">
+        </span>
+        <span className="engagement-findings-panel__counts">
           {SEVERITY_LABELS.map((label) => (
-            <div key={label} className="engagement-findings-panel__count">
+            <span key={label} className="engagement-findings-panel__count">
               <span
                 className="engagement-findings-panel__badge"
-                style={{
-                  ...getSeverityStyle(label),
-                  padding: '0.15rem 0.45rem',
-                  borderRadius: '4px',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                }}
+                style={getSeverityStyle(label)}
               >
                 {label}
               </span>
               <span className="engagement-findings-panel__count-value">
                 {counts[label]}
               </span>
-            </div>
+            </span>
           ))}
-        </div>
-        <div className="engagement-findings-panel__actions">
-          <button
-            type="button"
-            className="detail-icon-btn"
-            onClick={() => setViewOpen(true)}
-            title="View findings"
-          >
-            <Eye size={16} />
-          </button>
-        </div>
-      </div>
+        </span>
+      </button>
 
       {viewOpen && (
         <Modal
