@@ -276,18 +276,18 @@ export function EngagementFormFields({
           >
             <option value=""></option>
             <option value="AI">AI</option>
-            <option value="CODE_REVIEW">Code Review</option>
-            <option value="FIREWALL">Firewall</option>
-            <option value="MULTI">Multi</option>
-            <option value="PENTEST">Pentest</option>
-            <option value="PHISHING">Phishing</option>
-            <option value="PHYSICAL">Physical</option>
-            <option value="PURPLE_TEAM">Purple Team</option>
-            <option value="RED_TEAM">Red Team</option>
-            <option value="USB_DROP">USB Drop</option>
-            <option value="VISHING">Vishing</option>
-            <option value="WEB_APP">Web App</option>
-            <option value="WIRELESS">Wireless</option>
+            <option value="Code_Review">Code Review</option>
+            <option value="Firewall">Firewall</option>
+            <option value="Multi">Multi</option>
+            <option value="Pentest">Pentest</option>
+            <option value="Phishing">Phishing</option>
+            <option value="Physical">Physical</option>
+            <option value="Purple_Team">Purple Team</option>
+            <option value="Red_Team">Red Team</option>
+            <option value="USB_Drop">USB Drop</option>
+            <option value="Vishing">Vishing</option>
+            <option value="Web_App">Web App</option>
+            <option value="Wireless">Wireless</option>
           </select>
         </div>
         <div className="form-group">

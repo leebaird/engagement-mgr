@@ -3,6 +3,17 @@ import Link from 'next/link';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
 
+function formatEngagementType(type: string): string {
+  return type
+    .split('_')
+    .map((word) => {
+      const upper = word.toUpperCase();
+      if (upper === 'AI' || upper === 'USB') return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
 export default async function EngagementsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
   const { sort, dir } = await searchParams;
 
@@ -116,7 +127,7 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                   {eng.status ?? ''}
                 </td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? eng.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : ''}</td>
+                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? formatEngagementType(eng.type) : ''}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>

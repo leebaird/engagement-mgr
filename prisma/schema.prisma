@@ -57,18 +57,18 @@ enum EngagementStatus {
 
 enum EngagementType {
   AI
-  CODE_REVIEW
-  FIREWALL
-  MULTI
-  PENTEST
-  PHISHING
-  PHYSICAL
-  PURPLE_TEAM
-  RED_TEAM
-  USB_DROP
-  VISHING
-  WEB_APP
-  WIRELESS
+  Code_Review
+  Firewall
+  Multi
+  Pentest
+  Phishing
+  Physical
+  Purple_Team
+  Red_Team
+  USB_Drop
+  Vishing
+  Web_App
+  Wireless
 }
 
 enum Location {
