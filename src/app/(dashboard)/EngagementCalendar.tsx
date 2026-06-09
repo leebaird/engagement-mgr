@@ -1,22 +1,28 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
+  buildBannerSegmentsForRow,
   extractScheduleEvents,
-  formatScheduleEventLabel,
-  getPhaseRangesForEngagement,
-  isDateInPhaseRange,
+  getEngagementsOnDate,
   SCHEDULE_PHASE_COLORS,
-  type EngagementScheduleSource,
+  type EngagementCalendarItem,
   type ScheduleEvent,
   type SchedulePhase,
 } from '@/lib/engagement-schedule-events';
+import {
+  EngagementScheduleModal,
+  type ScheduleEngagement,
+} from './engagements/EngagementScheduleModal';
+import { Modal } from '@/components/Modal';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbrief'];
+
 type EngagementCalendarProps = {
-  engagements: EngagementScheduleSource[];
+  engagements: EngagementCalendarItem[];
 };
 
 function toDateKeyFromParts(year: number, month: number, day: number): string {
@@ -31,7 +37,7 @@ function getWorkWeekIndex(date: Date): number | null {
   return dayOfWeek - 1;
 }
 
-function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[] {
+function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[][] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (string | null)[] = [];
 
@@ -53,7 +59,11 @@ function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[] 
     cells.push(null);
   }
 
-  return cells;
+  const rows: (string | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 5) {
+    rows.push(cells.slice(i, i + 5));
+  }
+  return rows;
 }
 
 function formatMonthYear(year: number, month: number): string {
@@ -63,12 +73,28 @@ function formatMonthYear(year: number, month: number): string {
   });
 }
 
-export function EngagementCalendar({ engagements }: EngagementCalendarProps) {
+function formatPickerDate(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  if (!year || !month || !day) return dateKey;
+  return new Date(year, month - 1, day).toLocaleDateString();
+}
+
+export function EngagementCalendar({ engagements: initialEngagements }: EngagementCalendarProps) {
+  const router = useRouter();
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
 
+  const [engagements, setEngagements] = useState(initialEngagements);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [pickerDateKey, setPickerDateKey] = useState<string | null>(null);
+  const [pickerEngagements, setPickerEngagements] = useState<ScheduleEngagement[]>([]);
+  const [scheduleEngagement, setScheduleEngagement] = useState<ScheduleEngagement | null>(null);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
+  useEffect(() => {
+    setEngagements(initialEngagements);
+  }, [initialEngagements]);
 
   const events = useMemo(() => extractScheduleEvents(engagements), [engagements]);
   const eventsByDate = useMemo(() => {
@@ -81,7 +107,15 @@ export function EngagementCalendar({ engagements }: EngagementCalendarProps) {
     return map;
   }, [events]);
 
-  const monthCells = useMemo(
+  const engagementsById = useMemo(() => {
+    const map = new Map<string, ScheduleEngagement>();
+    for (const engagement of engagements) {
+      map.set(engagement.id, engagement);
+    }
+    return map;
+  }, [engagements]);
+
+  const weekRows = useMemo(
     () => buildWorkWeekMonthGrid(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
@@ -97,110 +131,194 @@ export function EngagementCalendar({ engagements }: EngagementCalendarProps) {
     setViewMonth(today.getMonth());
   };
 
-  const getRangeStyles = (dateKey: string) => {
-    const backgrounds: string[] = [];
+  const openScheduleForEngagement = (engagement: ScheduleEngagement) => {
+    setScheduleEngagement(engagement);
+    setIsScheduleOpen(true);
+    setPickerDateKey(null);
+    setPickerEngagements([]);
+  };
 
-    for (const engagement of engagements) {
-      for (const range of getPhaseRangesForEngagement(engagement)) {
-        if (!isDateInPhaseRange(dateKey, range.start, range.end)) continue;
-        const color = SCHEDULE_PHASE_COLORS[range.phase];
-        backgrounds.push(`linear-gradient(${color}22, ${color}22)`);
-      }
+  const handleDayClick = (dateKey: string) => {
+    const dayEngagements = getEngagementsOnDate(dateKey, engagements, eventsByDate);
+    if (dayEngagements.length === 0) return;
+
+    if (dayEngagements.length === 1) {
+      openScheduleForEngagement(dayEngagements[0]);
+      return;
     }
 
-    if (backgrounds.length === 0) return undefined;
-    return { background: backgrounds[backgrounds.length - 1] };
+    setPickerDateKey(dateKey);
+    setPickerEngagements(dayEngagements);
+  };
+
+  const handleScheduleUpdated = (updated: ScheduleEngagement) => {
+    setEngagements((prev) =>
+      prev.map((engagement) => (engagement.id === updated.id ? { ...engagement, ...updated } : engagement)),
+    );
+    setScheduleEngagement(updated);
+    router.refresh();
   };
 
   return (
-    <div className="engagement-calendar">
-      <div className="engagement-calendar__header">
-        <div className="engagement-calendar__legend">
-          {PHASES.map((phase) => (
-            <span key={phase} className="engagement-calendar__legend-item">
-              <span
-                className="engagement-calendar__legend-swatch"
-                style={{ backgroundColor: SCHEDULE_PHASE_COLORS[phase] }}
-              />
-              {phase}
-            </span>
+    <>
+      <div className="engagement-calendar">
+        <div className="engagement-calendar__header">
+          <div className="engagement-calendar__legend">
+            {PHASES.map((phase) => (
+              <span key={phase} className="engagement-calendar__legend-item">
+                <span
+                  className="engagement-calendar__legend-swatch"
+                  style={{ backgroundColor: SCHEDULE_PHASE_COLORS[phase] }}
+                />
+                {phase}
+              </span>
+            ))}
+          </div>
+          <div className="engagement-calendar__nav">
+            <button
+              type="button"
+              className="engagement-calendar__nav-btn"
+              onClick={() => shiftMonth(-1)}
+              aria-label="Previous month"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="engagement-calendar__month">{formatMonthYear(viewYear, viewMonth)}</span>
+            <button
+              type="button"
+              className="engagement-calendar__nav-btn"
+              onClick={() => shiftMonth(1)}
+              aria-label="Next month"
+            >
+              <ChevronRight size={16} />
+            </button>
+            <button type="button" className="btn-secondary engagement-calendar__today-btn" onClick={goToToday}>
+              Today
+            </button>
+          </div>
+        </div>
+
+        <div className="engagement-calendar__weekdays">
+          {WEEKDAY_LABELS.map((label) => (
+            <div key={label} className="engagement-calendar__weekday">
+              {label}
+            </div>
           ))}
         </div>
-        <div className="engagement-calendar__nav">
-          <button
-            type="button"
-            className="engagement-calendar__nav-btn"
-            onClick={() => shiftMonth(-1)}
-            aria-label="Previous month"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="engagement-calendar__month">{formatMonthYear(viewYear, viewMonth)}</span>
-          <button
-            type="button"
-            className="engagement-calendar__nav-btn"
-            onClick={() => shiftMonth(1)}
-            aria-label="Next month"
-          >
-            <ChevronRight size={16} />
-          </button>
-          <button type="button" className="btn-secondary engagement-calendar__today-btn" onClick={goToToday}>
-            Today
-          </button>
+
+        <div className="engagement-calendar__weeks">
+          {weekRows.map((row, rowIndex) => {
+            const banners = buildBannerSegmentsForRow(row, engagements);
+            const laneCount = banners.reduce((max, banner) => Math.max(max, banner.lane + 1), 0);
+
+            return (
+              <div key={`week-${rowIndex}`} className="engagement-calendar__week">
+                {row.map((dateKey, colIndex) => {
+                    if (!dateKey) {
+                      return (
+                        <div
+                          key={`empty-${rowIndex}-${colIndex}`}
+                          className="engagement-calendar__day engagement-calendar__day--empty"
+                        />
+                      );
+                    }
+
+                    const dayEngagements = getEngagementsOnDate(dateKey, engagements, eventsByDate);
+                    const isToday = dateKey === todayKey;
+                    const dayNumber = Number(dateKey.split('-')[2]);
+                    const isInteractive = dayEngagements.length > 0;
+
+                    return (
+                      <button
+                        key={dateKey}
+                        type="button"
+                        className={[
+                          'engagement-calendar__day',
+                          isToday ? 'engagement-calendar__day--today' : '',
+                          isInteractive ? 'engagement-calendar__day--interactive' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-label={`${dateKey}, ${dayEngagements.length} scheduled engagements`}
+                        disabled={!isInteractive}
+                        onClick={() => handleDayClick(dateKey)}
+                      >
+                        <span className="engagement-calendar__day-number">{dayNumber}</span>
+                      </button>
+                    );
+                  })}
+
+                {laneCount > 0 ? (
+                  <div
+                    className="engagement-calendar__banner-layer"
+                    style={{ gridTemplateRows: `repeat(${laneCount}, 1.35rem)` }}
+                  >
+                    {banners.map((banner) => (
+                      <button
+                        key={`${banner.engagementId}-${banner.phase}-${rowIndex}-${banner.gridColumnStart}-${banner.lane}`}
+                        type="button"
+                        className="engagement-calendar__banner"
+                        style={{
+                          gridColumn: `${banner.gridColumnStart} / ${banner.gridColumnEnd}`,
+                          gridRow: banner.lane + 1,
+                          backgroundColor: banner.color,
+                        }}
+                        title={banner.label}
+                        onClick={() => {
+                          const engagement = engagementsById.get(banner.engagementId);
+                          if (engagement) openScheduleForEngagement(engagement);
+                        }}
+                      >
+                        {banner.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="engagement-calendar__weekdays">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="engagement-calendar__weekday">
-            {label}
+      {pickerDateKey ? (
+        <Modal
+          isOpen
+          onClose={() => {
+            setPickerDateKey(null);
+            setPickerEngagements([]);
+          }}
+          title="Select Engagement"
+          maxWidth="420px"
+          zIndex={1100}
+        >
+          <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            {formatPickerDate(pickerDateKey)} has multiple scheduled engagements.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {pickerEngagements.map((engagement) => (
+              <button
+                key={engagement.id}
+                type="button"
+                className="btn-secondary"
+                style={{ width: '100%', textAlign: 'left' }}
+                onClick={() => openScheduleForEngagement(engagement)}
+              >
+                {engagement.codeName}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+        </Modal>
+      ) : null}
 
-      <div className="engagement-calendar__grid">
-        {monthCells.map((dateKey, index) => {
-          if (!dateKey) {
-            return <div key={`empty-${index}`} className="engagement-calendar__day engagement-calendar__day--empty" />;
-          }
-
-          const dayEvents = eventsByDate.get(dateKey) ?? [];
-          const isToday = dateKey === todayKey;
-          const dayNumber = Number(dateKey.split('-')[2]);
-
-          return (
-            <div
-              key={dateKey}
-              className={[
-                'engagement-calendar__day',
-                isToday ? 'engagement-calendar__day--today' : '',
-                dayEvents.length > 0 ? 'engagement-calendar__day--has-events' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              style={getRangeStyles(dateKey)}
-              aria-label={`${dateKey}, ${dayEvents.length} schedule events`}
-            >
-              <span className="engagement-calendar__day-number">{dayNumber}</span>
-              {dayEvents.length > 0 ? (
-                <span className="engagement-calendar__markers">
-                  {dayEvents.slice(0, 4).map((event) => (
-                    <span
-                      key={`${event.engagementId}-${event.phase}-${event.kind}`}
-                      className="engagement-calendar__marker"
-                      style={{ backgroundColor: SCHEDULE_PHASE_COLORS[event.phase] }}
-                      title={formatScheduleEventLabel(event)}
-                    />
-                  ))}
-                  {dayEvents.length > 4 ? (
-                    <span className="engagement-calendar__marker-more">+{dayEvents.length - 4}</span>
-                  ) : null}
-                </span>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      <EngagementScheduleModal
+        engagement={scheduleEngagement}
+        isOpen={isScheduleOpen}
+        onClose={() => {
+          setIsScheduleOpen(false);
+          setScheduleEngagement(null);
+        }}
+        onUpdated={handleScheduleUpdated}
+      />
+    </>
   );
 }

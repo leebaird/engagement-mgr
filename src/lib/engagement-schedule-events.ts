@@ -12,6 +12,7 @@ export type ScheduleEvent = {
 export type EngagementScheduleSource = {
   id: string;
   codeName: string;
+  status?: string | null;
   startPrep?: string | Date | null;
   endPrep?: string | Date | null;
   startRecon?: string | Date | null;
@@ -21,6 +22,27 @@ export type EngagementScheduleSource = {
   startReporting?: string | Date | null;
   endReporting?: string | Date | null;
   outbrief?: string | Date | null;
+};
+
+export type EngagementCalendarItem = EngagementScheduleSource;
+
+export type PhaseBanner = {
+  engagementId: string;
+  phase: SchedulePhase;
+  label: string;
+  start: string;
+  end: string;
+  color: string;
+};
+
+export type BannerRowSegment = {
+  engagementId: string;
+  phase: SchedulePhase;
+  label: string;
+  gridColumnStart: number;
+  gridColumnEnd: number;
+  color: string;
+  lane: number;
 };
 
 export const SCHEDULE_PHASE_COLORS: Record<SchedulePhase, string> = {
@@ -113,4 +135,146 @@ export function formatScheduleEventLabel(event: ScheduleEvent): string {
   if (event.phase === 'Outbrief') return `${event.codeName} — Outbrief`;
   const kindLabel = event.kind === 'start' ? 'Start' : 'End';
   return `${event.codeName} — ${event.phase} ${kindLabel}`;
+}
+
+export function getEngagementPhaseBanners(engagement: EngagementCalendarItem): PhaseBanner[] {
+  const banners: PhaseBanner[] = [];
+
+  for (const range of getPhaseRangesForEngagement(engagement)) {
+    if (!range.start) continue;
+    const end = range.end && range.end >= range.start ? range.end : range.start;
+    banners.push({
+      engagementId: engagement.id,
+      phase: range.phase,
+      label: `${engagement.codeName} - ${range.phase}`,
+      start: range.start,
+      end,
+      color: SCHEDULE_PHASE_COLORS[range.phase],
+    });
+  }
+
+  const outbrief = toDateKey(engagement.outbrief);
+  if (outbrief) {
+    banners.push({
+      engagementId: engagement.id,
+      phase: 'Outbrief',
+      label: `${engagement.codeName} - Outbrief`,
+      start: outbrief,
+      end: outbrief,
+      color: SCHEDULE_PHASE_COLORS.Outbrief,
+    });
+  }
+
+  return banners;
+}
+
+export function isEngagementScheduledOnDate(
+  engagement: EngagementCalendarItem,
+  dateKey: string,
+): boolean {
+  for (const banner of getEngagementPhaseBanners(engagement)) {
+    if (isDateInPhaseRange(dateKey, banner.start, banner.end)) return true;
+  }
+  return false;
+}
+
+function appendBannerSegmentsForRow(
+  row: (string | null)[],
+  banner: PhaseBanner,
+  rawSegments: Omit<BannerRowSegment, 'lane'>[],
+) {
+  let segmentStart: number | null = null;
+
+  for (let col = 0; col < row.length; col += 1) {
+    const dateKey = row[col];
+    const inRange = dateKey ? isDateInPhaseRange(dateKey, banner.start, banner.end) : false;
+
+    if (inRange) {
+      if (segmentStart === null) segmentStart = col;
+    } else if (segmentStart !== null) {
+      rawSegments.push({
+        engagementId: banner.engagementId,
+        phase: banner.phase,
+        label: banner.label,
+        gridColumnStart: segmentStart + 1,
+        gridColumnEnd: col + 1,
+        color: banner.color,
+      });
+      segmentStart = null;
+    }
+  }
+
+  if (segmentStart !== null) {
+    rawSegments.push({
+      engagementId: banner.engagementId,
+      phase: banner.phase,
+      label: banner.label,
+      gridColumnStart: segmentStart + 1,
+      gridColumnEnd: row.length + 1,
+      color: banner.color,
+    });
+  }
+}
+
+export function buildBannerSegmentsForRow(
+  row: (string | null)[],
+  engagements: EngagementCalendarItem[],
+): BannerRowSegment[] {
+  const rawSegments: Omit<BannerRowSegment, 'lane'>[] = [];
+
+  for (const engagement of engagements) {
+    for (const banner of getEngagementPhaseBanners(engagement)) {
+      appendBannerSegmentsForRow(row, banner, rawSegments);
+    }
+  }
+
+  rawSegments.sort((a, b) => a.gridColumnStart - b.gridColumnStart || a.label.localeCompare(b.label));
+
+  const lanes: BannerRowSegment[][] = [];
+  for (const segment of rawSegments) {
+    let placed = false;
+    for (let laneIdx = 0; laneIdx < lanes.length; laneIdx += 1) {
+      const overlaps = lanes[laneIdx].some(
+        (existing) =>
+          segment.gridColumnStart < existing.gridColumnEnd &&
+          segment.gridColumnEnd > existing.gridColumnStart,
+      );
+      if (!overlaps) {
+        lanes[laneIdx].push({ ...segment, lane: laneIdx });
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      lanes.push([{ ...segment, lane: lanes.length }]);
+    }
+  }
+
+  return lanes.flat();
+}
+
+export function getEngagementsOnDate(
+  dateKey: string,
+  engagements: EngagementCalendarItem[],
+  eventsByDate: Map<string, ScheduleEvent[]>,
+): EngagementCalendarItem[] {
+  const seen = new Set<string>();
+  const result: EngagementCalendarItem[] = [];
+
+  for (const event of eventsByDate.get(dateKey) ?? []) {
+    if (seen.has(event.engagementId)) continue;
+    const engagement = engagements.find((item) => item.id === event.engagementId);
+    if (!engagement) continue;
+    seen.add(event.engagementId);
+    result.push(engagement);
+  }
+
+  for (const engagement of engagements) {
+    if (seen.has(engagement.id)) continue;
+    if (!isEngagementScheduledOnDate(engagement, dateKey)) continue;
+    seen.add(engagement.id);
+    result.push(engagement);
+  }
+
+  return result;
 }

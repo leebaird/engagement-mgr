@@ -724,13 +724,58 @@ select.form-input {
   padding: 0.25rem 0;
 }
 
-.engagement-calendar__grid {
+.engagement-calendar__weeks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.engagement-calendar__week {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
+.engagement-calendar__banner-layer {
+  position: absolute;
+  top: 1.65rem;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.engagement-calendar__banner {
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.15rem 0.4rem;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.engagement-calendar__banner:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
 .engagement-calendar__day {
+  position: relative;
+  z-index: 1;
+  width: 100%;
   min-height: 7rem;
   border: 1px solid var(--surface-border);
   border-radius: 8px;
@@ -743,6 +788,21 @@ select.form-input {
   gap: 0.25rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   font-family: inherit;
+  text-align: left;
+  appearance: none;
+}
+
+.engagement-calendar__day--interactive:not(:disabled) {
+  cursor: pointer;
+}
+
+.engagement-calendar__day--interactive:not(:disabled):hover {
+  border-color: #0066ff;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+}
+
+.engagement-calendar__day:disabled {
+  cursor: default;
 }
 
 .engagement-calendar__day--empty {
@@ -758,28 +818,10 @@ select.form-input {
 }
 
 .engagement-calendar__day-number {
+  position: relative;
+  z-index: 3;
   font-size: 0.8rem;
   font-weight: 600;
-  line-height: 1;
-}
-
-.engagement-calendar__markers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  margin-top: auto;
-}
-
-.engagement-calendar__marker {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-
-.engagement-calendar__marker-more {
-  font-size: 0.65rem;
-  color: var(--text-muted);
   line-height: 1;
 }
 

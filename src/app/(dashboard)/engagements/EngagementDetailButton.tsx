@@ -2,12 +2,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateEngagement, updateEngagementSchedule, deleteEngagement } from '@/app/actions/engagement';
-import {
-  EngagementScheduleFields,
-  engagementToScheduleValues,
-  type EngagementScheduleValues,
-} from './EngagementScheduleFields';
+import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
+import { EngagementScheduleModal } from './EngagementScheduleModal';
 import { focusEditFieldAtStart } from '@/lib/edit-field-focus';
 import { EngagementFormFields, engagementToFormValues } from './EngagementFormFields';
 import {
@@ -50,12 +46,6 @@ export function EngagementDetailButton({
   );
   const [isOpen, setIsOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [isScheduleEditing, setIsScheduleEditing] = useState(false);
-  const [isSchedulePending, setIsSchedulePending] = useState(false);
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [scheduleFormData, setScheduleFormData] = useState<EngagementScheduleValues>(
-    engagementToScheduleValues(initialEngagement)
-  );
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,15 +53,7 @@ export function EngagementDetailButton({
   useEffect(() => {
     setEngagement(initialEngagement);
     setFindings(mapEngagementFindings(initialEngagement.findings));
-    setScheduleFormData(engagementToScheduleValues(initialEngagement));
   }, [initialEngagement]);
-
-  useEffect(() => {
-    if (isScheduleOpen) {
-      setScheduleFormData(engagementToScheduleValues(engagement));
-      setScheduleError(null);
-    }
-  }, [isScheduleOpen, engagement]);
 
   const [formData, setFormData] = useState({
     codeName: initialEngagement.codeName,
@@ -171,46 +153,6 @@ export function EngagementDetailButton({
     }
   };
 
-  const handleScheduleSave = async () => {
-    setIsSchedulePending(true);
-    setScheduleError(null);
-    try {
-      const data = new FormData();
-      Object.entries(scheduleFormData).forEach(([key, value]) => {
-        data.append(key, value);
-      });
-      const result = await updateEngagementSchedule(engagement.id, data);
-      if (result?.error) {
-        setScheduleError(result.error);
-      } else {
-        const toNullableDate = (iso: string) => (iso ? new Date(iso) : null);
-        setEngagement({
-          ...engagement,
-          startPrep: toNullableDate(scheduleFormData.startPrep),
-          endPrep: toNullableDate(scheduleFormData.endPrep),
-          startRecon: toNullableDate(scheduleFormData.startRecon),
-          endRecon: toNullableDate(scheduleFormData.endRecon),
-          startTesting: toNullableDate(scheduleFormData.startTesting),
-          endTesting: toNullableDate(scheduleFormData.endTesting),
-          startReporting: toNullableDate(scheduleFormData.startReporting),
-          endReporting: toNullableDate(scheduleFormData.endReporting),
-          outbrief: toNullableDate(scheduleFormData.outbrief),
-        });
-        setIsScheduleEditing(false);
-      }
-    } catch {
-      setScheduleError('An error occurred while saving the schedule.');
-    } finally {
-      setIsSchedulePending(false);
-    }
-  };
-
-  const handleScheduleCancel = () => {
-    setScheduleFormData(engagementToScheduleValues(engagement));
-    setScheduleError(null);
-    setIsScheduleEditing(false);
-  };
-
   const timestampsFooter = (
     <div className="engagement-form-timestamps">
       <div>Created</div>
@@ -244,7 +186,7 @@ export function EngagementDetailButton({
       {isOpen && (
         <Modal 
           isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsScheduleOpen(false); setIsScheduleEditing(false); setIsEditing(false); setError(null); }} 
+          onClose={() => { setIsOpen(false); setIsScheduleOpen(false); setIsEditing(false); setError(null); }} 
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
         alignTop
@@ -344,62 +286,29 @@ export function EngagementDetailButton({
       </Modal>
       )}
 
-      {isScheduleOpen && (
-        <Modal
-          isOpen={isScheduleOpen}
-          onClose={() => { setIsScheduleOpen(false); setIsScheduleEditing(false); setScheduleError(null); }}
-          title={isScheduleEditing ? 'Edit Engagement Schedule' : 'Engagement Schedule'}
-          maxWidth="560px"
-          zIndex={1100}
-          headerActions={isScheduleEditing ? (
-            <>
-              <button
-                type="button"
-                onClick={handleScheduleSave}
-                className="btn-save"
-                style={{ boxShadow: 'none' }}
-                disabled={isSchedulePending}
-              >
-                {isSchedulePending ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                type="button"
-                onClick={handleScheduleCancel}
-                className="btn-cancel"
-                style={{ boxShadow: 'none' }}
-                disabled={isSchedulePending}
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => {
-                setScheduleFormData(engagementToScheduleValues(engagement));
-                setScheduleError(null);
-                setIsScheduleEditing(true);
-              }}
-            >
-              Edit
-            </button>
-          )}
-        >
-          <EngagementScheduleFields
-            values={scheduleFormData}
-            readOnly={!isScheduleEditing}
-            onFieldChange={(field, value) =>
-              setScheduleFormData((prev) => ({ ...prev, [field]: value }))
-            }
-          />
-          {scheduleError ? (
-            <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.75rem', fontSize: '0.85rem' }}>
-              {scheduleError}
-            </div>
-          ) : null}
-        </Modal>
-      )}
+      <EngagementScheduleModal
+        engagement={engagement}
+        isOpen={isScheduleOpen}
+        onClose={() => setIsScheduleOpen(false)}
+        onUpdated={(updated) => {
+          const toNullableDate = (value: string | Date | null | undefined) => {
+            if (!value) return null;
+            return value instanceof Date ? value : new Date(value);
+          };
+          setEngagement({
+            ...engagement,
+            startPrep: toNullableDate(updated.startPrep),
+            endPrep: toNullableDate(updated.endPrep),
+            startRecon: toNullableDate(updated.startRecon),
+            endRecon: toNullableDate(updated.endRecon),
+            startTesting: toNullableDate(updated.startTesting),
+            endTesting: toNullableDate(updated.endTesting),
+            startReporting: toNullableDate(updated.startReporting),
+            endReporting: toNullableDate(updated.endReporting),
+            outbrief: toNullableDate(updated.outbrief),
+          });
+        }}
+      />
     </>
   );
 }

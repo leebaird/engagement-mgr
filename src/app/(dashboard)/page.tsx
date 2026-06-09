@@ -27,6 +27,7 @@ export default async function DashboardHome() {
       select: {
         id: true,
         codeName: true,
+        status: true,
         startPrep: true,
         endPrep: true,
         startRecon: true,
