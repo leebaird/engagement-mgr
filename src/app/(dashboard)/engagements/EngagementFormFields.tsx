@@ -11,8 +11,6 @@ export type EngagementFormValues = {
   focus: string;
   type: string;
   location: string;
-  startTesting: string;
-  endTesting: string;
   objectives: string;
   targets: string;
   exclusions: string;
@@ -27,16 +25,11 @@ export function engagementToFormValues(engagement: {
   focus?: string | null;
   type?: string | null;
   location?: string | null;
-  startTesting?: string | Date | null;
-  endTesting?: string | Date | null;
   objectives?: string | null;
   targets?: string | null;
   exclusions?: string | null;
   notes?: string | null;
 }): EngagementFormValues {
-  const toDate = (d: string | Date | null | undefined) =>
-    d ? new Date(d).toISOString().split('T')[0] : '';
-
   return {
     codeName: engagement.codeName || '',
     clientName: engagement.client?.company || '',
@@ -45,8 +38,6 @@ export function engagementToFormValues(engagement: {
     focus: engagement.focus || '',
     type: engagement.type || '',
     location: engagement.location || '',
-    startTesting: toDate(engagement.startTesting),
-    endTesting: toDate(engagement.endTesting),
     objectives: engagement.objectives || '',
     targets: engagement.targets || '',
     exclusions: engagement.exclusions || '',
@@ -155,61 +146,10 @@ export function EngagementFormFields({
     return { name };
   };
 
-  const dateStyle = {
-    colorScheme: 'dark' as const,
-    paddingTop: '0.25rem',
-    paddingBottom: '0.25rem',
-    ...(readOnly ? { pointerEvents: 'none' as const } : {}),
-  };
-
-  const formatTestingDate = (iso: string) => {
-    if (!iso) return '';
-    const [year, month, day] = iso.split('-').map(Number);
-    if (!year || !month || !day) return '';
-    return new Date(year, month - 1, day).toLocaleDateString();
-  };
-
-  const testingDateInputStyle = {
-    height: 'calc(0.75rem * 2 + 1rem * 1.5)',
-    boxSizing: 'border-box' as const,
-  };
-
-  const testingDateProps = (field: 'startTesting' | 'endTesting', name: string) => {
-    if (readOnly && values) {
-      return {
-        type: 'text' as const,
-        readOnly: true as const,
-        value: formatTestingDate(values[field]),
-        style: { pointerEvents: 'none' as const, ...testingDateInputStyle },
-      };
-    }
-    return {
-      type: 'date' as const,
-      style: { ...dateStyle, ...testingDateInputStyle },
-      ...textProps(field, name),
-    };
-  };
-
   return (
     <>
       <div className="engagement-form-grid">
       <div className="engagement-col-left engagement-form-col">
-        <div className="engagement-form-dates">
-          <div className="form-group">
-            <label className="form-label">Start</label>
-            <input
-              className="form-input"
-              {...testingDateProps('startTesting', 'startTesting')}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">End</label>
-            <input
-              className="form-input"
-              {...testingDateProps('endTesting', 'endTesting')}
-            />
-          </div>
-        </div>
         <div className="form-group">
           <label className="form-label">Code Name</label>
           <input
@@ -260,8 +200,8 @@ export function EngagementFormFields({
             {...selectProps('status', 'status')}
           >
             <option value=""></option>
-            <option value="Planning">Planning</option>
             <option value="Prep">Prep</option>
+            <option value="Recon">Recon</option>
             <option value="Testing">Testing</option>
             <option value="Reporting">Reporting</option>
             <option value="Complete">Complete</option>

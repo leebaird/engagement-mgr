@@ -14,7 +14,7 @@ import {
 } from '@/lib/engagement-schedule-events';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-const PHASES: SchedulePhase[] = ['Planning', 'Prep', 'Testing', 'Reporting', 'Outbrief'];
+const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbrief'];
 type EngagementCalendarProps = {
   engagements: EngagementScheduleSource[];
 };

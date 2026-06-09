@@ -22,8 +22,8 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
   const statusOrder: Record<string, number> = {
-    Planning: 1,
-    Prep: 2,
+    Prep: 1,
+    Recon: 2,
     Testing: 3,
     Reporting: 4,
     Complete: 5,

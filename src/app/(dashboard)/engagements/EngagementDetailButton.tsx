@@ -81,8 +81,6 @@ export function EngagementDetailButton({
     location: initialEngagement.location || '',
     status: initialEngagement.status || '',
     focus: initialEngagement.focus || '',
-    startTesting: initialEngagement.startTesting ? new Date(initialEngagement.startTesting).toISOString().split('T')[0] : '',
-    endTesting: initialEngagement.endTesting ? new Date(initialEngagement.endTesting).toISOString().split('T')[0] : '',
     objectives: initialEngagement.objectives || '',
     targets: initialEngagement.targets || '',
     exclusions: initialEngagement.exclusions || '',
@@ -188,21 +186,16 @@ export function EngagementDetailButton({
         const toNullableDate = (iso: string) => (iso ? new Date(iso) : null);
         setEngagement({
           ...engagement,
-          startPlanning: toNullableDate(scheduleFormData.startPlanning),
-          endPlanning: toNullableDate(scheduleFormData.endPlanning),
           startPrep: toNullableDate(scheduleFormData.startPrep),
           endPrep: toNullableDate(scheduleFormData.endPrep),
+          startRecon: toNullableDate(scheduleFormData.startRecon),
+          endRecon: toNullableDate(scheduleFormData.endRecon),
           startTesting: toNullableDate(scheduleFormData.startTesting),
           endTesting: toNullableDate(scheduleFormData.endTesting),
           startReporting: toNullableDate(scheduleFormData.startReporting),
           endReporting: toNullableDate(scheduleFormData.endReporting),
           outbrief: toNullableDate(scheduleFormData.outbrief),
         });
-        setFormData((prev) => ({
-          ...prev,
-          startTesting: scheduleFormData.startTesting,
-          endTesting: scheduleFormData.endTesting,
-        }));
         setIsScheduleEditing(false);
       }
     } catch {
@@ -282,8 +275,6 @@ export function EngagementDetailButton({
                   location: engagement.location || '',
                   status: engagement.status || '',
                   focus: engagement.focus || '',
-                  startTesting: engagement.startTesting ? new Date(engagement.startTesting).toISOString().split('T')[0] : '',
-                  endTesting: engagement.endTesting ? new Date(engagement.endTesting).toISOString().split('T')[0] : '',
                   objectives: engagement.objectives || '',
                   targets: engagement.targets || '',
                   exclusions: engagement.exclusions || '',

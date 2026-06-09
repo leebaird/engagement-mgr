@@ -1,10 +1,10 @@
 'use client';
 
 export type EngagementScheduleValues = {
-  startPlanning: string;
-  endPlanning: string;
   startPrep: string;
   endPrep: string;
+  startRecon: string;
+  endRecon: string;
   startTesting: string;
   endTesting: string;
   startReporting: string;
@@ -17,18 +17,18 @@ const SCHEDULE_ROWS: {
   start: keyof EngagementScheduleValues;
   end?: keyof EngagementScheduleValues;
 }[] = [
-  { label: 'Planning', start: 'startPlanning', end: 'endPlanning' },
   { label: 'Prep', start: 'startPrep', end: 'endPrep' },
+  { label: 'Recon', start: 'startRecon', end: 'endRecon' },
   { label: 'Testing', start: 'startTesting', end: 'endTesting' },
   { label: 'Reporting', start: 'startReporting', end: 'endReporting' },
   { label: 'Outbrief', start: 'outbrief' },
 ];
 
 export function engagementToScheduleValues(engagement: {
-  startPlanning?: string | Date | null;
-  endPlanning?: string | Date | null;
   startPrep?: string | Date | null;
   endPrep?: string | Date | null;
+  startRecon?: string | Date | null;
+  endRecon?: string | Date | null;
   startTesting?: string | Date | null;
   endTesting?: string | Date | null;
   startReporting?: string | Date | null;
@@ -39,10 +39,10 @@ export function engagementToScheduleValues(engagement: {
     d ? new Date(d).toISOString().split('T')[0] : '';
 
   return {
-    startPlanning: toDate(engagement.startPlanning),
-    endPlanning: toDate(engagement.endPlanning),
     startPrep: toDate(engagement.startPrep),
     endPrep: toDate(engagement.endPrep),
+    startRecon: toDate(engagement.startRecon),
+    endRecon: toDate(engagement.endRecon),
     startTesting: toDate(engagement.startTesting),
     endTesting: toDate(engagement.endTesting),
     startReporting: toDate(engagement.startReporting),

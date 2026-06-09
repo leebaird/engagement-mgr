@@ -6,7 +6,7 @@ import { EngagementCalendar } from './EngagementCalendar';
 export default async function DashboardHome() {
   const [
     activeEngagementCount,
-    planningEngagementCount,
+    reconEngagementCount,
     completedEngagementCount,
     clientCount,
     contactCount,
@@ -15,9 +15,9 @@ export default async function DashboardHome() {
     engagements,
   ] = await Promise.all([
     prisma.engagement.count({
-      where: { status: { notIn: ['Planning', 'Complete'] } },
+      where: { status: { notIn: ['Recon', 'Complete'] } },
     }),
-    prisma.engagement.count({ where: { status: 'Planning' } }),
+    prisma.engagement.count({ where: { status: 'Recon' } }),
     prisma.engagement.count({ where: { status: 'Complete' } }),
     prisma.client.count(),
     prisma.contact.count(),
@@ -27,10 +27,10 @@ export default async function DashboardHome() {
       select: {
         id: true,
         codeName: true,
-        startPlanning: true,
-        endPlanning: true,
         startPrep: true,
         endPrep: true,
+        startRecon: true,
+        endRecon: true,
         startTesting: true,
         endTesting: true,
         startReporting: true,
@@ -43,10 +43,10 @@ export default async function DashboardHome() {
 
   const calendarEngagements = engagements.map((engagement) => ({
     ...engagement,
-    startPlanning: engagement.startPlanning?.toISOString() ?? null,
-    endPlanning: engagement.endPlanning?.toISOString() ?? null,
     startPrep: engagement.startPrep?.toISOString() ?? null,
     endPrep: engagement.endPrep?.toISOString() ?? null,
+    startRecon: engagement.startRecon?.toISOString() ?? null,
+    endRecon: engagement.endRecon?.toISOString() ?? null,
     startTesting: engagement.startTesting?.toISOString() ?? null,
     endTesting: engagement.endTesting?.toISOString() ?? null,
     startReporting: engagement.startReporting?.toISOString() ?? null,
@@ -63,7 +63,7 @@ export default async function DashboardHome() {
 
   const engagementStats = [
     { label: 'Active', count: activeEngagementCount },
-    { label: 'Planning', count: planningEngagementCount },
+    { label: 'Recon', count: reconEngagementCount },
     { label: 'Completed', count: completedEngagementCount },
   ];
 

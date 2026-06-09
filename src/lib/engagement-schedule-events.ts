@@ -1,4 +1,4 @@
-export type SchedulePhase = 'Planning' | 'Prep' | 'Testing' | 'Reporting' | 'Outbrief';
+export type SchedulePhase = 'Prep' | 'Recon' | 'Testing' | 'Reporting' | 'Outbrief';
 export type ScheduleEventKind = 'start' | 'end';
 
 export type ScheduleEvent = {
@@ -12,10 +12,10 @@ export type ScheduleEvent = {
 export type EngagementScheduleSource = {
   id: string;
   codeName: string;
-  startPlanning?: string | Date | null;
-  endPlanning?: string | Date | null;
   startPrep?: string | Date | null;
   endPrep?: string | Date | null;
+  startRecon?: string | Date | null;
+  endRecon?: string | Date | null;
   startTesting?: string | Date | null;
   endTesting?: string | Date | null;
   startReporting?: string | Date | null;
@@ -24,8 +24,8 @@ export type EngagementScheduleSource = {
 };
 
 export const SCHEDULE_PHASE_COLORS: Record<SchedulePhase, string> = {
-  Planning: '#eab308',
   Prep: '#f97316',
+  Recon: '#eab308',
   Testing: '#ef4444',
   Reporting: '#0066ff',
   Outbrief: '#00cc66',
@@ -36,10 +36,10 @@ const SCHEDULE_FIELD_MAP: {
   kind: ScheduleEventKind;
   field: keyof EngagementScheduleSource;
 }[] = [
-  { phase: 'Planning', kind: 'start', field: 'startPlanning' },
-  { phase: 'Planning', kind: 'end', field: 'endPlanning' },
   { phase: 'Prep', kind: 'start', field: 'startPrep' },
   { phase: 'Prep', kind: 'end', field: 'endPrep' },
+  { phase: 'Recon', kind: 'start', field: 'startRecon' },
+  { phase: 'Recon', kind: 'end', field: 'endRecon' },
   { phase: 'Testing', kind: 'start', field: 'startTesting' },
   { phase: 'Testing', kind: 'end', field: 'endTesting' },
   { phase: 'Reporting', kind: 'start', field: 'startReporting' },
@@ -87,14 +87,14 @@ export function isDateInPhaseRange(
 export function getPhaseRangesForEngagement(engagement: EngagementScheduleSource) {
   return [
     {
-      phase: 'Planning' as const,
-      start: toDateKey(engagement.startPlanning),
-      end: toDateKey(engagement.endPlanning),
-    },
-    {
       phase: 'Prep' as const,
       start: toDateKey(engagement.startPrep),
       end: toDateKey(engagement.endPrep),
+    },
+    {
+      phase: 'Recon' as const,
+      start: toDateKey(engagement.startRecon),
+      end: toDateKey(engagement.endRecon),
     },
     {
       phase: 'Testing' as const,

@@ -36,10 +36,10 @@ model Engagement {
   targets              String?
   exclusions           String?
   notes                String?
-  startPlanning        DateTime?
-  endPlanning          DateTime?
   startPrep            DateTime?
   endPrep              DateTime?
+  startRecon           DateTime?
+  endRecon             DateTime?
   startTesting         DateTime?
   endTesting           DateTime?
   startReporting       DateTime?
@@ -55,8 +55,8 @@ model Engagement {
 }
 
 enum EngagementStatus {
-  Planning
   Prep
+  Recon
   Testing
   Reporting
   Complete
