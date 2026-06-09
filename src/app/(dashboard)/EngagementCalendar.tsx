@@ -13,7 +13,7 @@ import {
   type SchedulePhase,
 } from '@/lib/engagement-schedule-events';
 
-const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbrief'];
 type EngagementCalendarProps = {
   engagements: EngagementScheduleSource[];
@@ -25,21 +25,31 @@ function toDateKeyFromParts(year: number, month: number, day: number): string {
   return `${year}-${monthPart}-${dayPart}`;
 }
 
-function buildMonthGrid(year: number, month: number): (string | null)[] {
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7;
+function getWorkWeekIndex(date: Date): number | null {
+  const dayOfWeek = date.getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) return null;
+  return dayOfWeek - 1;
+}
+
+function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (string | null)[] = [];
 
-  for (let i = 0; i < startOffset; i += 1) {
-    cells.push(null);
-  }
-
   for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month, day);
+    const workWeekIndex = getWorkWeekIndex(date);
+    if (workWeekIndex === null) continue;
+
+    if (cells.length % 5 === 0) {
+      for (let i = 0; i < workWeekIndex; i += 1) {
+        cells.push(null);
+      }
+    }
+
     cells.push(toDateKeyFromParts(year, month, day));
   }
 
-  while (cells.length % 7 !== 0) {
+  while (cells.length % 5 !== 0) {
     cells.push(null);
   }
 
@@ -72,7 +82,7 @@ export function EngagementCalendar({ engagements }: EngagementCalendarProps) {
   }, [events]);
 
   const monthCells = useMemo(
-    () => buildMonthGrid(viewYear, viewMonth),
+    () => buildWorkWeekMonthGrid(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
 

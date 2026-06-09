@@ -711,7 +711,7 @@ select.form-input {
 
 .engagement-calendar__weekdays {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
   margin-bottom: 0.35rem;
 }
@@ -726,7 +726,7 @@ select.form-input {
 
 .engagement-calendar__grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
