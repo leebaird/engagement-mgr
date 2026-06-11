@@ -1,10 +1,10 @@
 # Engagement Manager
 
-Engagement Manager is a web application for tracking offensive security engagements. It features a modern UI, built with Next.js, Prisma, and PostgreSQL.
+Engagement Manager is a web application for tracking offensive security engagements. It features a modern UI, built with Next.js, Prisma, and PostgreSQL. The dashboard includes an engagement schedule calendar; other sections cover engagements, clients, contacts, findings, and operators.
 
 ## Prerequisites
 
-Before running the application on Ubuntu, install the following prerequisities:
+Before running the application on Ubuntu, install the following prerequisites:
 ```bash
 sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-client postgresql-contrib unzip zip
 ```
@@ -66,6 +66,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
+For production:
+
+```bash
+npm run build
+npm run start
+```
+
 ## Default Credentials
 
 After seeding the database, you can log in using the default admin account:
@@ -78,10 +85,10 @@ After seeding the database, you can log in using the default admin account:
 
 ## Server migration (Backup / Restore / Reset)
 
-- Admin can back up and restore the full application data from the **Admin* page.
+- Admin can back up and restore the full application data from the **Admin** page (`/users`).
 - Use this when moving from an old server to a new one: clone the app on the new host, then restore a backup from the old host.
 
-On **Admin**, the **Database** section shows **Backup**, **Restore**, and **Reset** buttons. **New Record** stays in the header for adding users.
+On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
 
 **Backup** saves a `.zip` download named `em-backup-YYYY-MM-DD-HH-MM.zip`.
 - The timestamp uses the **local time** of the server running the app (year, month, day, hour, and minute). Example: `em-backup-2026-06-02-14-30.zip`.
@@ -92,7 +99,7 @@ On **Admin**, the **Database** section shows **Backup**, **Restore**, and **Rese
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
 - **Restore** accepts the `.zip` from **Backup** and replaces the current database and `uploads/` folder. A plain `.sql` file restores the database only (no screenshots).
-- **Reset** wipes all data and recreates the default `admin` account.
+- **Reset** wipes all data and recreates the default `admin` account. You must type `RESET` to confirm.
 
 **Old server**
 
@@ -113,7 +120,7 @@ On **Admin**, the **Database** section shows **Backup**, **Restore**, and **Rese
 5. **Do not** run `npx prisma migrate dev` or `npx prisma db seed` before importing — the SQL dump creates schema and data.
 6. Start the app: `npm run dev` (or your production process).
 7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI (`admin` / `admin`); the import step replaces that data with the backup.
-8. Open **Users**, click **Restore** (under **Database**) to select the `.zip` from the old server, and confirm.
+8. Open **Admin** (`/users`), click **Restore** (under **Database**) to select the `.zip` from the old server, and confirm.
 9. Restart the app if it was already running so it picks up the restored data.
 
 **Notes**
@@ -138,7 +145,7 @@ This section documents the architecture, database schema, security measures, and
 ### Database Schema
 
 - **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
-- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Planning, Prep, Testing, Reporting, Complete), `focus`, `type` (AI, CODE_REVIEW, FIREWALL, MULTI, PENTEST, PHISHING, PHYSICAL, PURPLE_TEAM, RED_TEAM, USB_DROP, VISHING, WEB_APP, WIRELESS), `location` (Internal, External), `startDate`, `endDate`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
+- **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Prep, Recon, Testing, Reporting, Complete), `focus`, `type` (AI, Code_Review, Firewall, Multi, Pentest, Phishing, Physical, Purple_Team, Red_Team, USB_Drop, Vishing, Web_App, Wireless), `location` (Internal, External), `startPrep`, `endPrep`, `startRecon`, `endRecon`, `startTesting`, `endTesting`, `startReporting`, `endReporting`, `outbrief`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
 - **Finding**: `id`, `engagementId` (optional), `title`, `category`, `severity`, `background`, `remediation`, `supportingData` (DB column: `supportingLinks`), `screenshots`, `engagementContext`, `createdAt`, `updatedAt`.
@@ -163,15 +170,17 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 2. Every change to `prisma/schema.prisma` must be followed with:
 
-   `npx prisma db push` — to update the database
+   ```bash
+   npx prisma migrate dev --name describe_your_change
+   ```
 
-   `npx prisma generate` — to update the Prisma Client types
+   This creates a migration, updates the database, and regenerates the Prisma Client types.
 
 3. Update any affected UI components, forms, validation logic, or server actions as needed.
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `Admin` roles can access the `/users` endpoint to create new accounts (the UI dynamically hides the Users navigation button from non-admins). Only admins can back up, restore, or reset the database from the Users page.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `Admin` roles can access the Admin page (`/users`) to create new accounts (the UI dynamically hides the Admin navigation button from non-admins). Only admins can back up, restore, or reset the database from the Admin page.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.
