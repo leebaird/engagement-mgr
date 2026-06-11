@@ -66,6 +66,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
+To expose the dev server on your LAN (for example, testing from another device on the same network), bind to all interfaces:
+
+```bash
+npx next dev -H 0.0.0.0
+```
+
+Then open `http://<this-machine-ip>:3000` from the other device. Use this only on trusted networks — dev mode is not hardened for production.
+
 For production:
 
 ```bash
