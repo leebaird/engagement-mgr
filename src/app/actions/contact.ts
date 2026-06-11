@@ -1,8 +1,11 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { isAuthError, requireAuth } from '@/lib/require-auth';
 
 export async function createContact(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
   const clientId = formData.get('clientId') as string;
   const name = formData.get('name') as string;
   const title = formData.get('title') as string;
@@ -24,6 +27,9 @@ export async function createContact(prevState: any, formData: FormData) {
 }
 
 export async function updateContact(id: string, prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const clientId = formData.get('clientId') as string;
   const name = formData.get('name') as string;
   const title = formData.get('title') as string;
@@ -46,6 +52,9 @@ export async function updateContact(id: string, prevState: any, formData: FormDa
 }
 
 export async function deleteContact(id: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.contact.delete({ where: { id } });
     revalidatePath('/contacts');

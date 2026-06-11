@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Database, Upload, Download, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CreateUserForm } from './CreateUserForm';
+import { exportDatabaseBackup, importDatabaseBackup, resetDatabase } from '@/app/actions/db';
 
 interface UsersClientProps {
   children: React.ReactNode;
@@ -25,8 +26,19 @@ export function UsersClient({ children }: UsersClientProps) {
 
   const sectionWidth = '600px';
 
-  const handleExportDb = () => {
-    window.location.href = '/api/db/export';
+  const handleExportDb = async () => {
+    const result = await exportDatabaseBackup();
+    if ('error' in result) {
+      alert(result.error);
+      return;
+    }
+    const blob = new Blob([new Uint8Array(result.data)], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = result.filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   const closeResetModal = () => {
@@ -37,14 +49,20 @@ export function UsersClient({ children }: UsersClientProps) {
   const handleDeleteDb = async () => {
     setDeletePending(true);
     try {
-      const res = await fetch('/api/db/delete', { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data.error || 'Reset failed');
+      const result = await resetDatabase();
+      if (result?.error) {
+        alert(result.error);
+      }
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'digest' in error &&
+        typeof error.digest === 'string' &&
+        error.digest.startsWith('NEXT_REDIRECT')
+      ) {
         return;
       }
-      window.location.href = '/login';
-    } catch {
       alert('Reset failed');
     } finally {
       setDeletePending(false);
@@ -62,10 +80,9 @@ export function UsersClient({ children }: UsersClientProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/db/import', { method: 'POST', body: formData });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        alert(data.error || 'Restore failed');
+      const data = await importDatabaseBackup(formData);
+      if (data.error) {
+        alert(data.error);
         return;
       }
       setRestoreSuccess('Database restored successfully.');

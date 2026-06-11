@@ -1,8 +1,11 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { isAuthError, requireAuth } from '@/lib/require-auth';
 
 export async function createOperator(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
   const name = formData.get('name') as string;
   const title = formData.get('title') as string;
   const email = formData.get('email') as string;
@@ -25,6 +28,9 @@ export async function createOperator(prevState: any, formData: FormData) {
 }
 
 export async function updateOperator(id: string, prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const name = formData.get('name') as string;
   const title = formData.get('title') as string;
   const email = formData.get('email') as string;
@@ -49,6 +55,9 @@ export async function updateOperator(id: string, prevState: any, formData: FormD
 }
 
 export async function deleteOperator(id: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.operator.delete({ where: { id } });
     revalidatePath('/operators');

@@ -1,8 +1,13 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { getJwtSecretKey } from '@/lib/jwt-secret';
 
-const secretKey = process.env.JWT_SECRET || 'super-secret-key-for-dev-only-change-me';
-const encodedKey = new TextEncoder().encode(secretKey);
+let encodedKey: Uint8Array | undefined;
+
+function getEncodedKey(): Uint8Array {
+  encodedKey ??= getJwtSecretKey();
+  return encodedKey;
+}
 
 export interface SessionPayload {
   userId: string;
@@ -15,13 +20,13 @@ export async function encrypt(payload: SessionPayload) {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('1d') // 1 day session
-    .sign(encodedKey);
+    .sign(getEncodedKey());
 }
 
 export async function decrypt(session: string | undefined = '') {
   if (!session) return null;
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(session, getEncodedKey(), {
       algorithms: ['HS256'],
     });
     return payload as unknown as SessionPayload;

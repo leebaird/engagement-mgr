@@ -1,6 +1,7 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { isAuthError, requireAuth } from '@/lib/require-auth';
 
 function trimField(value: FormDataEntryValue | null): string {
   if (value == null) return '';
@@ -34,6 +35,9 @@ async function resolveClientId(clientId: string, clientName: string): Promise<st
 }
 
 export async function createEngagement(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const codeName = trimField(formData.get('codeName'));
   const clientName = trimField(formData.get('clientName'));
   let clientId = trimField(formData.get('clientId'));
@@ -86,6 +90,9 @@ export async function createEngagement(prevState: any, formData: FormData) {
 }
 
 export async function updateEngagement(id: string, prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const codeName = trimField(formData.get('codeName'));
   const clientName = trimField(formData.get('clientName'));
   let clientId = trimField(formData.get('clientId'));
@@ -150,6 +157,9 @@ export async function updateEngagement(id: string, prevState: any, formData: For
 }
 
 export async function updateEngagementSchedule(id: string, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.engagement.update({
       where: { id },
@@ -175,6 +185,9 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
 }
 
 export async function deleteEngagement(id: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.engagement.delete({ where: { id } });
     revalidatePath('/engagements');

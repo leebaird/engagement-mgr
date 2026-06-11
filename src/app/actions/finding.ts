@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
+import { isAuthError, requireAuth } from '@/lib/require-auth';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -15,6 +16,9 @@ export type FindingTemplateMatch = {
 };
 
 export async function searchFindingsByTitle(query: string): Promise<FindingTemplateMatch[]> {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return [];
+
   const trimmed = query.trim();
   if (!trimmed) return [];
 
@@ -47,6 +51,9 @@ export async function searchFindingsByTitle(query: string): Promise<FindingTempl
 }
 
 export async function createFinding(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const engagementId = formData.get('engagementId') as string;
   const title = formData.get('title') as string;
   const observation = formData.get('observation') as string;
@@ -110,6 +117,9 @@ export async function createFinding(prevState: any, formData: FormData) {
 }
 
 export async function updateFinding(id: string, prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const engagementId = formData.get('engagementId') as string;
   const engagementScoped = formData.get('engagementScoped') === 'true';
   const title = formData.get('title') as string;
@@ -183,6 +193,9 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
 }
 
 export async function deleteFinding(id: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     const screenshots = await prisma.screenshot.findMany({ where: { findingId: id } });
     for (const snap of screenshots) {
@@ -205,6 +218,9 @@ export async function deleteFinding(id: string) {
 }
 
 export async function uploadScreenshot(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   const findingId = formData.get('findingId') as string;
   const description = formData.get('description') as string;
   const file = formData.get('screenshot') as File;
@@ -237,6 +253,9 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
 }
 
 export async function deleteScreenshot(screenshotId: string, findingId: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return;
+
   try {
     const screenshot = await prisma.screenshot.findUnique({ where: { id: screenshotId } });
     if (screenshot) {

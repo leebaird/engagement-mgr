@@ -1,8 +1,11 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { isAuthError, requireAuth } from '@/lib/require-auth';
 
 export async function createClient(prevState: any, formData: FormData) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
   const company = formData.get('companyName') as string;
   const address = formData.get('address') as string;
   const city = formData.get('city') as string;
@@ -35,6 +38,9 @@ export async function updateClient(id: string, data: {
   phone?: string | null;
   notes?: string | null;
 }) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.client.update({
       where: { id },
@@ -57,6 +63,9 @@ export async function updateClient(id: string, data: {
 }
 
 export async function deleteClient(id: string) {
+  const auth = await requireAuth();
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
+
   try {
     await prisma.client.delete({ where: { id } });
     revalidatePath('/clients');
