@@ -87,10 +87,49 @@ Avoid leaving files in the repo that nothing uses. Orphans confuse future work a
 - For pre-existing orphans you did not create: mention them to the user; delete when asked or when clearly superseded by your change.
 - Never add throwaway helper scripts to the repo root unless the user explicitly wants them kept.
 
-### Authentication & Security
-- All protected routes go through `src/proxy.ts`.
-- Sessions use `HttpOnly`, `SameSite=Lax` cookies with `jose` JWTs.
-- Password policy (minimum 16 characters with uppercase, lowercase, number, and symbol) must never be weakened.
+### Security by Design (OWASP Top 10)
+
+This application stores **strictly confidential** offensive-security engagement data. Design and review every change with security in mind. Use the [OWASP Top 10](https://owasp.org/www-project-top-ten/) as a minimum checklist — not an afterthought at the end of a task.
+
+**Defense in depth (required patterns in this codebase)**
+
+- **Proxy is not enough**: `src/proxy.ts` redirects unauthenticated users, but **every Server Action and API route must enforce auth itself**. Use `requireAuth()` from `src/lib/require-auth.ts` for authenticated mutations; use `requireAdmin()` from `src/lib/require-admin.ts` for admin-only operations.
+- **Prefer Server Actions for mutations**: Do not add new cookie-authenticated `fetch()` POST/DELETE API routes — they are CSRF-prone. Admin backup/restore/reset live in `src/app/actions/db.ts` for this reason.
+- **Sessions & secrets**: `JWT_SECRET` must be ≥ 32 characters in production (`src/lib/jwt-secret.ts`). No hardcoded fallback outside development. Sessions use `HttpOnly`, `SameSite=Lax` cookies with `jose` JWTs.
+- **Password policy**: Minimum 16 characters with uppercase, lowercase, number, and symbol — never weaken (`src/lib/auth/password.ts`).
+- **File paths**: Never pass user-controlled paths to `fs` directly. Screenshot downloads must go through `resolveUploadFilePath()` in `src/lib/uploads-path.ts`.
+- **Database access**: Use Prisma parameterised queries. Do not build raw SQL from user input. Backup/restore (`src/lib/db-backup.ts`) runs arbitrary SQL only from trusted admin uploads — treat as highly privileged.
+- **Shell commands**: Use `execFile` with argument arrays for `pg_dump`/`psql`/`zip`/`unzip` — never `exec` with string interpolation.
+- **Client boundaries**: Never import `prisma`, `fs`, secrets, or password hashes into Client Components. Do not return passwords or tokens in Server Action state.
+
+**OWASP Top 10 — what to watch for here**
+
+| Risk | Examples in this app |
+|------|----------------------|
+| **A01 Broken Access Control** | Missing `requireAuth()` on a new action; IDOR on uploads/findings; assuming proxy protects `/api/*` |
+| **A02 Cryptographic Failures** | Weak/missing `JWT_SECRET`; serving sensitive files; logging credentials |
+| **A03 Injection** | Path traversal in uploads; unsafe raw SQL; unvalidated restore uploads |
+| **A04 Insecure Design** | Destructive admin APIs without re-auth; no upload size/type limits; default `admin`/`admin` |
+| **A05 Security Misconfiguration** | Missing security headers; `NODE_ENV` mis-set in production; committed `.env` |
+| **A06 Vulnerable Components** | Run `npm audit` before deploy; keep overrides documented in `package.json` |
+| **A07 Auth Failures** | No login rate limiting; password change without current-password check; stale JWT roles |
+| **A08 Integrity Failures** | Unsigned backups; zip-slip on restore; tampered import archives |
+| **A09 Logging Failures** | Logging passwords, tokens, or full stack traces to clients |
+| **A10 SSRF** | Not currently applicable — avoid adding outbound fetch to user-supplied URLs without safeguards |
+
+**When adding or changing features**
+
+1. Identify which OWASP categories the change touches.
+2. Add server-side validation (prefer Zod schemas aligned to Prisma enums).
+3. Confirm auth on every new mutation path — UI hiding alone is not security.
+4. For file upload/download, allowlist types, enforce max size, and validate resolved paths.
+5. For admin/destructive operations, require explicit user confirmation in UI and server-side admin checks.
+
+**Testing & review discipline**
+
+- **Never run destructive tests** (database reset, restore, delete-all) against a real database without **explicit written user authorization**. Use isolated fixtures or ask the user first.
+- After security-sensitive changes, run `npm run build` and consider `npm audit`.
+- When the user asks for a security review, check Server Actions, API routes, auth/session code, uploads, and backup/restore — not just the file that was edited.
 
 ## 3. Coding & Editing Discipline
 
@@ -117,6 +156,7 @@ After any meaningful change:
 - Run `npx tsc --noEmit`.
 - Run `git status`. If new untracked application files exist, commit and push them following the "Git & New Files" rules above.
 - If schema was changed: clear `.next` cache if issues arise (`rm -rf .next`).
+- If auth, uploads, admin APIs, or user input handling changed: re-read **Security by Design (OWASP Top 10)** and confirm server-side checks are in place.
 - Test the affected functionality when practical.
 
 ## 6. Working with Screenshots & User Requests

@@ -13,6 +13,7 @@ Before implementing:
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so.
 - If something is unclear, stop. Name what's confusing. Ask.
+- For auth, data access, file I/O, or admin features: consider OWASP Top 10 risks up front. See `AI-ASSISTANT.md` → **Security by Design (OWASP Top 10)**.
 
 ## 2. Simplicity First
 
@@ -60,6 +61,17 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. Security-Conscious Changes
+
+This project holds confidential engagement data. Security is part of the task, not a separate pass.
+
+- Enforce authorization in server-side code (actions, routes, layouts) — never rely on hidden UI alone.
+- Validate and sanitise user input on the server; treat client-side checks as convenience only.
+- Do not run destructive operations (database reset, restore, wipe) against real environments without explicit user approval.
+- When unsure whether a change introduces an OWASP risk, say so before implementing.
+
+Project-specific requirements: `AI-ASSISTANT.md` → **Security by Design (OWASP Top 10)**.
 
 ---
 
