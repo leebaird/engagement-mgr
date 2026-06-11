@@ -58,6 +58,35 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Stage the files, commit, then push with `git push origin main`.
 - Surface the list of files and proposed commit messages/grouping to the user for approval before committing and pushing (unless the user has previously instructed "you take care of it").
 
+### Orphaned & Leftover Files
+
+Avoid leaving files in the repo that nothing uses. Orphans confuse future work and often end up in the remote repository indefinitely.
+
+**When to check**
+
+- After refactors (e.g. API route → Server Action, rename/move/delete a module, schema or seed script changes).
+- Before marking a task complete: run `git status` and confirm every tracked file still has a purpose.
+- When adding a replacement file, delete the superseded file in the same change set (e.g. `seed.ts` replaces `seed.mjs`).
+
+**What often becomes orphaned in this project**
+
+- One-off patch scripts at the repo root (e.g. `fix.js`) — delete once the real source fix is merged.
+- Duplicate configs or seeds (only one Prisma seed entrypoint: `prisma/seed.ts` via `prisma.config.ts`).
+- Next.js scaffold assets with no imports (`public/*.svg`, unused `*.module.css`).
+- Empty directories left after removing routes (e.g. `src/app/api/...`).
+
+**How to verify a file is unused**
+
+- Search the codebase for imports and path references (`grep`, glob).
+- Confirm nothing in `package.json` scripts, `prisma.config.ts`, or README points at the file.
+- Do not assume a file is dead from training data alone — check this repository.
+
+**Cleanup rules**
+
+- Remove orphans your own changes create; commit and push the deletions with the related work.
+- For pre-existing orphans you did not create: mention them to the user; delete when asked or when clearly superseded by your change.
+- Never add throwaway helper scripts to the repo root unless the user explicitly wants them kept.
+
 ### Authentication & Security
 - All protected routes go through `src/proxy.ts`.
 - Sessions use `HttpOnly`, `SameSite=Lax` cookies with `jose` JWTs.

@@ -38,6 +38,7 @@ When editing existing code:
 
 When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
+- Remove file-level orphans your change supersedes (empty dirs, replaced scripts, deleted routes). See `AI-ASSISTANT.md` → **Orphaned & Leftover Files**.
 - Don't remove pre-existing dead code unless asked.
 
 The test: Every changed line should trace directly to the user's request.
