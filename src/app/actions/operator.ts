@@ -2,19 +2,28 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { firstZodError, uuidSchema } from '@/lib/validation/common';
+import { createOperatorSchema, updateOperatorSchema } from '@/lib/validation/operator';
 
 export async function createOperator(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
-  const name = formData.get('name') as string;
-  const title = formData.get('title') as string;
-  const email = formData.get('email') as string;
-  const phoneNumber = formData.get('phoneNumber') as string;
-  const discord = formData.get('discord') as string;
-  const github = formData.get('github') as string;
-  const notes = formData.get('notes') as string;
 
-  if (!name) return { error: 'Name is required' };
+  const parsed = createOperatorSchema.safeParse({
+    name: formData.get('name'),
+    title: formData.get('title'),
+    email: formData.get('email'),
+    phoneNumber: formData.get('phoneNumber'),
+    discord: formData.get('discord'),
+    github: formData.get('github'),
+    notes: formData.get('notes'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const { name, title, email, phoneNumber, discord, github, notes } = parsed.data;
 
   try {
     await prisma.operator.create({
@@ -31,19 +40,30 @@ export async function updateOperator(id: string, prevState: any, formData: FormD
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const name = formData.get('name') as string;
-  const title = formData.get('title') as string;
-  const email = formData.get('email') as string;
-  const phoneNumber = formData.get('phoneNumber') as string;
-  const discord = formData.get('discord') as string;
-  const github = formData.get('github') as string;
-  const notes = formData.get('notes') as string;
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
 
-  if (!name) return { error: 'Name is required' };
+  const parsed = updateOperatorSchema.safeParse({
+    name: formData.get('name'),
+    title: formData.get('title'),
+    email: formData.get('email'),
+    phoneNumber: formData.get('phoneNumber'),
+    discord: formData.get('discord'),
+    github: formData.get('github'),
+    notes: formData.get('notes'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const { name, title, email, phoneNumber, discord, github, notes } = parsed.data;
 
   try {
     await prisma.operator.update({
-      where: { id },
+      where: { id: idParsed.data },
       data: { name, title, email, phoneNumber, discord, github, notes },
     });
     revalidatePath('/operators');
@@ -58,8 +78,13 @@ export async function deleteOperator(id: string) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
   try {
-    await prisma.operator.delete({ where: { id } });
+    await prisma.operator.delete({ where: { id: idParsed.data } });
     revalidatePath('/operators');
     return { success: true };
   } catch (e) {

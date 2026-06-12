@@ -2,10 +2,16 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
 import { createUploadFilePath, resolveUploadFilePath } from '@/lib/uploads-path';
-import { firstZodError, userIdSchema } from '@/lib/validation/common';
+import { firstZodError, uuidSchema } from '@/lib/validation/common';
+import {
+  createFindingSchema,
+  deleteScreenshotSchema,
+  findingSearchQuerySchema,
+  screenshotDescriptionSchema,
+  updateFindingSchema,
+} from '@/lib/validation/finding';
 import { validateScreenshotUpload } from '@/lib/validation/upload';
 
 export type FindingTemplateMatch = {
@@ -22,12 +28,12 @@ export async function searchFindingsByTitle(query: string): Promise<FindingTempl
   const auth = await requireAuth();
   if (isAuthError(auth)) return [];
 
-  const trimmed = query.trim();
-  if (!trimmed) return [];
+  const parsed = findingSearchQuerySchema.safeParse(query);
+  if (!parsed.success || !parsed.data) return [];
 
   const findings = await prisma.finding.findMany({
     where: {
-      title: { contains: trimmed, mode: 'insensitive' },
+      title: { contains: parsed.data, mode: 'insensitive' },
     },
     select: {
       id: true,
@@ -57,19 +63,33 @@ export async function createFinding(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const engagementId = formData.get('engagementId') as string;
-  const title = formData.get('title') as string;
-  const observation = formData.get('observation') as string;
-  const category = formData.get('category') as string;
-  const severity = formData.get('severity') as string;
-  const background = formData.get('background') as string;
-  const remediation = formData.get('remediation') as string;
-  const supportingData = formData.get('supportingLinks') as string;
-  const affectedHosts = formData.get('affectedHosts') as string;
+  const parsed = createFindingSchema.safeParse({
+    engagementId: formData.get('engagementId'),
+    title: formData.get('title'),
+    observation: formData.get('observation'),
+    category: formData.get('category'),
+    severity: formData.get('severity'),
+    background: formData.get('background'),
+    remediation: formData.get('remediation'),
+    supportingLinks: formData.get('supportingLinks'),
+    affectedHosts: formData.get('affectedHosts'),
+  });
 
-  if (!title) {
-    return { error: 'Title is required' };
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
   }
+
+  const {
+    engagementId,
+    title,
+    observation,
+    category,
+    severity,
+    background,
+    remediation,
+    supportingLinks,
+    affectedHosts,
+  } = parsed.data;
 
   try {
     const findingData: {
@@ -90,10 +110,10 @@ export async function createFinding(prevState: any, formData: FormData) {
     } = {
       title,
       category,
-      severity: severity || '',
+      severity,
       background,
       remediation,
-      supportingData,
+      supportingData: supportingLinks,
     };
 
     if (engagementId) {
@@ -123,20 +143,40 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const engagementId = formData.get('engagementId') as string;
-  const engagementScoped = formData.get('engagementScoped') === 'true';
-  const title = formData.get('title') as string;
-  const observation = formData.get('observation') as string;
-  const category = formData.get('category') as string;
-  const severity = formData.get('severity') as string;
-  const background = formData.get('background') as string;
-  const remediation = formData.get('remediation') as string;
-  const supportingData = formData.get('supportingLinks') as string;
-  const affectedHosts = formData.get('affectedHosts') as string;
-
-  if (!title) {
-    return { error: 'Title is required' };
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
   }
+
+  const parsed = updateFindingSchema.safeParse({
+    engagementId: formData.get('engagementId'),
+    engagementScoped: formData.get('engagementScoped'),
+    title: formData.get('title'),
+    observation: formData.get('observation'),
+    category: formData.get('category'),
+    severity: formData.get('severity'),
+    background: formData.get('background'),
+    remediation: formData.get('remediation'),
+    supportingLinks: formData.get('supportingLinks'),
+    affectedHosts: formData.get('affectedHosts'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const {
+    engagementId,
+    engagementScoped,
+    title,
+    observation,
+    category,
+    severity,
+    background,
+    remediation,
+    supportingLinks,
+    affectedHosts,
+  } = parsed.data;
 
   try {
     const data: {
@@ -150,30 +190,30 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
     } = {
       title,
       category,
-      severity: severity || '',
+      severity,
       background,
       remediation,
-      supportingData,
+      supportingData: supportingLinks,
     };
     if (engagementId) data.engagementId = engagementId;
 
     const existing = await prisma.finding.findUnique({
-      where: { id },
+      where: { id: idParsed.data },
       select: { engagementId: true },
     });
 
     await prisma.finding.update({
-      where: { id },
+      where: { id: idParsed.data },
       data,
     });
 
     const scopedEngagementId = engagementId || existing?.engagementId;
     if (engagementScoped && scopedEngagementId) {
       await prisma.engagementFindingContext.upsert({
-        where: { findingId: id },
+        where: { findingId: idParsed.data },
         create: {
           engagementId: scopedEngagementId,
-          findingId: id,
+          findingId: idParsed.data,
           observation: observation || null,
           affectedHosts: affectedHosts || null,
         },
@@ -199,18 +239,23 @@ export async function deleteFinding(id: string) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
   try {
-    const screenshots = await prisma.screenshot.findMany({ where: { findingId: id } });
+    const screenshots = await prisma.screenshot.findMany({ where: { findingId: idParsed.data } });
     for (const snap of screenshots) {
       const filePath = resolveUploadFilePath(snap.filePath);
       if (!filePath) continue;
       await unlink(filePath).catch(() => {});
     }
     const finding = await prisma.finding.findUnique({
-      where: { id },
+      where: { id: idParsed.data },
       select: { engagementId: true },
     });
-    await prisma.finding.delete({ where: { id } });
+    await prisma.finding.delete({ where: { id: idParsed.data } });
     revalidatePath('/findings');
     if (finding?.engagementId) {
       revalidatePath('/engagements');
@@ -225,7 +270,7 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const findingIdParsed = userIdSchema.safeParse(formData.get('findingId'));
+  const findingIdParsed = uuidSchema.safeParse(formData.get('findingId'));
   if (!findingIdParsed.success) {
     return { error: firstZodError(findingIdParsed.error) };
   }
@@ -240,7 +285,9 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
     return { error: 'Upload failed.' };
   }
 
-  const description = String(formData.get('description') ?? '').trim().slice(0, 500);
+  const descriptionParsed = screenshotDescriptionSchema.safeParse(formData.get('description') ?? '');
+  const description = descriptionParsed.success ? descriptionParsed.data : '';
+
   const findingId = findingIdParsed.data;
   const { file } = fileResult;
   const { absolutePath, fileName } = uploadPath;
@@ -254,8 +301,8 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
       data: {
         findingId,
         description,
-        filePath: fileName
-      }
+        filePath: fileName,
+      },
     });
     revalidatePath(`/findings/${findingId}`);
     return { success: 'Screenshot uploaded.' };
@@ -268,16 +315,21 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
   const auth = await requireAuth();
   if (isAuthError(auth)) return;
 
+  const parsed = deleteScreenshotSchema.safeParse({ screenshotId, findingId });
+  if (!parsed.success) return;
+
   try {
-    const screenshot = await prisma.screenshot.findUnique({ where: { id: screenshotId } });
+    const screenshot = await prisma.screenshot.findUnique({
+      where: { id: parsed.data.screenshotId },
+    });
     if (screenshot) {
       const filePath = resolveUploadFilePath(screenshot.filePath);
       if (filePath) {
         await unlink(filePath).catch(() => {});
       }
-      await prisma.screenshot.delete({ where: { id: screenshotId } });
+      await prisma.screenshot.delete({ where: { id: parsed.data.screenshotId } });
     }
-    revalidatePath(`/findings/${findingId}`);
+    revalidatePath(`/findings/${parsed.data.findingId}`);
   } catch (e) {
     console.error(e);
   }

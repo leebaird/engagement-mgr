@@ -14,4 +14,14 @@ export const usernameSchema = z
   .min(1, 'Username is required.')
   .max(100, 'Username is too long.');
 
-export const userIdSchema = z.string().uuid('Invalid user ID.');
+export const uuidSchema = z.string().uuid('Invalid ID.');
+
+export const userIdSchema = uuidSchema;
+
+export const optionalUuidSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    const trimmed = value == null ? '' : String(value).trim();
+    return trimmed === '' ? undefined : trimmed;
+  })
+  .pipe(uuidSchema.optional());

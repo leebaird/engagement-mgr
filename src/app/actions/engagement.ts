@@ -2,24 +2,14 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
-
-function trimField(value: FormDataEntryValue | null): string {
-  if (value == null) return '';
-  return String(value).trim();
-}
-
-function parseOptionalDate(value: FormDataEntryValue | null): Date | null {
-  const raw = trimField(value);
-  if (!raw) return null;
-  const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function relationIds(formData: FormData, key: string): string[] {
-  return formData
-    .getAll(key)
-    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
-}
+import { firstZodError, uuidSchema } from '@/lib/validation/common';
+import {
+  createEngagementSchema,
+  engagementIdSchema,
+  engagementScheduleSchema,
+  updateEngagementSchema,
+} from '@/lib/validation/engagement';
+import { parseFormUuidList } from '@/lib/validation/form';
 
 async function resolveClientId(clientId: string, clientName: string): Promise<string | null> {
   if (clientId) return clientId;
@@ -34,51 +24,80 @@ async function resolveClientId(clientId: string, clientName: string): Promise<st
   return client.id;
 }
 
+function parseRelationIds(
+  formData: FormData,
+  key: string
+): { ok: true; ids: string[] } | { ok: false; error: string } {
+  return parseFormUuidList(formData.getAll(key));
+}
+
 export async function createEngagement(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const codeName = trimField(formData.get('codeName'));
-  const clientName = trimField(formData.get('clientName'));
-  let clientId = trimField(formData.get('clientId'));
-  const type = trimField(formData.get('type'));
-  const location = trimField(formData.get('location'));
-  const focus = trimField(formData.get('focus'));
-  const objectives = trimField(formData.get('objectives'));
-  const targets = trimField(formData.get('targets'));
-  const exclusions = trimField(formData.get('exclusions'));
-  const notes = trimField(formData.get('notes'));
-  const operatorIds = relationIds(formData, 'operators');
-  const contactIds = relationIds(formData, 'contacts');
-  const trustedAgentIds = relationIds(formData, 'trustedAgents');
+  const parsed = createEngagementSchema.safeParse({
+    codeName: formData.get('codeName'),
+    clientId: formData.get('clientId'),
+    clientName: formData.get('clientName'),
+    type: formData.get('type'),
+    location: formData.get('location'),
+    focus: formData.get('focus'),
+    objectives: formData.get('objectives'),
+    targets: formData.get('targets'),
+    exclusions: formData.get('exclusions'),
+    notes: formData.get('notes'),
+  });
 
-  if (!codeName) return { error: 'A Code Name is required to create an engagement.' };
-  if (!clientId && !clientName) return { error: 'A Client is required to create an engagement.' };
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const operatorIds = parseRelationIds(formData, 'operators');
+  if (!operatorIds.ok) return { error: operatorIds.error };
+
+  const contactIds = parseRelationIds(formData, 'contacts');
+  if (!contactIds.ok) return { error: contactIds.error };
+
+  const trustedAgentIds = parseRelationIds(formData, 'trustedAgents');
+  if (!trustedAgentIds.ok) return { error: trustedAgentIds.error };
+
+  const {
+    codeName,
+    clientId: parsedClientId,
+    clientName,
+    type,
+    location,
+    focus,
+    objectives,
+    targets,
+    exclusions,
+    notes,
+  } = parsed.data;
 
   try {
-    clientId = (await resolveClientId(clientId, clientName)) ?? '';
+    const clientId = (await resolveClientId(parsedClientId, clientName)) ?? '';
     if (!clientId) return { error: 'A Client is required to create an engagement.' };
 
     await prisma.engagement.create({
       data: {
         codeName,
         clientId,
-        type: (type || null) as any,
-        location: (location || null) as any,
+        type,
+        location,
         focus,
         objectives,
         targets,
         exclusions,
         notes: notes || null,
         operators: {
-          connect: operatorIds.map(id => ({ id }))
+          connect: operatorIds.ids.map((id) => ({ id })),
         },
         contacts: {
-          connect: contactIds.map(id => ({ id }))
+          connect: contactIds.ids.map((id) => ({ id })),
         },
         trustedAgents: {
-          connect: trustedAgentIds.map(id => ({ id }))
-        }
+          connect: trustedAgentIds.ids.map((id) => ({ id })),
+        },
       },
     });
     revalidatePath('/engagements');
@@ -93,30 +112,59 @@ export async function updateEngagement(id: string, prevState: any, formData: For
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const codeName = trimField(formData.get('codeName'));
-  const clientName = trimField(formData.get('clientName'));
-  let clientId = trimField(formData.get('clientId'));
-  const type = trimField(formData.get('type'));
-  const location = trimField(formData.get('location'));
-  const focus = trimField(formData.get('focus'));
-  const status = trimField(formData.get('status'));
-  const objectives = trimField(formData.get('objectives'));
-  const targets = trimField(formData.get('targets'));
-  const exclusions = trimField(formData.get('exclusions'));
-  const notes = trimField(formData.get('notes'));
-  const operatorIds = relationIds(formData, 'operators');
-  const contactIds = relationIds(formData, 'contacts');
-  const trustedAgentIds = relationIds(formData, 'trustedAgents');
-  const chargeCode = trimField(formData.get('chargeCode'));
+  const idParsed = engagementIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
 
-  if (!codeName) return { error: 'A Code Name is required to update an engagement.' };
-  if (!clientId && !clientName) return { error: 'A Client is required to update an engagement.' };
+  const parsed = updateEngagementSchema.safeParse({
+    codeName: formData.get('codeName'),
+    clientId: formData.get('clientId'),
+    clientName: formData.get('clientName'),
+    type: formData.get('type'),
+    location: formData.get('location'),
+    focus: formData.get('focus'),
+    status: formData.get('status'),
+    objectives: formData.get('objectives'),
+    targets: formData.get('targets'),
+    exclusions: formData.get('exclusions'),
+    notes: formData.get('notes'),
+    chargeCode: formData.get('chargeCode'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const operatorIds = parseRelationIds(formData, 'operators');
+  if (!operatorIds.ok) return { error: operatorIds.error };
+
+  const contactIds = parseRelationIds(formData, 'contacts');
+  if (!contactIds.ok) return { error: contactIds.error };
+
+  const trustedAgentIds = parseRelationIds(formData, 'trustedAgents');
+  if (!trustedAgentIds.ok) return { error: trustedAgentIds.error };
+
+  const {
+    codeName,
+    clientId: parsedClientId,
+    clientName,
+    type,
+    location,
+    focus,
+    status,
+    objectives,
+    targets,
+    exclusions,
+    notes,
+    chargeCode,
+  } = parsed.data;
 
   try {
-    clientId = (await resolveClientId(clientId, clientName)) ?? '';
+    let clientId = (await resolveClientId(parsedClientId, clientName)) ?? '';
     if (!clientId) {
       const existing = await prisma.engagement.findUnique({
-        where: { id },
+        where: { id: idParsed.data },
         select: { clientId: true },
       });
       clientId = existing?.clientId ?? '';
@@ -124,28 +172,28 @@ export async function updateEngagement(id: string, prevState: any, formData: For
     if (!clientId) return { error: 'A Client is required to update an engagement.' };
 
     await prisma.engagement.update({
-      where: { id },
+      where: { id: idParsed.data },
       data: {
         codeName,
         clientId,
-        chargeCode: chargeCode || null,
-        type: (type || null) as any,
-        location: (location || null) as any,
-        status: status ? (status as any) : null,
+        chargeCode,
+        type,
+        location,
+        status,
         focus,
         objectives,
         targets,
         exclusions,
         notes: notes || null,
         operators: {
-          set: operatorIds.map(id => ({ id }))
+          set: operatorIds.ids.map((relationId) => ({ id: relationId })),
         },
         contacts: {
-          set: contactIds.map(id => ({ id }))
+          set: contactIds.ids.map((relationId) => ({ id: relationId })),
         },
         trustedAgents: {
-          set: trustedAgentIds.map(id => ({ id }))
-        }
+          set: trustedAgentIds.ids.map((relationId) => ({ id: relationId })),
+        },
       },
     });
     revalidatePath('/engagements');
@@ -160,20 +208,31 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = engagementIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
+  const parsed = engagementScheduleSchema.safeParse({
+    startPrep: formData.get('startPrep'),
+    endPrep: formData.get('endPrep'),
+    startRecon: formData.get('startRecon'),
+    endRecon: formData.get('endRecon'),
+    startTesting: formData.get('startTesting'),
+    endTesting: formData.get('endTesting'),
+    startReporting: formData.get('startReporting'),
+    endReporting: formData.get('endReporting'),
+    outbrief: formData.get('outbrief'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
   try {
     await prisma.engagement.update({
-      where: { id },
-      data: {
-        startPrep: parseOptionalDate(formData.get('startPrep')),
-        endPrep: parseOptionalDate(formData.get('endPrep')),
-        startRecon: parseOptionalDate(formData.get('startRecon')),
-        endRecon: parseOptionalDate(formData.get('endRecon')),
-        startTesting: parseOptionalDate(formData.get('startTesting')),
-        endTesting: parseOptionalDate(formData.get('endTesting')),
-        startReporting: parseOptionalDate(formData.get('startReporting')),
-        endReporting: parseOptionalDate(formData.get('endReporting')),
-        outbrief: parseOptionalDate(formData.get('outbrief')),
-      },
+      where: { id: idParsed.data },
+      data: parsed.data,
     });
     revalidatePath('/engagements');
     revalidatePath('/');
@@ -188,8 +247,13 @@ export async function deleteEngagement(id: string) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
   try {
-    await prisma.engagement.delete({ where: { id } });
+    await prisma.engagement.delete({ where: { id: idParsed.data } });
     revalidatePath('/engagements');
     return { success: true };
   } catch (e) {

@@ -2,24 +2,42 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { createClientSchema, updateClientDataSchema } from '@/lib/validation/client';
+import { firstZodError, uuidSchema } from '@/lib/validation/common';
 
 export async function createClient(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
-  const company = formData.get('companyName') as string;
-  const address = formData.get('address') as string;
-  const city = formData.get('city') as string;
-  const state = (formData.get('state') as string)?.toUpperCase();
-  const zip = formData.get('zip') as string;
-  const phone = formData.get('phoneNumber') as string;
-  const website = formData.get('website') as string;
-  const notes = formData.get('notes') as string;
 
-  if (!company) return { error: 'Company Name is required' };
+  const parsed = createClientSchema.safeParse({
+    companyName: formData.get('companyName'),
+    address: formData.get('address'),
+    city: formData.get('city'),
+    state: formData.get('state'),
+    zip: formData.get('zip'),
+    phoneNumber: formData.get('phoneNumber'),
+    website: formData.get('website'),
+    notes: formData.get('notes'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const { companyName, address, city, state, zip, phoneNumber, website, notes } = parsed.data;
 
   try {
     await prisma.client.create({
-      data: { company, address, city, state, zip, phone, website, notes },
+      data: {
+        company: companyName,
+        address,
+        city,
+        state,
+        zip,
+        phone: phoneNumber,
+        website,
+        notes,
+      },
     });
     revalidatePath('/clients');
     return { success: 'Client created successfully.' };
@@ -41,18 +59,28 @@ export async function updateClient(id: string, data: {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
+  const parsed = updateClientDataSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
   try {
     await prisma.client.update({
-      where: { id },
+      where: { id: idParsed.data },
       data: {
-        company: data.company,
-        address: data.address,
-        city: data.city,
-        state: data.state,
-        zip: data.zip,
-        website: data.website,
-        phone: data.phone,
-        notes: data.notes,
+        company: parsed.data.company,
+        address: parsed.data.address,
+        city: parsed.data.city,
+        state: parsed.data.state,
+        zip: parsed.data.zip,
+        website: parsed.data.website,
+        phone: parsed.data.phone,
+        notes: parsed.data.notes,
       },
     });
     revalidatePath('/clients');
@@ -66,8 +94,13 @@ export async function deleteClient(id: string) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
+  const idParsed = uuidSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
   try {
-    await prisma.client.delete({ where: { id } });
+    await prisma.client.delete({ where: { id: idParsed.data } });
     revalidatePath('/clients');
     return { success: true };
   } catch (e) {
