@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
 import { getSession } from '@/lib/auth/session';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
+import { firstZodError, userIdSchema } from '@/lib/validation/common';
+import { createUserSchema, updateUserSchema } from '@/lib/validation/user';
 import { revalidatePath } from 'next/cache';
 
 async function wouldRemoveLastAdmin(userId: string, newRole: 'Admin' | 'User'): Promise<boolean> {
@@ -21,13 +23,23 @@ export async function createUser(prevState: any, formData: FormData) {
     return { error: 'Unauthorized: Only admins can create users.' };
   }
 
-  const username = formData.get('username') as string;
-  const password = formData.get('password') as string;
-  const role = formData.get('role') as 'Admin' | 'User';
+  const parsed = createUserSchema.safeParse({
+    username: formData.get('username'),
+    password: formData.get('password'),
+    role: formData.get('role'),
+  });
 
-  if (!username || !password || !role) {
-    return { error: 'All fields are required.', fields: { username, role } };
+  if (!parsed.success) {
+    return {
+      error: firstZodError(parsed.error),
+      fields: {
+        username: String(formData.get('username') ?? ''),
+        role: String(formData.get('role') ?? ''),
+      },
+    };
   }
+
+  const { username, password, role } = parsed.data;
 
   const complexity = validatePasswordComplexity(password);
   if (!complexity.valid) {
@@ -64,20 +76,29 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
     return { error: 'Unauthorized: Only admins can update users.' };
   }
 
-  const username = formData.get('username') as string;
-  const password = formData.get('password') as string;
-  const role = formData.get('role') as 'Admin' | 'User';
-
-  if (!username || !role) {
-    return { error: 'Username and Role are required.' };
+  const idParsed = userIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
   }
 
-  if (await wouldRemoveLastAdmin(id, role)) {
+  const parsed = updateUserSchema.safeParse({
+    username: formData.get('username'),
+    password: formData.get('password'),
+    role: formData.get('role'),
+  });
+
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
+  }
+
+  const { username, password, role } = parsed.data;
+
+  if (await wouldRemoveLastAdmin(idParsed.data, role)) {
     return { error: 'Cannot remove the last admin account.' };
   }
 
   try {
-    const existing = await prisma.user.findFirst({ where: { username, NOT: { id } } });
+    const existing = await prisma.user.findFirst({ where: { username, NOT: { id: idParsed.data } } });
     if (existing) {
       return { error: 'Username already exists.' };
     }
@@ -98,7 +119,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
     }
 
     await prisma.user.update({
-      where: { id },
+      where: { id: idParsed.data },
       data,
     });
 
@@ -116,17 +137,24 @@ export async function deleteUser(id: string) {
     return { error: 'Unauthorized' };
   }
 
+  const idParsed = userIdSchema.safeParse(id);
+  if (!idParsed.success) {
+    return { error: firstZodError(idParsed.error) };
+  }
+
+  const userId = idParsed.data;
+
   // Prevent users from deleting themselves
-  if (session.userId === id) {
+  if (session.userId === userId) {
     return { error: 'You cannot delete yourself.' };
   }
 
-  if (await wouldRemoveLastAdmin(id, 'User')) {
+  if (await wouldRemoveLastAdmin(userId, 'User')) {
     return { error: 'Cannot delete the last admin account.' };
   }
 
   try {
-    await prisma.user.delete({ where: { id } });
+    await prisma.user.delete({ where: { id: userId } });
     revalidatePath('/users');
     return { success: true };
   } catch (err) {

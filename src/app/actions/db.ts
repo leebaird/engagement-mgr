@@ -9,6 +9,7 @@ import {
   importDatabaseSql,
 } from '@/lib/db-backup';
 import { requireAdmin } from '@/lib/require-admin';
+import { validateBackupFile } from '@/lib/validation/db';
 
 function backupFilename(): string {
   const now = new Date();
@@ -46,27 +47,23 @@ export async function importDatabaseBackup(
   }
 
   try {
-    const file = formData.get('file');
-
-    if (!file || typeof file === 'string') {
-      return { error: 'No backup file provided' };
+    const fileResult = validateBackupFile(formData.get('file'));
+    if (!fileResult.ok) {
+      return { error: fileResult.error };
     }
 
+    const file = fileResult.file;
     const name = file.name.toLowerCase();
 
     if (name.endsWith('.zip')) {
       const buffer = Buffer.from(await file.arrayBuffer());
       await importDatabaseArchive(buffer);
-    } else if (name.endsWith('.sql')) {
+    } else {
       const sql = await file.text();
       if (!sql.trim()) {
         return { error: 'Backup file is empty' };
       }
       await importDatabaseSql(sql);
-    } else {
-      return {
-        error: 'Use a .zip full backup from Backup, or a .sql database-only file',
-      };
     }
 
     revalidatePath('/', 'layout');

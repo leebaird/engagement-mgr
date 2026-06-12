@@ -5,14 +5,20 @@ import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
+import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
+import { firstZodError } from '@/lib/validation/common';
 
 export async function login(prevState: any, formData: FormData) {
-  const username = formData.get('username') as string;
-  const password = formData.get('password') as string;
+  const parsed = loginSchema.safeParse({
+    username: formData.get('username'),
+    password: formData.get('password'),
+  });
 
-  if (!username || !password) {
-    return { error: 'Username and password are required' };
+  if (!parsed.success) {
+    return { error: firstZodError(parsed.error) };
   }
+
+  const { username, password } = parsed.data;
 
   const user = await prisma.user.findUnique({
     where: { username },
@@ -70,28 +76,27 @@ export async function changePassword(prevState: any, formData: FormData) {
     return { error: 'You must be logged in to change your password.' };
   }
 
-  const newPassword = (formData.get('password') as string || '').trim();
-  const confirmPassword = (formData.get('confirmPassword') as string || '').trim();
+  const parsed = changePasswordSchema.safeParse({
+    password: formData.get('password'),
+    confirmPassword: formData.get('confirmPassword'),
+  });
 
-  if (!newPassword || !confirmPassword) {
-    return { 
-      error: 'Both password fields are required.',
-      fields: { password: newPassword, confirmPassword }
+  if (!parsed.success) {
+    const password = String(formData.get('password') ?? '');
+    const confirmPassword = String(formData.get('confirmPassword') ?? '');
+    return {
+      error: firstZodError(parsed.error),
+      fields: { password, confirmPassword },
     };
   }
 
-  if (newPassword !== confirmPassword) {
-    return { 
-      error: 'Passwords do not match.',
-      fields: { password: newPassword, confirmPassword }
-    };
-  }
+  const newPassword = parsed.data.password;
 
   const complexity = validatePasswordComplexity(newPassword);
   if (!complexity.valid) {
-    return { 
+    return {
       error: 'The password must be at least 16 characters long, contain at least one uppercase letter, one number, and one symbol.',
-      fields: { password: newPassword, confirmPassword }
+      fields: { password: newPassword, confirmPassword: parsed.data.confirmPassword },
     };
   }
 
@@ -120,9 +125,9 @@ export async function changePassword(prevState: any, formData: FormData) {
       throw error;
     }
     console.error('Change password error:', error);
-    return { 
+    return {
       error: 'An error occurred while changing your password.',
-      fields: { password: newPassword, confirmPassword }
+      fields: { password: newPassword, confirmPassword: parsed.data.confirmPassword },
     };
   }
 
