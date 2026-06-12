@@ -16,13 +16,24 @@ Create a `.env` file in the project root before running Prisma or the app:
 ```bash
 cat > .env << 'EOF'
 DATABASE_URL="postgresql://em_admin:em_pass@localhost:5432/engagement_manager?schema=public"
-JWT_SECRET="replace-with-a-long-random-secret"
+JWT_SECRET="replace-with-a-long-random-secret-at-least-32-characters"
 EOF
 ```
 
-Prisma uses the `schema=public` query parameter in `DATABASE_URL`. Backup and restore strip Prisma-only parameters before calling `pg_dump` or `psql`.
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string. Prisma uses the `schema=public` query parameter. Backup and restore strip Prisma-only parameters before calling `pg_dump` or `psql`. |
+| `JWT_SECRET` | Yes in production | Must be at least **32 characters**. The app refuses to start in production without it. Rotating this invalidates all existing sessions. |
+
+Generate a strong secret:
+
+```bash
+openssl rand -base64 32
+```
 
 ## Database Setup
+
+### Development
 
 Run the following commands to create the PostgreSQL database and user:
 
@@ -33,6 +44,17 @@ sudo -u postgres psql -c "CREATE DATABASE engagement_manager;"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE engagement_manager TO em_admin;"
 sudo -u postgres psql -c "ALTER DATABASE engagement_manager OWNER TO em_admin;"
 ```
+
+### Production
+
+Use a dedicated database user with **least privilege** — do not grant `CREATEDB` or superuser rights:
+
+```bash
+sudo -u postgres psql -c "CREATE USER em_app WITH ENCRYPTED PASSWORD 'strong-password-here';"
+sudo -u postgres psql -c "CREATE DATABASE engagement_manager OWNER em_app;"
+```
+
+Set `DATABASE_URL` to use `em_app` (or your chosen username). Migrations run as this user via `npm run db:migrate`.
 
 > **Note:** The database files are stored in the PostgreSQL data directory (typically `/var/lib/postgresql/<version>/main/`).
 
@@ -74,12 +96,58 @@ npx next dev -H 0.0.0.0
 
 Then open `http://<this-machine-ip>:3000` from the other device. Use this only on trusted networks — dev mode is not hardened for production.
 
-For production:
+## Production Deployment
 
-```bash
-npm run build
-npm run start
-```
+### Requirements
+
+- **Node.js** `^20.19.0`, `^22.12.0`, or `>=24.0.0` (see `engines` in `package.json`)
+- **PostgreSQL** with a least-privilege app user (see [Database Setup](#database-setup))
+- **System tools** for admin backup/restore: `pg_dump`, `psql`, `zip`, `unzip`
+- **HTTPS** in front of the app (reverse proxy such as nginx or Caddy). Session cookies are marked `Secure` in production.
+- **Persistent storage** for the `uploads/` directory (finding screenshots)
+
+### Deploy steps
+
+1. Clone the repository and install dependencies:
+
+   ```bash
+   npm ci
+   ```
+
+2. Create `.env` with production values (`DATABASE_URL`, `JWT_SECRET` ≥ 32 characters).
+
+3. Apply database migrations:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+4. Run pre-deploy checks:
+
+   ```bash
+   npm run audit
+   npm run typecheck
+   npm run build
+   ```
+
+5. Start the application with `NODE_ENV=production`:
+
+   ```bash
+   NODE_ENV=production npm run start
+   ```
+
+   For a real server, run this under a process manager (systemd, PM2, etc.) and place a reverse proxy in front for TLS termination.
+
+6. Create the first admin account through the database seed (development only) or by restoring from a backup. **Change any default password immediately** before exposing the app to users.
+
+### Production checklist
+
+- [ ] `JWT_SECRET` is at least 32 characters and not committed to git
+- [ ] `NODE_ENV=production` is set for the running process
+- [ ] HTTPS is configured; HTTP redirects to HTTPS
+- [ ] Database user has no `CREATEDB` or superuser privileges
+- [ ] `uploads/` is on persistent disk and included in backups
+- [ ] `pg_dump`, `psql`, `zip`, and `unzip` are available if admins will use Backup/Restore
 
 ## Default Credentials
 
