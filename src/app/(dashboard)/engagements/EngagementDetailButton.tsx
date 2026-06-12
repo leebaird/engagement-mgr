@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
@@ -40,6 +41,7 @@ export function EngagementDetailButton({
   contacts: { id: string, name: string, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[]
 }) {
+  const router = useRouter();
   const [engagement, setEngagement] = useState(initialEngagement);
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
     mapEngagementFindings(initialEngagement.findings)
@@ -119,7 +121,6 @@ export function EngagementDetailButton({
     setError(null);
     try {
       const data = new FormData();
-      data.append('clientId', engagement.clientId);
       Object.entries(formData).forEach(([key, value]) => {
         data.append(key, value as string);
       });
@@ -132,19 +133,25 @@ export function EngagementDetailButton({
       if (result?.error) {
         setError(result.error);
       } else {
-        const updatedClient =
-          clients.find((c) => c.company.toLowerCase() === formData.clientName.trim().toLowerCase()) ||
-          engagement.client;
+        const trimmedClientName = formData.clientName.trim();
+        const matchedClient = clients.find(
+          (c) => c.company.toLowerCase() === trimmedClientName.toLowerCase()
+        );
+        const { clientName: _clientName, ...engagementFields } = formData;
         setEngagement({
           ...engagement,
-          ...formData,
-          clientId: updatedClient?.id ?? engagement.clientId,
-          client: updatedClient || engagement.client,
+          ...engagementFields,
+          clientId: matchedClient?.id ?? engagement.clientId,
+          client: matchedClient ?? {
+            ...(engagement.client ?? { id: engagement.clientId }),
+            company: trimmedClientName,
+          },
           operators: selectedOps.map(id => operators.find(o => o.id === id)).filter(Boolean),
           contacts: selectedContacts.map(id => contacts.find(c => c.id === id)).filter(Boolean),
           trustedAgents: selectedTAs.map(id => contacts.find(c => c.id === id)).filter(Boolean),
         });
         setIsEditing(false);
+        router.refresh();
       }
     } catch (e) {
       setError('An error occurred while updating the engagement.');

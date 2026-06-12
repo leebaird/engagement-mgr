@@ -12,16 +12,18 @@ import {
 import { parseFormUuidList } from '@/lib/validation/form';
 
 async function resolveClientId(clientId: string, clientName: string): Promise<string | null> {
-  if (clientId) return clientId;
-  if (!clientName) return null;
-
-  let client = await prisma.client.findFirst({
-    where: { company: { equals: clientName, mode: 'insensitive' } },
-  });
-  if (!client) {
-    client = await prisma.client.create({ data: { company: clientName } });
+  const trimmedName = clientName.trim();
+  if (trimmedName) {
+    let client = await prisma.client.findFirst({
+      where: { company: { equals: trimmedName, mode: 'insensitive' } },
+    });
+    if (!client) {
+      client = await prisma.client.create({ data: { company: trimmedName } });
+    }
+    return client.id;
   }
-  return client.id;
+  if (clientId) return clientId;
+  return null;
 }
 
 function parseRelationIds(
