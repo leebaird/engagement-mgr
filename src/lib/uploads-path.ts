@@ -3,7 +3,7 @@ import { basename, resolve } from 'path';
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
 
-const ALLOWED_UPLOAD_EXTENSIONS = new Set(['png', 'jpg', 'gif', 'webp']);
+const ALLOWED_UPLOAD_EXTENSIONS = new Set(['png', 'jpg']);
 
 function isPathInsideUploads(filePath: string): boolean {
   return filePath.startsWith(UPLOADS_DIR + '/') || filePath === UPLOADS_DIR;

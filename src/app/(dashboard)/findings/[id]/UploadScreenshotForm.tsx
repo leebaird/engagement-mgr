@@ -15,7 +15,7 @@ export function UploadScreenshotForm({ findingId }: { findingId: string }) {
       <input type="hidden" name="findingId" value={findingId} />
       <div className="form-group">
         <label className="form-label">Screenshot File</label>
-        <input type="file" name="screenshot" accept="image/*" className="form-input" required />
+        <input type="file" name="screenshot" accept="image/png,image/jpeg" className="form-input" required />
       </div>
       <div className="form-group">
         <label className="form-label">Description</label>
