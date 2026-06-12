@@ -22,13 +22,26 @@ export default function ChangePasswordPage() {
 
         <form action={formAction}>
           <div className="form-group">
+            <label className="form-label" htmlFor="currentPassword">Current Password</label>
+            <input
+              type="password"
+              id="currentPassword"
+              name="currentPassword"
+              className="form-input"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+
+          <div className="form-group">
             <label className="form-label" htmlFor="password">New Password</label>
             <input 
               type="password" 
               id="password" 
               name="password" 
               className="form-input" 
-              required 
+              required
+              autoComplete="new-password"
               defaultValue={state?.fields?.password || ''}
             />
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
@@ -49,7 +62,8 @@ export default function ChangePasswordPage() {
               id="confirmPassword" 
               name="confirmPassword" 
               className="form-input" 
-              required 
+              required
+              autoComplete="new-password"
               defaultValue={state?.fields?.confirmPassword || ''}
             />
           </div>

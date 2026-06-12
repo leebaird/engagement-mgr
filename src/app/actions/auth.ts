@@ -4,7 +4,14 @@ import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
+import {
+  clearLoginRateLimit,
+  isLoginRateLimited,
+  loginRateLimitKey,
+  recordLoginFailure,
+} from '@/lib/auth/login-rate-limit';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
+import { getClientIp } from '@/lib/request-client-ip';
 import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
 import { firstZodError } from '@/lib/validation/common';
 
@@ -19,12 +26,21 @@ export async function login(prevState: any, formData: FormData) {
   }
 
   const { username, password } = parsed.data;
+  const rateLimitKey = loginRateLimitKey(await getClientIp(), username);
+  const rateLimit = isLoginRateLimited(rateLimitKey);
+
+  if (rateLimit.limited) {
+    return {
+      error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
+    };
+  }
 
   const user = await prisma.user.findUnique({
     where: { username },
   });
 
   if (!user) {
+    recordLoginFailure(rateLimitKey);
     return { error: 'Invalid credentials' };
   }
 
@@ -32,8 +48,11 @@ export async function login(prevState: any, formData: FormData) {
     const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
 
     if (!isPasswordValid) {
+      recordLoginFailure(rateLimitKey);
       return { error: 'Invalid credentials' };
     }
+
+    clearLoginRateLimit(rateLimitKey);
 
     // Record the login timestamp
     await prisma.user.update({
@@ -77,30 +96,54 @@ export async function changePassword(prevState: any, formData: FormData) {
   }
 
   const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get('currentPassword'),
     password: formData.get('password'),
     confirmPassword: formData.get('confirmPassword'),
   });
 
   if (!parsed.success) {
-    const password = String(formData.get('password') ?? '');
-    const confirmPassword = String(formData.get('confirmPassword') ?? '');
     return {
       error: firstZodError(parsed.error),
-      fields: { password, confirmPassword },
+      fields: {
+        password: String(formData.get('password') ?? ''),
+        confirmPassword: String(formData.get('confirmPassword') ?? ''),
+      },
     };
   }
 
-  const newPassword = parsed.data.password;
+  const { currentPassword, password: newPassword, confirmPassword } = parsed.data;
 
   const complexity = validatePasswordComplexity(newPassword);
   if (!complexity.valid) {
     return {
       error: 'The password must be at least 16 characters long, contain at least one uppercase letter, one number, and one symbol.',
-      fields: { password: newPassword, confirmPassword: parsed.data.confirmPassword },
+      fields: { password: newPassword, confirmPassword },
     };
   }
 
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { passwordHash: true, role: true },
+    });
+
+    if (!user) {
+      return { error: 'You must be logged in to change your password.' };
+    }
+
+    const currentPasswordValid = await argon2.verify(
+      user.passwordHash,
+      currentPassword,
+      ARGON2_OPTIONS
+    );
+
+    if (!currentPasswordValid) {
+      return {
+        error: 'Current password is incorrect.',
+        fields: { password: newPassword, confirmPassword },
+      };
+    }
+
     const passwordHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
 
     await prisma.user.update({
@@ -114,7 +157,7 @@ export async function changePassword(prevState: any, formData: FormData) {
     // Refresh the session with the new lastPasswordChange timestamp
     await createSession({
       userId: session.userId,
-      role: session.role,
+      role: user.role,
       lastPasswordChange: new Date().toISOString(),
     });
 

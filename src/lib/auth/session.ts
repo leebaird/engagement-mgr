@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { getJwtSecretKey } from '@/lib/jwt-secret';
+import { prisma } from '@/lib/db';
 
 let encodedKey: Uint8Array | undefined;
 
@@ -47,11 +48,26 @@ export async function createSession(payload: SessionPayload) {
   });
 }
 
-export async function getSession() {
+export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get('session')?.value;
   if (!session) return null;
-  return await decrypt(session);
+
+  const payload = await decrypt(session);
+  if (!payload) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { role: true, lastPasswordChange: true },
+  });
+
+  if (!user) return null;
+
+  return {
+    userId: payload.userId,
+    role: user.role,
+    lastPasswordChange: user.lastPasswordChange.toISOString(),
+  };
 }
 
 export async function deleteSession() {

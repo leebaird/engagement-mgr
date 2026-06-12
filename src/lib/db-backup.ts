@@ -1,8 +1,8 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { writeFile, readFile, unlink, rm, mkdir, cp } from 'fs/promises';
+import { writeFile, readFile, unlink, rm, mkdir, cp, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { tmpdir } from 'os';
 import { prisma } from '@/lib/db';
 import { getPgToolsConnectionUrl } from '@/lib/require-admin';
@@ -21,6 +21,32 @@ const PG_DUMP_ARGS = [
   '--no-acl',
   '--encoding=UTF8',
 ];
+
+function isPathInsideDirectory(targetPath: string, rootDir: string): boolean {
+  const root = resolve(rootDir);
+  const target = resolve(targetPath);
+  return target === root || target.startsWith(`${root}/`);
+}
+
+async function assertExtractedPathsContained(rootDir: string): Promise<void> {
+  async function walk(dir: string): Promise<void> {
+    const entries = await readdir(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = resolve(dir, entry.name);
+
+      if (!isPathInsideDirectory(fullPath, rootDir)) {
+        throw new Error('Invalid backup: archive contains unsafe paths');
+      }
+
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+      }
+    }
+  }
+
+  await walk(rootDir);
+}
 
 async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   const dir = join(tmpdir(), `em-backup-${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -108,6 +134,7 @@ export async function importDatabaseArchive(buffer: Buffer): Promise<void> {
     const zipPath = join(workDir, 'upload.zip');
     await writeFile(zipPath, buffer);
     await execFileAsync('unzip', ['-q', zipPath, '-d', workDir]);
+    await assertExtractedPathsContained(workDir);
 
     const backupDir = join(workDir, BACKUP_FOLDER);
     const sqlPath = join(backupDir, 'database.sql');

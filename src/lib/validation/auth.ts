@@ -9,6 +9,7 @@ export const loginSchema = z.object({
 
 export const changePasswordSchema = z
   .object({
+    currentPassword: z.string().min(1, 'Current password is required.'),
     password: z.string().trim().min(1, 'Both password fields are required.'),
     confirmPassword: z.string().trim().min(1, 'Both password fields are required.'),
   })
