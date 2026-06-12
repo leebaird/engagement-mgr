@@ -110,16 +110,14 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
                       <span style={{
                         padding: '0.2rem 0.6rem',
                         borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
                         ...getSeverityStyle(f.severity),
                       }}>
                         {f.severity}
                       </span>
                     ) : null}
                   </td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(f.createdAt).toLocaleDateString()}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{new Date(f.updatedAt).toLocaleDateString()}</td>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.createdAt).toLocaleDateString()}</td>
+                  <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.updatedAt).toLocaleDateString()}</td>
                   <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                     <FindingDetailButton 
                       finding={f} 

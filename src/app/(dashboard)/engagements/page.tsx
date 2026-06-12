@@ -123,13 +123,11 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
               <tr key={eng.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{eng.codeName}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.client.company}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>
-                  {eng.status ?? ''}
-                </td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.focus || ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.type ? formatEngagementType(eng.type) : ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
-                <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
+                <td style={{ padding: '0.75rem' }}>{eng.status ?? ''}</td>
+                <td style={{ padding: '0.75rem' }}>{eng.focus || ''}</td>
+                <td style={{ padding: '0.75rem' }}>{eng.type ? formatEngagementType(eng.type) : ''}</td>
+                <td style={{ padding: '0.75rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
+                <td style={{ padding: '0.75rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} />
                 </td>

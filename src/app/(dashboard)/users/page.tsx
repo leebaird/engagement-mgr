@@ -68,16 +68,18 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               <tr key={user.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                 <td style={{ padding: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '188px' }} title={user.username}>{user.username}</td>
                 <td style={{ padding: '0.25rem', width: '160px', textAlign: 'center' }}>
-                  <span style={{
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '4px',
-                    background: user.role === 'Admin' ? 'var(--sidebar-active-bg)' : 'rgba(255,255,255,0.1)',
-                    color: user.role === 'Admin' ? 'var(--sidebar-active)' : 'var(--text-main)',
-                    fontSize: '0.8rem',
-                    fontWeight: 600
-                  }}>
-                    {user.role === 'Admin' ? 'Admin' : 'User'}
-                  </span>
+                  {user.role === 'Admin' ? (
+                    <span style={{
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      background: 'var(--sidebar-active-bg)',
+                      color: 'var(--sidebar-active)',
+                    }}>
+                      Admin
+                    </span>
+                  ) : (
+                    'User'
+                  )}
                 </td>
                 <td style={{ padding: '0.25rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
