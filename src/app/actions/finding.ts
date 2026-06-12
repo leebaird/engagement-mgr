@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { createUploadFilePath, resolveUploadFilePath } from '@/lib/uploads-path';
+import { firstZodError, userIdSchema } from '@/lib/validation/common';
+import { validateScreenshotUpload } from '@/lib/validation/upload';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -199,7 +202,8 @@ export async function deleteFinding(id: string) {
   try {
     const screenshots = await prisma.screenshot.findMany({ where: { findingId: id } });
     for (const snap of screenshots) {
-      const filePath = join(process.cwd(), 'uploads', snap.filePath);
+      const filePath = resolveUploadFilePath(snap.filePath);
+      if (!filePath) continue;
       await unlink(filePath).catch(() => {});
     }
     const finding = await prisma.finding.findUnique({
@@ -221,23 +225,31 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
-  const findingId = formData.get('findingId') as string;
-  const description = formData.get('description') as string;
-  const file = formData.get('screenshot') as File;
-
-  if (!findingId || !file || file.size === 0) {
-    return { error: 'Valid file is required.' };
+  const findingIdParsed = userIdSchema.safeParse(formData.get('findingId'));
+  if (!findingIdParsed.success) {
+    return { error: firstZodError(findingIdParsed.error) };
   }
+
+  const fileResult = validateScreenshotUpload(formData.get('screenshot'));
+  if (!fileResult.ok) {
+    return { error: fileResult.error };
+  }
+
+  const uploadPath = createUploadFilePath(fileResult.extension);
+  if (!uploadPath) {
+    return { error: 'Upload failed.' };
+  }
+
+  const description = String(formData.get('description') ?? '').trim().slice(0, 500);
+  const findingId = findingIdParsed.data;
+  const { file } = fileResult;
+  const { absolutePath, fileName } = uploadPath;
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const extension = file.name.split('.').pop() || 'png';
-  const fileName = `${crypto.randomUUID()}.${extension}`;
-  const filePath = join(process.cwd(), 'uploads', fileName);
-
   try {
-    await writeFile(filePath, buffer);
+    await writeFile(absolutePath, buffer);
     await prisma.screenshot.create({
       data: {
         findingId,
@@ -259,8 +271,10 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
   try {
     const screenshot = await prisma.screenshot.findUnique({ where: { id: screenshotId } });
     if (screenshot) {
-      const filePath = join(process.cwd(), 'uploads', screenshot.filePath);
-      await unlink(filePath).catch(() => {});
+      const filePath = resolveUploadFilePath(screenshot.filePath);
+      if (filePath) {
+        await unlink(filePath).catch(() => {});
+      }
       await prisma.screenshot.delete({ where: { id: screenshotId } });
     }
     revalidatePath(`/findings/${findingId}`);

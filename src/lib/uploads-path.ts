@@ -1,6 +1,31 @@
-import { basename, join, resolve } from 'path';
+import { randomUUID } from 'crypto';
+import { basename, resolve } from 'path';
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
+
+const ALLOWED_UPLOAD_EXTENSIONS = new Set(['png', 'jpg', 'gif', 'webp']);
+
+function isPathInsideUploads(filePath: string): boolean {
+  return filePath.startsWith(UPLOADS_DIR + '/') || filePath === UPLOADS_DIR;
+}
+
+export function createUploadFilePath(
+  extension: string
+): { absolutePath: string; fileName: string } | null {
+  const normalized = extension.toLowerCase();
+  if (!ALLOWED_UPLOAD_EXTENSIONS.has(normalized)) {
+    return null;
+  }
+
+  const fileName = `${randomUUID()}.${normalized}`;
+  const absolutePath = resolve(UPLOADS_DIR, fileName);
+
+  if (!isPathInsideUploads(absolutePath)) {
+    return null;
+  }
+
+  return { absolutePath, fileName };
+}
 
 export function resolveUploadFilePath(filename: string): string | null {
   if (!filename || filename.includes('\0')) {
