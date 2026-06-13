@@ -9,23 +9,24 @@ interface EngagementsClientProps {
   clients: any[];
   contacts: any[];
   operators: any[];
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export function EngagementsClient({ clients, contacts, operators, children }: EngagementsClientProps) {
+export function EngagementsClient({ clients, contacts, operators, isAdmin = false, children }: EngagementsClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Engagements" onAddClick={() => setIsModalOpen(true)} />
+      <PageHeader title="Engagements" showAddButton={isAdmin} onAddClick={() => setIsModalOpen(true)} />
       
       <div ref={listRef}>
         {children}
       </div>
 
-      {isModalOpen && (
+      {isAdmin && isModalOpen && (
         <Modal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 

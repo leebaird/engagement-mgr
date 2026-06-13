@@ -1,13 +1,13 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { createClientSchema, updateClientDataSchema } from '@/lib/validation/client';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 
 export async function createClient(prevState: any, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const parsed = createClientSchema.safeParse({
     companyName: formData.get('companyName'),
@@ -56,8 +56,8 @@ export async function updateClient(id: string, data: {
   phone?: string | null;
   notes?: string | null;
 }) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = uuidSchema.safeParse(id);
   if (!idParsed.success) {
@@ -91,8 +91,8 @@ export async function updateClient(id: string, data: {
 }
 
 export async function deleteClient(id: string) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = uuidSchema.safeParse(id);
   if (!idParsed.success) {

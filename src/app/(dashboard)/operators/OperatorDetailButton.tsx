@@ -6,7 +6,7 @@ import { Modal } from '@/components/Modal';
 import { updateOperator, deleteOperator } from '@/app/actions/operator';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
-export function OperatorDetailButton({ operator: initialOperator }: { operator: any }) {
+export function OperatorDetailButton({ operator: initialOperator, isAdmin = false }: { operator: any; isAdmin?: boolean }) {
   const router = useRouter();
   const [operator, setOperator] = useState(initialOperator);
   const [isOpen, setIsOpen] = useState(false);
@@ -78,7 +78,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
             <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
           </>
-        ) : (
+        ) : isAdmin ? (
           <>
             <button
               type="button"
@@ -115,7 +115,7 @@ export function OperatorDetailButton({ operator: initialOperator }: { operator: 
               Delete
             </button>
           </>
-        )}
+        ) : undefined}
       >
         {!isEditing ? (
           // VIEW MODE - styled to match size and layout of EDIT/CREATE views exactly

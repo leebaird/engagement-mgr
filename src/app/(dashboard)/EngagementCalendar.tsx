@@ -23,6 +23,7 @@ const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbr
 
 type EngagementCalendarProps = {
   engagements: EngagementCalendarItem[];
+  isAdmin?: boolean;
 };
 
 function toDateKeyFromParts(year: number, month: number, day: number): string {
@@ -79,7 +80,7 @@ function formatPickerDate(dateKey: string): string {
   return new Date(year, month - 1, day).toLocaleDateString();
 }
 
-export function EngagementCalendar({ engagements: initialEngagements }: EngagementCalendarProps) {
+export function EngagementCalendar({ engagements: initialEngagements, isAdmin = false }: EngagementCalendarProps) {
   const router = useRouter();
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
@@ -312,6 +313,7 @@ export function EngagementCalendar({ engagements: initialEngagements }: Engageme
 
       <EngagementScheduleModal
         engagement={scheduleEngagement}
+        isAdmin={isAdmin}
         isOpen={isScheduleOpen}
         onClose={() => {
           setIsScheduleOpen(false);

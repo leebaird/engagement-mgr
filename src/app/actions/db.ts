@@ -8,8 +8,10 @@ import {
   importDatabaseArchive,
   importDatabaseSql,
 } from '@/lib/db-backup';
-import { requireAdmin } from '@/lib/require-admin';
-import { validateBackupFile } from '@/lib/validation/db';
+import { verifyUserPassword } from '@/lib/auth/verify-password';
+import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
+import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
+import { firstZodError } from '@/lib/validation/common';
 
 function backupFilename(): string {
   const now = new Date();
@@ -23,8 +25,8 @@ function backupFilename(): string {
 
 export async function exportDatabaseBackup():
   Promise<{ error: string } | { filename: string; data: number[] }> {
-  const session = await requireAdmin();
-  if (!session) {
+  const session = await requireAdminAuth();
+  if (isAdminError(session)) {
     return { error: 'Unauthorized' };
   }
 
@@ -41,9 +43,19 @@ export async function exportDatabaseBackup():
 export async function importDatabaseBackup(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean }> {
-  const session = await requireAdmin();
-  if (!session) {
+  const session = await requireAdminAuth();
+  if (isAdminError(session)) {
     return { error: 'Unauthorized' };
+  }
+
+  const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
+  if (!passwordParsed.success) {
+    return { error: firstZodError(passwordParsed.error) };
+  }
+
+  const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
+  if (!passwordValid) {
+    return { error: 'Incorrect password.' };
   }
 
   try {
@@ -76,10 +88,20 @@ export async function importDatabaseBackup(
   }
 }
 
-export async function resetDatabase(): Promise<{ error?: string }> {
-  const session = await requireAdmin();
-  if (!session) {
+export async function resetDatabase(formData: FormData): Promise<{ error?: string }> {
+  const session = await requireAdminAuth();
+  if (isAdminError(session)) {
     return { error: 'Unauthorized' };
+  }
+
+  const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
+  if (!passwordParsed.success) {
+    return { error: firstZodError(passwordParsed.error) };
+  }
+
+  const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
+  if (!passwordValid) {
+    return { error: 'Incorrect password.' };
   }
 
   try {

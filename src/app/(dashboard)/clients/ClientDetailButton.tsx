@@ -25,7 +25,7 @@ interface Client {
   updatedAt: Date;
 }
 
-export function ClientDetailButton({ client: initialClient }: { client: Client }) {
+export function ClientDetailButton({ client: initialClient, isAdmin = false }: { client: Client; isAdmin?: boolean }) {
   const router = useRouter();
   const [client, setClient] = useState(initialClient);
   const [isOpen, setIsOpen] = useState(false);
@@ -159,7 +159,7 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 Cancel
               </button>
             </>
-          ) : (
+          ) : isAdmin ? (
             <>
               <button
                 type="button"
@@ -196,7 +196,7 @@ export function ClientDetailButton({ client: initialClient }: { client: Client }
                 Delete
               </button>
             </>
-          )}
+          ) : undefined}
         >
           {!isEditing ? (
           // VIEW MODE - matching edit layout & typography

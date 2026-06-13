@@ -25,6 +25,7 @@ export type ScheduleEngagement = {
 
 type EngagementScheduleModalProps = {
   engagement: ScheduleEngagement | null;
+  isAdmin?: boolean;
   isOpen: boolean;
   onClose: () => void;
   onUpdated?: (engagement: ScheduleEngagement) => void;
@@ -32,6 +33,7 @@ type EngagementScheduleModalProps = {
 
 export function EngagementScheduleModal({
   engagement,
+  isAdmin = false,
   isOpen,
   onClose,
   onUpdated,
@@ -129,7 +131,7 @@ export function EngagementScheduleModal({
             Cancel
           </button>
         </>
-      ) : (
+      ) : isAdmin ? (
         <button
           type="button"
           className="modal-action-btn"
@@ -141,7 +143,7 @@ export function EngagementScheduleModal({
         >
           Edit
         </button>
-      )}
+      ) : undefined}
     >
       <div style={{ marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
         {engagement.codeName}

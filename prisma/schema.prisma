@@ -17,6 +17,12 @@ model User {
   lastLogin            DateTime?
 }
 
+model LoginRateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+}
+
 enum Role {
   Admin
   User

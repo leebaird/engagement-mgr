@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 export const MAX_BACKUP_BYTES = 500 * 1024 * 1024;
 
+export const adminConfirmPasswordSchema = z
+  .string()
+  .min(1, 'Password confirmation is required.');
+
 export function validateBackupFile(
   file: unknown
 ): { ok: true; file: File } | { ok: false; error: string } {

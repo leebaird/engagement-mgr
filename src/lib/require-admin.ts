@@ -1,5 +1,21 @@
-import { getSession } from '@/lib/auth/session';
+import { getSession, type SessionPayload } from '@/lib/auth/session';
 
+export type AdminError = { error: 'Unauthorized' };
+export type AdminResult = SessionPayload | AdminError;
+
+export function isAdminError(result: AdminResult): result is AdminError {
+  return 'error' in result;
+}
+
+export async function requireAdminAuth(): Promise<AdminResult> {
+  const session = await getSession();
+  if (!session || session.role !== 'Admin') {
+    return { error: 'Unauthorized' };
+  }
+  return session;
+}
+
+/** @deprecated Prefer requireAdminAuth() for consistent error handling. */
 export async function requireAdmin() {
   const session = await getSession();
   if (!session || session.role !== 'Admin') {

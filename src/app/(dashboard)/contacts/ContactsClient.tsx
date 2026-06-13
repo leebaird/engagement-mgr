@@ -7,23 +7,24 @@ import { CreateContactForm } from './CreateContactForm';
 
 interface ContactsClientProps {
   clients: { id: string, company: string }[];
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export function ContactsClient({ clients, children }: ContactsClientProps) {
+export function ContactsClient({ clients, isAdmin = false, children }: ContactsClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Contacts" onAddClick={() => setIsModalOpen(true)} />
+      <PageHeader title="Contacts" showAddButton={isAdmin} onAddClick={() => setIsModalOpen(true)} />
       
       <div ref={listRef}>
         {children}
       </div>
 
-      {isModalOpen && (
+      {isAdmin && isModalOpen && (
         <Modal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 

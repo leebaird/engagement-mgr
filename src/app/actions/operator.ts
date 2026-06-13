@@ -1,13 +1,13 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createOperatorSchema, updateOperatorSchema } from '@/lib/validation/operator';
 
 export async function createOperator(prevState: any, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const parsed = createOperatorSchema.safeParse({
     name: formData.get('name'),
@@ -37,8 +37,8 @@ export async function createOperator(prevState: any, formData: FormData) {
 }
 
 export async function updateOperator(id: string, prevState: any, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = uuidSchema.safeParse(id);
   if (!idParsed.success) {
@@ -75,8 +75,8 @@ export async function updateOperator(id: string, prevState: any, formData: FormD
 }
 
 export async function deleteOperator(id: string) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = uuidSchema.safeParse(id);
   if (!idParsed.success) {

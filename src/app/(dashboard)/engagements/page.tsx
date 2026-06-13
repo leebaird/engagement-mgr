@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
@@ -15,6 +16,8 @@ function formatEngagementType(type: string): string {
 }
 
 export default async function EngagementsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+  const session = await getSession();
+  const isAdmin = session?.role === 'Admin';
   const { sort, dir } = await searchParams;
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
@@ -89,7 +92,7 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
   const operators = await prisma.operator.findMany({ orderBy: { name: 'asc' } });
 
   return (
-    <EngagementsClient clients={clients} contacts={contacts} operators={operators}>
+    <EngagementsClient clients={clients} contacts={contacts} operators={operators} isAdmin={isAdmin}>
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -129,7 +132,7 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                 <td style={{ padding: '0.75rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} />
+                  <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} isAdmin={isAdmin} />
                 </td>
               </tr>
             ))}

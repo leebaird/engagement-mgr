@@ -34,12 +34,14 @@ export function EngagementDetailButton({
   engagement: initialEngagement,
   clients,
   contacts,
-  operators
+  operators,
+  isAdmin = false,
 }: {
   engagement: any,
   clients: { id: string, company: string }[],
   contacts: { id: string, name: string, clientId: string }[],
-  operators: { id: string, name: string, title: string | null }[]
+  operators: { id: string, name: string, title: string | null }[],
+  isAdmin?: boolean,
 }) {
   const router = useRouter();
   const [engagement, setEngagement] = useState(initialEngagement);
@@ -203,7 +205,7 @@ export function EngagementDetailButton({
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
             <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
           </>
-        ) : (
+        ) : isAdmin ? (
           <>
             <button
               type="button"
@@ -254,7 +256,7 @@ export function EngagementDetailButton({
               Delete
             </button>
           </>
-        )}
+        ) : undefined}
       >
         <div className="engagement-create-form">
           <EngagementFormFields
@@ -295,6 +297,7 @@ export function EngagementDetailButton({
 
       <EngagementScheduleModal
         engagement={engagement}
+        isAdmin={isAdmin}
         isOpen={isScheduleOpen}
         onClose={() => setIsScheduleOpen(false)}
         onUpdated={(updated) => {

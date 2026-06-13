@@ -1,10 +1,13 @@
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
 import { formatPhone } from '@/lib/format';
 
 export default async function ContactsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+  const session = await getSession();
+  const isAdmin = session?.role === 'Admin';
   const { sort, dir } = await searchParams;
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber', 'client'];
@@ -45,7 +48,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   };
 
   return (
-    <ContactsClient clients={clients}>
+    <ContactsClient clients={clients} isAdmin={isAdmin}>
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -77,7 +80,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
                 <td style={{ padding: '0.75rem' }}>{c.email || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(c.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <ContactDetailButton contact={c} clients={clients} />
+                  <ContactDetailButton contact={c} clients={clients} isAdmin={isAdmin} />
                 </td>
               </tr>
             ))}

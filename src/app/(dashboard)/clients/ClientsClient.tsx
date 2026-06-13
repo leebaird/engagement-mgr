@@ -6,23 +6,24 @@ import { Modal } from '@/components/Modal';
 import { CreateClientForm } from './CreateClientForm';
 
 interface ClientsClientProps {
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export function ClientsClient({ children }: ClientsClientProps) {
+export function ClientsClient({ isAdmin = false, children }: ClientsClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Clients" onAddClick={() => setIsModalOpen(true)} />
+      <PageHeader title="Clients" showAddButton={isAdmin} onAddClick={() => setIsModalOpen(true)} />
       
       <div ref={listRef}>
         {children}
       </div>
 
-      {isModalOpen && (
+      {isAdmin && isModalOpen && (
         <Modal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 

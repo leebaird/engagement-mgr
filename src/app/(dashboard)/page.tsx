@@ -1,9 +1,13 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import { Crosshair, ShieldAlert, Building2, Zap, Contact } from 'lucide-react';
 import { EngagementCalendar } from './EngagementCalendar';
 
 export default async function DashboardHome() {
+  const session = await getSession();
+  const isAdmin = session?.role === 'Admin';
+
   const [
     activeEngagementCount,
     reconEngagementCount,
@@ -217,7 +221,7 @@ export default async function DashboardHome() {
         </div>
 
         <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <EngagementCalendar engagements={calendarEngagements} />
+          <EngagementCalendar engagements={calendarEngagements} isAdmin={isAdmin} />
         </div>
       </div>
     </div>

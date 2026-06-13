@@ -12,7 +12,7 @@ import {
   screenshotDescriptionSchema,
   updateFindingSchema,
 } from '@/lib/validation/finding';
-import { validateScreenshotUpload } from '@/lib/validation/upload';
+import { validateScreenshotBuffer, validateScreenshotUpload } from '@/lib/validation/upload';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -294,6 +294,11 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
+
+  const bufferResult = validateScreenshotBuffer(buffer, fileResult.extension);
+  if (!bufferResult.ok) {
+    return { error: bufferResult.error };
+  }
 
   try {
     await writeFile(absolutePath, buffer);

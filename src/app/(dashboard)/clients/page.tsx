@@ -1,10 +1,13 @@
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { ClientsClient } from './ClientsClient';
 import { ClientDetailButton } from './ClientDetailButton';
 import { formatPhone } from '@/lib/format';
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+  const session = await getSession();
+  const isAdmin = session?.role === 'Admin';
   const { sort, dir } = await searchParams;
 
   const validSortColumns = ['company', 'website', 'phoneNumber'];
@@ -31,7 +34,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   };
 
   return (
-    <ClientsClient>
+    <ClientsClient isAdmin={isAdmin}>
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -55,7 +58,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 <td style={{ padding: '0.75rem' }}>{client.website || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(client.phone)}</td>
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <ClientDetailButton client={client} />
+                  <ClientDetailButton client={client} isAdmin={isAdmin} />
                 </td>
               </tr>
             ))}

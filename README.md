@@ -221,6 +221,7 @@ This section documents the architecture, database schema, security measures, and
 ### Database Schema
 
 - **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
+- **LoginRateLimit**: `key` (IP + username), `count`, `resetAt` — persisted login attempt tracking.
 - **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Prep, Recon, Testing, Reporting, Complete), `focus`, `type` (AI, Code_Review, Firewall, Multi, Pentest, Phishing, Physical, Purple_Team, Red_Team, USB_Drop, Vishing, Web_App, Wireless), `location` (Internal, External), `startPrep`, `endPrep`, `startRecon`, `endRecon`, `startTesting`, `endTesting`, `startReporting`, `endReporting`, `outbrief`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
@@ -256,7 +257,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. Only `Admin` roles can access the Admin page (`/users`) to create new accounts (the UI dynamically hides the Admin navigation button from non-admins). Only admins can back up, restore, or reset the database from the Admin page.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Only admins can access the Admin page (`/users`), manage accounts, and back up, restore, or reset the database. Destructive database operations require password re-confirmation.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

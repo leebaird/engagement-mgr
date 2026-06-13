@@ -1,10 +1,13 @@
 import { prisma } from '@/lib/db';
+import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { OperatorsClient } from './OperatorsClient';
 import { OperatorDetailButton } from './OperatorDetailButton';
 import { formatPhone } from '@/lib/format';
 
 export default async function OperatorsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+  const session = await getSession();
+  const isAdmin = session?.role === 'Admin';
   const { sort, dir } = await searchParams;
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber'];
@@ -53,7 +56,7 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
   };
 
   return (
-    <OperatorsClient>
+    <OperatorsClient isAdmin={isAdmin}>
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -83,7 +86,7 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
                 <td style={{ padding: '0.75rem' }}>{formatPhone(op.phoneNumber)}</td>
 
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <OperatorDetailButton operator={op} />
+                  <OperatorDetailButton operator={op} isAdmin={isAdmin} />
                 </td>
               </tr>
             ))}

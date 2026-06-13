@@ -19,6 +19,8 @@ export function UsersClient({ children }: UsersClientProps) {
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [restorePassword, setRestorePassword] = useState('');
   const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null);
   const dbBusy = importPending || deletePending;
   const listRef = useRef<HTMLDivElement>(null);
@@ -44,12 +46,15 @@ export function UsersClient({ children }: UsersClientProps) {
   const closeResetModal = () => {
     setResetModalOpen(false);
     setResetConfirmText('');
+    setResetPassword('');
   };
 
   const handleDeleteDb = async () => {
     setDeletePending(true);
     try {
-      const result = await resetDatabase();
+      const formData = new FormData();
+      formData.append('password', resetPassword);
+      const result = await resetDatabase(formData);
       if (result?.error) {
         alert(result.error);
       }
@@ -80,6 +85,7 @@ export function UsersClient({ children }: UsersClientProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('password', restorePassword);
       const data = await importDatabaseBackup(formData);
       if (data.error) {
         alert(data.error);
@@ -93,6 +99,7 @@ export function UsersClient({ children }: UsersClientProps) {
       setImportPending(false);
       setRestoreConfirmOpen(false);
       setPendingRestoreFile(null);
+      setRestorePassword('');
     }
   };
 
@@ -222,6 +229,7 @@ export function UsersClient({ children }: UsersClientProps) {
         onClose={() => {
           setRestoreConfirmOpen(false);
           setPendingRestoreFile(null);
+          setRestorePassword('');
         }}
         title="Restore backup"
         maxWidth="480px"
@@ -231,7 +239,7 @@ export function UsersClient({ children }: UsersClientProps) {
               type="button"
               className="btn-save"
               style={{ boxShadow: 'none' }}
-              disabled={importPending}
+              disabled={importPending || !restorePassword}
               onClick={confirmRestore}
             >
               {importPending ? 'Restoring...' : 'Restore'}
@@ -244,6 +252,7 @@ export function UsersClient({ children }: UsersClientProps) {
               onClick={() => {
                 setRestoreConfirmOpen(false);
                 setPendingRestoreFile(null);
+                setRestorePassword('');
               }}
             >
               Cancel
@@ -251,15 +260,30 @@ export function UsersClient({ children }: UsersClientProps) {
           </>
         }
       >
-        <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-          Restore will replace all database data and uploaded screenshots with
-          {pendingRestoreFile ? (
-            <> <strong style={{ color: 'var(--text-main)' }}>{pendingRestoreFile.name}</strong></>
-          ) : (
-            ' this backup'
-          )}
-          . This cannot be undone.
-        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            Restore will replace all database data and uploaded screenshots with
+            {pendingRestoreFile ? (
+              <> <strong style={{ color: 'var(--text-main)' }}>{pendingRestoreFile.name}</strong></>
+            ) : (
+              ' this backup'
+            )}
+            . This cannot be undone.
+          </p>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Enter your password to confirm
+            </div>
+            <input
+              type="password"
+              className="form-input"
+              value={restorePassword}
+              onChange={e => setRestorePassword(e.target.value)}
+              autoComplete="current-password"
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
       </Modal>
 
       <Modal
@@ -273,7 +297,7 @@ export function UsersClient({ children }: UsersClientProps) {
               type="button"
               className="btn-save"
               style={{ boxShadow: 'none', borderColor: '#ff3366', color: '#ff3366' }}
-              disabled={resetConfirmText !== 'RESET' || deletePending}
+              disabled={resetConfirmText !== 'RESET' || !resetPassword || deletePending}
               onClick={handleDeleteDb}
             >
               {deletePending ? 'Resetting...' : 'Reset'}
@@ -304,6 +328,19 @@ export function UsersClient({ children }: UsersClientProps) {
               value={resetConfirmText}
               onChange={e => setResetConfirmText(e.target.value)}
               autoComplete="off"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+              Enter your password to confirm
+            </div>
+            <input
+              type="password"
+              className="form-input"
+              value={resetPassword}
+              onChange={e => setResetPassword(e.target.value)}
+              autoComplete="current-password"
               style={{ width: '100%' }}
             />
           </div>

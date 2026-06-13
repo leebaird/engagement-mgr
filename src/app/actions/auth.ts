@@ -27,7 +27,7 @@ export async function login(prevState: any, formData: FormData) {
 
   const { username, password } = parsed.data;
   const rateLimitKey = loginRateLimitKey(await getClientIp(), username);
-  const rateLimit = isLoginRateLimited(rateLimitKey);
+  const rateLimit = await isLoginRateLimited(rateLimitKey);
 
   if (rateLimit.limited) {
     return {
@@ -40,7 +40,7 @@ export async function login(prevState: any, formData: FormData) {
   });
 
   if (!user) {
-    recordLoginFailure(rateLimitKey);
+    await recordLoginFailure(rateLimitKey);
     return { error: 'Invalid credentials' };
   }
 
@@ -48,11 +48,11 @@ export async function login(prevState: any, formData: FormData) {
     const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
 
     if (!isPasswordValid) {
-      recordLoginFailure(rateLimitKey);
+      await recordLoginFailure(rateLimitKey);
       return { error: 'Invalid credentials' };
     }
 
-    clearLoginRateLimit(rateLimitKey);
+    await clearLoginRateLimit(rateLimitKey);
 
     // Record the login timestamp
     await prisma.user.update({

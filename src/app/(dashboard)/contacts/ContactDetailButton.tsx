@@ -25,7 +25,7 @@ interface Contact {
   updatedAt: Date;
 }
 
-export function ContactDetailButton({ contact: initialContact, clients }: { contact: Contact, clients: Client[] }) {
+export function ContactDetailButton({ contact: initialContact, clients, isAdmin = false }: { contact: Contact, clients: Client[], isAdmin?: boolean }) {
   const router = useRouter();
   const [contact, setContact] = useState(initialContact);
   const [isOpen, setIsOpen] = useState(false);
@@ -109,7 +109,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
             <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
             <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
           </>
-        ) : (
+        ) : isAdmin ? (
           <>
             <button
               type="button"
@@ -145,7 +145,7 @@ export function ContactDetailButton({ contact: initialContact, clients }: { cont
               Delete
             </button>
           </>
-        )}
+        ) : undefined}
       >
         {!isEditing ? (
           // VIEW MODE (form field style)

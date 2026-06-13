@@ -1,7 +1,7 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { isAuthError, requireAuth } from '@/lib/require-auth';
+import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import {
   createEngagementSchema,
@@ -34,8 +34,8 @@ function parseRelationIds(
 }
 
 export async function createEngagement(prevState: any, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const parsed = createEngagementSchema.safeParse({
     codeName: formData.get('codeName'),
@@ -111,8 +111,8 @@ export async function createEngagement(prevState: any, formData: FormData) {
 }
 
 export async function updateEngagement(id: string, prevState: any, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = engagementIdSchema.safeParse(id);
   if (!idParsed.success) {
@@ -207,8 +207,8 @@ export async function updateEngagement(id: string, prevState: any, formData: For
 }
 
 export async function updateEngagementSchedule(id: string, formData: FormData) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = engagementIdSchema.safeParse(id);
   if (!idParsed.success) {
@@ -246,8 +246,8 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
 }
 
 export async function deleteEngagement(id: string) {
-  const auth = await requireAuth();
-  if (isAuthError(auth)) return { error: 'Unauthorized' };
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) return { error: 'Unauthorized' };
 
   const idParsed = uuidSchema.safeParse(id);
   if (!idParsed.success) {

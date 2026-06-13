@@ -6,23 +6,24 @@ import { Modal } from '@/components/Modal';
 import { CreateOperatorForm } from './CreateOperatorForm';
 
 interface OperatorsClientProps {
+  isAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export function OperatorsClient({ children }: OperatorsClientProps) {
+export function OperatorsClient({ isAdmin = false, children }: OperatorsClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Operators" onAddClick={() => setIsModalOpen(true)} />
+      <PageHeader title="Operators" showAddButton={isAdmin} onAddClick={() => setIsModalOpen(true)} />
       
       <div ref={listRef}>
         {children}
       </div>
 
-      {isModalOpen && (
+      {isAdmin && isModalOpen && (
         <Modal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
