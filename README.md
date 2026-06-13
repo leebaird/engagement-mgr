@@ -4,10 +4,15 @@ Engagement Manager is a web application for tracking offensive security engageme
 
 ## Prerequisites
 
-Before running the application on Ubuntu, install the following prerequisites:
+This application is designed to run on Ubuntu, and requires the following:
+
 ```bash
-sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-client postgresql-contrib unzip zip
+sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-client postgresql-contrib zip unzip
 ```
+
+`postgresql-client` provides `pg_dump` and `psql`; `zip` and `unzip` are used for backup archives.
+
+The app requires Node.js `^20.19.0`, `^22.12.0`, or `>=24.0.0` (see `engines` in `package.json`). If `node -v` is older after installing from apt, use [NodeSource](https://github.com/nodesource/distributions) or [nvm](https://github.com/nvm-sh/nvm) before continuing.
 
 ## Environment Configuration
 
@@ -102,7 +107,6 @@ Then open `http://<this-machine-ip>:3000` from the other device. Use this only o
 
 - **Node.js** `^20.19.0`, `^22.12.0`, or `>=24.0.0` (see `engines` in `package.json`)
 - **PostgreSQL** with a least-privilege app user (see [Database Setup](#database-setup))
-- **System tools** for admin backup/restore: `pg_dump`, `psql`, `zip`, `unzip`
 - **HTTPS** in front of the app (reverse proxy such as nginx or Caddy). Session cookies are marked `Secure` in production.
 - **Persistent storage** for the `uploads/` directory (finding screenshots)
 
@@ -156,8 +160,7 @@ After seeding the database, you can log in using the default admin account:
 - **Username**: `admin`
 - **Password**: `admin`
 
-> **Note:** Upon logging in, you will be required to change this password after 90 days.
-- All new passwords must be at least 16 characters long, include an uppercase letter, lowercase letter, number, and a symbol.
+> **Note:** You will be required to change this password after 90 days. All passwords must be at least 16 characters and include an uppercase letter, lowercase letter, number, and a symbol.
 
 ## Server migration (Backup / Restore / Reset)
 
@@ -174,8 +177,8 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/database.sql` | Full PostgreSQL dump (schema, tables, data, enums, relations) from `pg_dump` |
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
-- **Restore** accepts the `.zip` from **Backup** and replaces the current database and `uploads/` folder. A plain `.sql` file restores the database only (no screenshots).
-- **Reset** wipes all data and recreates the default `admin` account. You must type `RESET` to confirm.
+- **Restore** accepts the `.zip` from **Backup** and replaces the current database and `uploads/` folder. A plain `.sql` file restores the database only (no screenshots). Requires your admin password to confirm.
+- **Reset** wipes all data and recreates the default `admin` account. Requires typing `RESET` and entering your admin password to confirm.
 
 **Old server**
 
@@ -189,22 +192,28 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 
 **New server**
 
-1. Install prerequisites (Node.js, PostgreSQL, `zip`, `unzip`) and clone the repository.
+1. Install [Prerequisites](#prerequisites) and clone the repository.
 2. Create `.env` with `DATABASE_URL` and `JWT_SECRET` (see [Environment Configuration](#environment-configuration)).
 3. Create an empty PostgreSQL database and user (see [Database Setup](#database-setup)).
 4. Install dependencies: `npm install`.
 5. **Do not** run `npx prisma migrate dev` or `npx prisma db seed` before importing — the SQL dump creates schema and data.
-6. Start the app: `npm run dev` (or your production process).
+6. Build and start the app in production mode (see [Production Deployment](#production-deployment)):
+
+   ```bash
+   npm run build
+   NODE_ENV=production npm run start
+   ```
+
 7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI (`admin` / `admin`); the import step replaces that data with the backup.
-8. Open **Admin** (`/users`), click **Restore** (under **Database**) to select the `.zip` from the old server, and confirm.
+8. Open **Admin** (`/users`), click **Restore** (under **Database**), select the `.zip` from the old server, enter your admin password, and confirm.
 9. Restart the app if it was already running so it picks up the restored data.
 
 **Notes**
 
-- **Destructive actions:** Restore and Reset replace all existing database rows and overwrite the `uploads/` directory.
+- **Destructive actions:** Restore and Reset replace all existing database rows and overwrite the `uploads/` directory. Both require admin password re-confirmation in addition to the UI prompt.
 - **JWT_SECRET:** May differ on the new server; existing browser sessions from the old server are not migrated. Users sign in again with accounts from the imported database.
 - **Application code:** Use `git clone` (or deploy the same revision) on the new server so the app matches the schema expected by the backup. If the old server ran a newer schema than the cloned code, align versions before importing.
-- **Tools:** Backup and restore require `pg_dump`, `psql`, `zip`, and `unzip` on the server where the app runs.
+- **Tools:** Backup and restore require the CLI tools installed in [Prerequisites](#prerequisites).
 
 ## Implementation Plan & Architecture
 
