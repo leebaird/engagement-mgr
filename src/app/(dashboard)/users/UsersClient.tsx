@@ -15,6 +15,7 @@ export function UsersClient({ children }: UsersClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [importPending, setImportPending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
   const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -29,11 +30,13 @@ export function UsersClient({ children }: UsersClientProps) {
   const sectionWidth = '600px';
 
   const handleExportDb = async () => {
+    setBackupSuccess(null);
     const result = await exportDatabaseBackup();
     if ('error' in result) {
       alert(result.error);
       return;
     }
+    setBackupSuccess(`Backup saved to ${result.savedPath}`);
     const blob = new Blob([new Uint8Array(result.data)], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -81,6 +84,7 @@ export function UsersClient({ children }: UsersClientProps) {
 
   const runRestore = async (file: File) => {
     setImportPending(true);
+    setBackupSuccess(null);
     setRestoreSuccess(null);
     try {
       const formData = new FormData();
@@ -151,7 +155,7 @@ export function UsersClient({ children }: UsersClientProps) {
               <h2 className="db-panel-title">Database</h2>
             </div>
           </div>
-          {restoreSuccess ? (
+          {backupSuccess || restoreSuccess ? (
             <div
               style={{
                 color: '#4ade80',
@@ -163,7 +167,7 @@ export function UsersClient({ children }: UsersClientProps) {
                 borderRadius: '8px',
               }}
             >
-              {restoreSuccess}
+              {backupSuccess ?? restoreSuccess}
             </div>
           ) : null}
           <div className="db-action-grid">
@@ -175,7 +179,7 @@ export function UsersClient({ children }: UsersClientProps) {
             >
               <Upload size={22} color="#0066ff" />
               <span className="db-action-btn-label">Backup</span>
-              <span className="db-action-btn-desc">Export a full backup zip.</span>
+              <span className="db-action-btn-desc">Save a full backup zip to your home directory.</span>
             </button>
             <button
               type="button"

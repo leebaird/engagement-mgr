@@ -1,7 +1,14 @@
 'use server';
 
+import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import {
+  backupFilename,
+  ensureBackupDirectory,
+  formatBackupPathForDisplay,
+  resolveBackupFilePath,
+} from '@/lib/backup-path';
 import {
   deleteAllDatabaseData,
   exportDatabaseArchive,
@@ -13,18 +20,8 @@ import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
 import { firstZodError } from '@/lib/validation/common';
 
-function backupFilename(): string {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const timestamp =
-    [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-') +
-    '-' +
-    [pad(now.getHours()), pad(now.getMinutes())].join('-');
-  return `em-backup-${timestamp}.zip`;
-}
-
 export async function exportDatabaseBackup():
-  Promise<{ error: string } | { filename: string; data: number[] }> {
+  Promise<{ error: string } | { filename: string; savedPath: string; data: number[] }> {
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
     return { error: 'Unauthorized' };
@@ -32,7 +29,21 @@ export async function exportDatabaseBackup():
 
   try {
     const zip = await exportDatabaseArchive();
-    return { filename: backupFilename(), data: Array.from(zip) };
+    const filename = backupFilename();
+    await ensureBackupDirectory();
+    const absolutePath = resolveBackupFilePath(filename);
+
+    if (!absolutePath) {
+      return { error: 'Failed to prepare backup file path.' };
+    }
+
+    await writeFile(absolutePath, zip);
+
+    return {
+      filename,
+      savedPath: formatBackupPathForDisplay(absolutePath),
+      data: Array.from(zip),
+    };
   } catch {
     return {
       error: 'Export failed. Ensure pg_dump and zip are installed and DATABASE_URL is valid.',

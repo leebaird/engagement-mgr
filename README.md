@@ -164,6 +164,7 @@ Then open `http://<this-machine-ip>:3000` from the other device. Use this only o
 - [ ] HTTPS is configured; HTTP redirects to HTTPS
 - [ ] Database user has no `CREATEDB` or superuser privileges
 - [ ] `uploads/` is on persistent disk and included in backups
+- [ ] `~/engagement-mgr-backups/` is on persistent disk if admins use Backup
 - [ ] `pg_dump`, `psql`, `zip`, and `unzip` are available if admins will use Backup/Restore
 
 ## Default Credentials
@@ -182,7 +183,7 @@ After seeding the database, you can log in using the default admin account:
 
 On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
 
-**Backup** saves a `.zip` download named `em-backup-YYYY-MM-DD-HH-MM.zip`.
+**Backup** saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app) and also downloads a copy to your browser.
 - The timestamp uses the **local time** of the server running the app (year, month, day, hour, and minute). Example: `em-backup-2026-06-02-14-30.zip`.
 
 | Path | Contents |
