@@ -70,7 +70,7 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '180px' }}>
                 <Link href={getSortHref('email')} style={{ color: 'inherit', textDecoration: 'none' }}>Email{getSortIcon('email')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}>
+              <th style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', color: 'var(--text-muted)', width: '160px' }}>
                 <Link href={getSortHref('phoneNumber')} style={{ color: 'inherit', textDecoration: 'none' }}>Phone{getSortIcon('phoneNumber')}</Link>
               </th>
 
@@ -83,7 +83,7 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
                 <td style={{ padding: '0.75rem', fontWeight: 500, width: '170px' }}>{op.name}</td>
                 <td style={{ padding: '0.75rem', width: '170px' }}>{op.title || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{op.email || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{formatPhone(op.phoneNumber)}</td>
+                <td style={{ padding: '0.75rem 0.75rem 0.75rem 3rem' }}>{formatPhone(op.phoneNumber)}</td>
 
                 <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <OperatorDetailButton operator={op} isAdmin={isAdmin} />
