@@ -5,12 +5,69 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 DB_NAME="engagement_manager"
-APT_PACKAGES=(nodejs npm postgresql postgresql-client postgresql-contrib zip unzip)
+NODE_INSTALL_MAJOR="${NODE_INSTALL_MAJOR:-22}"
+APT_PACKAGES=(postgresql postgresql-client postgresql-contrib zip unzip)
+
+NONINTERACTIVE=false
+OVERWRITE_ENV=false
+SETUP_MODE=""
+DB_USER=""
+DB_PASSWORD=""
+GENERATED_DB_PASSWORD=false
 
 info() { printf '==> %s\n' "$*"; }
 warn() { printf 'warning: %s\n' "$*" >&2; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 success() { printf '✓ %s\n' "$*"; }
+
+usage() {
+  cat <<EOF
+Usage: ./setup.sh [options]
+
+Options:
+  -y, --yes, --non-interactive   Run without prompts
+  --mode=development|production  Setup mode (default: development)
+  --db-user=NAME                 Database username (default: em_admin)
+  --db-pass=PASSWORD             Database password
+  --overwrite-env                Overwrite an existing .env without prompting
+  -h, --help                     Show this help
+
+Non-interactive examples:
+  ./setup.sh -y --db-user=em_admin --db-pass='secret'
+  ./setup.sh -y --mode=production --overwrite-env
+EOF
+}
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --non-interactive|--yes|-y)
+        NONINTERACTIVE=true
+        OVERWRITE_ENV=true
+        ;;
+      --mode=*)
+        SETUP_MODE="${1#*=}"
+        ;;
+      --db-user=*)
+        DB_USER="${1#*=}"
+        ;;
+      --db-pass=*)
+        DB_PASSWORD="${1#*=}"
+        ;;
+      --overwrite-env)
+        OVERWRITE_ENV=true
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      *)
+        die "Unknown argument: $1 (use --help)"
+        ;;
+    esac
+    shift
+  done
+}
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || die "Required command not found: $1"
@@ -49,16 +106,26 @@ process.exit(ok ? 0 : 1);
 }
 
 install_node_from_nodesource() {
-  info "Installing Node.js 22.x from NodeSource..."
+  info "Installing Node.js ${NODE_INSTALL_MAJOR}.x from NodeSource..."
   require_command curl
-  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_INSTALL_MAJOR}.x" | sudo -E bash -
   sudo apt-get install -y nodejs
 }
 
 install_system_packages() {
   info "Installing system packages..."
   sudo apt-get update
-  sudo apt-get install -y "${APT_PACKAGES[@]}"
+  sudo apt-get install -y curl ca-certificates gnupg "${APT_PACKAGES[@]}"
+
+  if ! node_version_ok 2>/dev/null; then
+    if command -v node >/dev/null 2>&1; then
+      warn "Node.js $(node -v) is below the required version."
+    else
+      warn "Node.js is not installed."
+    fi
+    install_node_from_nodesource
+  fi
+
   success "System packages installed"
 }
 
@@ -72,7 +139,7 @@ ensure_postgresql_running() {
 validate_cli_tools() {
   info "Validating required CLI tools..."
   local tool
-  for tool in node npm npx psql pg_dump zip unzip openssl; do
+  for tool in node npm npx psql pg_dump zip unzip openssl python3; do
     require_command "$tool"
     success "$tool available ($(command -v "$tool"))"
   done
@@ -83,26 +150,59 @@ validate_cli_tools() {
   success "Node.js version OK ($(node -v))"
 }
 
-prompt_setup_mode() {
+validate_db_username() {
+  local username="$1"
+  [[ "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]
+}
+
+resolve_setup_mode() {
+  if [[ -n "$SETUP_MODE" ]]; then
+    case "$SETUP_MODE" in
+      development|dev) SETUP_MODE="development" ;;
+      production|prod) SETUP_MODE="production" ;;
+      *) die "Invalid setup mode: $SETUP_MODE" ;;
+    esac
+    success "Setup mode: $SETUP_MODE"
+    return
+  fi
+
+  if $NONINTERACTIVE; then
+    SETUP_MODE="development"
+    success "Setup mode: $SETUP_MODE (default)"
+    return
+  fi
+
   local reply
   printf "Setup mode [development/production] (default: development): "
   read -r reply
   reply="${reply:-development}"
   case "$reply" in
-    development|dev)
-      SETUP_MODE="development"
-      ;;
-    production|prod)
-      SETUP_MODE="production"
-      ;;
-    *)
-      die "Invalid setup mode: $reply"
-      ;;
+    development|dev) SETUP_MODE="development" ;;
+    production|prod) SETUP_MODE="production" ;;
+    *) die "Invalid setup mode: $reply" ;;
   esac
   success "Setup mode: $SETUP_MODE"
 }
 
-prompt_db_credentials() {
+resolve_db_credentials() {
+  if $NONINTERACTIVE; then
+    DB_USER="${DB_USER:-em_admin}"
+    validate_db_username "$DB_USER" || die "Invalid database username: $DB_USER"
+
+    if [[ -z "$DB_PASSWORD" ]]; then
+      if [[ "$SETUP_MODE" == "production" ]]; then
+        DB_PASSWORD="$(openssl rand -base64 24)"
+        GENERATED_DB_PASSWORD=true
+        warn "Generated a database password for non-interactive production setup."
+      else
+        die "Non-interactive mode requires --db-pass=... in development mode."
+      fi
+    fi
+
+    success "Database credentials configured for user '$DB_USER'"
+    return
+  fi
+
   local reply
 
   while true; do
@@ -110,7 +210,7 @@ prompt_db_credentials() {
     read -r DB_USER
     DB_USER="${DB_USER:-em_admin}"
 
-    if [[ "$DB_USER" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+    if validate_db_username "$DB_USER"; then
       break
     fi
     warn "Username must start with a letter or underscore and contain only letters, numbers, and underscores."
@@ -146,12 +246,16 @@ urlencode() {
 
 postgres_role_exists() {
   local role="$1"
-  sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname = '${role}'" | grep -q 1
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -tA \
+    -c "SELECT 1 FROM pg_roles WHERE rolname = :'role'" \
+    -v "role=${role}" | grep -q 1
 }
 
 postgres_database_exists() {
   local db="$1"
-  sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '${db}'" | grep -q 1
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -tA \
+    -c "SELECT 1 FROM pg_database WHERE datname = :'db'" \
+    -v "db=${db}" | grep -q 1
 }
 
 create_database_objects() {
@@ -187,13 +291,17 @@ write_env_file() {
   local encoded_password jwt_secret database_url
 
   if [[ -f .env ]]; then
-    local overwrite
-    printf ".env already exists. Overwrite? [y/N]: "
-    read -r overwrite
-    case "$overwrite" in
-      y|Y|yes|YES) ;;
-      *) die "Aborting to avoid overwriting existing .env." ;;
-    esac
+    if $OVERWRITE_ENV; then
+      warn "Overwriting existing .env"
+    else
+      local overwrite
+      printf ".env already exists. Overwrite? [y/N]: "
+      read -r overwrite
+      case "$overwrite" in
+        y|Y|yes|YES) ;;
+        *) die "Aborting to avoid overwriting existing .env." ;;
+      esac
+    fi
   fi
 
   encoded_password="$(urlencode "$DB_PASSWORD")"
@@ -205,7 +313,9 @@ DATABASE_URL="${database_url}"
 JWT_SECRET="${jwt_secret}"
 EOF
 
-  success ".env created"
+  chmod 600 .env
+  success ".env created and secured (600)"
+  warn "Review .env and store a backup in a safe location before production use."
 }
 
 verify_database_connection() {
@@ -260,30 +370,29 @@ Then open http://localhost:3000 and sign in with:
   Username: admin
   Password: admin
 
-Change the default admin password before exposing this app to others.
-
+Important:
+- Change the default admin password before exposing this app to others.
+- Back up $ROOT_DIR/.env securely; it contains database credentials and JWT_SECRET.
 EOF
+
+  if $GENERATED_DB_PASSWORD; then
+    cat <<EOF
+- Generated database password for '$DB_USER': $DB_PASSWORD
+EOF
+  fi
 }
 
 main() {
+  parse_args "$@"
+
   info "Engagement Manager setup"
   check_os
   require_sudo
   install_system_packages
   ensure_postgresql_running
-
-  if ! node_version_ok 2>/dev/null; then
-    if command -v node >/dev/null 2>&1; then
-      warn "Node.js $(node -v) is below the required version."
-    else
-      warn "Node.js is not installed."
-    fi
-    install_node_from_nodesource
-  fi
-
   validate_cli_tools
-  prompt_setup_mode
-  prompt_db_credentials
+  resolve_setup_mode
+  resolve_db_credentials
   write_env_file
   create_database_objects
   verify_database_connection

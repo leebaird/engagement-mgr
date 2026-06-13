@@ -74,7 +74,15 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script installs prerequisites, prompts for a database username and password, writes `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account.
+The script installs prerequisites, prompts for a database username and password, writes a `chmod 600` `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account.
+
+For headless or CI use:
+
+```bash
+./setup.sh -y --db-user=em_admin --db-pass='your-password'
+```
+
+Run `./setup.sh --help` for all options.
 
 ### Manual setup
 
