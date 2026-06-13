@@ -65,6 +65,19 @@ Set `DATABASE_URL` to use `em_app` (or your chosen username). Migrations run as 
 
 ## Installation
 
+### Automated setup (Ubuntu)
+
+From the repository root, run:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+The script installs prerequisites, prompts for a database username and password, writes `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account.
+
+### Manual setup
+
 1. Install Node.js dependencies:
 
    ```bash
