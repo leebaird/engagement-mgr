@@ -80,6 +80,7 @@ type EngagementFormFieldsProps = {
   taTriggerRef: RefObject<HTMLDivElement | null>;
   operatorsTriggerRef: RefObject<HTMLDivElement | null>;
   values?: EngagementFormValues;
+  defaultValues?: EngagementFormValues;
   onFieldChange?: (field: keyof EngagementFormValues, value: string) => void;
   autoFocusCodeName?: boolean;
   readOnly?: boolean;
@@ -111,37 +112,43 @@ export function EngagementFormFields({
   taTriggerRef,
   operatorsTriggerRef,
   values,
+  defaultValues,
   onFieldChange,
   autoFocusCodeName = false,
   readOnly = false,
   footer,
 }: EngagementFormFieldsProps) {
   const controlled = values !== undefined && onFieldChange !== undefined;
-  const displayValues = readOnly || controlled;
 
   const textProps = (field: keyof EngagementFormValues, name: string, extra?: { required?: boolean; autoFocus?: boolean }) => {
-    if (displayValues && values) {
+    if (readOnly && values) {
+      return { value: values[field], readOnly: true as const };
+    }
+    if (controlled && values) {
       return {
         value: values[field],
-        ...(readOnly
-          ? { readOnly: true as const }
-          : {
-              onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                onFieldChange!(field, e.target.value),
-            }),
+        onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+          onFieldChange!(field, e.target.value),
       };
+    }
+    if (defaultValues) {
+      return { name, defaultValue: defaultValues[field], ...extra };
     }
     return { name, ...extra };
   };
 
   const selectProps = (field: keyof EngagementFormValues, name: string) => {
-    if (displayValues && values) {
+    if (readOnly && values) {
+      return { value: values[field], disabled: true as const };
+    }
+    if (controlled && values) {
       return {
         value: values[field],
-        ...(readOnly
-          ? { disabled: true as const }
-          : { onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onFieldChange!(field, e.target.value) }),
+        onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onFieldChange!(field, e.target.value),
       };
+    }
+    if (defaultValues) {
+      return { name, defaultValue: defaultValues[field] };
     }
     return { name };
   };

@@ -115,20 +115,6 @@ export function EngagementDetailButton({
     setFindings(mapEngagementFindings(initialEngagement.findings));
   }, [initialEngagement]);
 
-  const [formData, setFormData] = useState({
-    codeName: initialEngagement.codeName,
-    clientName: initialEngagement.client?.company || '',
-    chargeCode: initialEngagement.chargeCode || '',
-    type: initialEngagement.type || '',
-    location: initialEngagement.location || '',
-    status: initialEngagement.status || '',
-    focus: initialEngagement.focus || '',
-    objectives: initialEngagement.objectives || '',
-    targets: initialEngagement.targets || '',
-    exclusions: initialEngagement.exclusions || '',
-    notes: initialEngagement.notes || '',
-  });
-
   const [selectedOps, setSelectedOps] = useState<string[]>(initialEngagement.operators?.map((o: any) => o.id) || []);
   const [opsOpen, setOpsOpen] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>(initialEngagement.contacts?.map((c: any) => c.id) || []);
@@ -147,19 +133,6 @@ export function EngagementDetailButton({
 
   useEffect(() => {
     if (isEditing) {
-      setFormData({
-        codeName: engagement.codeName,
-        clientName: engagement.client?.company || '',
-        chargeCode: engagement.chargeCode || '',
-        type: engagement.type || '',
-        location: engagement.location || '',
-        status: engagement.status || '',
-        focus: engagement.focus || '',
-        objectives: engagement.objectives || '',
-        targets: engagement.targets || '',
-        exclusions: engagement.exclusions || '',
-        notes: engagement.notes || '',
-      });
       setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
       setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
       setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
@@ -195,9 +168,6 @@ export function EngagementDetailButton({
         dir={dir}
         extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
       />
-      {Object.entries(formData).map(([key, value]) => (
-        <input key={key} type="hidden" name={key} value={value} />
-      ))}
       {selectedOps.map((id) => (
         <input key={`op-${id}`} type="hidden" name="operators" value={id} />
       ))}
@@ -294,9 +264,9 @@ export function EngagementDetailButton({
             <form id={EDIT_FORM_ID} action={updateEngagementFromDetail}>
               {editFormHiddenFields}
               <EngagementFormFields
+                key={`edit-${engagement.id}-${engagement.updatedAt}`}
                 readOnly={false}
-                values={formData}
-                onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
+                defaultValues={engagementToFormValues(engagement)}
                 clients={clients}
                 contacts={contacts}
                 operators={operators}
