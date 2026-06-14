@@ -34,6 +34,51 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Server Actions**: Must begin with `'use server'`. Always return serializable objects (e.g., `{ success: true }` or `{ error: "Message" }`) rather than throwing raw errors, and ensure the Client UI handles and displays these error states gracefully.
 - **No DB in Client**: Never import `prisma` or any node-specific dependencies (like `fs`) inside a Client Component.
 
+### Remote & LAN Browser Interactivity (Required)
+
+Controls that work on `localhost` often **fail when the app is opened from another machine on the LAN** (e.g. `http://192.168.x.x:3000`) or in Safari. Do not rely on client hydration, `onClick`, or `useState`-driven modals for primary navigation or mutations. Design for **progressive enhancement**: the UI must work from plain links and HTML forms even before React hydrates.
+
+**Root causes seen in this project (do not reintroduce)**
+
+| Symptom | Cause |
+|--------|--------|
+| Eye icons, New buttons, calendar cells dead remotely | Heavy `*DetailButton` / modal state on every table row; hydration delayed or never attaches handlers |
+| Modal shows but nav / page chrome bleeds through | Modal rendered inside `.glass-panel`; `backdrop-filter` traps `position: fixed` until portal runs |
+| Sidebar stays visible over modal | Fixed modal inside `main` loses to `position: fixed; z-index: 10` nav unless portaled outside `main` |
+| Entire dashboard unclickable | `body.modal-open` + `visibility: hidden` / `pointer-events: none` on `.dashboard-main` (stuck after close) |
+| Modal backdrop click does nothing remotely | `onClick` / `window.location.assign` on backdrop instead of a real link |
+
+**Default patterns — use these for every new list page, modal, and admin action**
+
+1. **URL-driven modals** — Open/create/confirm via search params (`?detail=`, `?create=`, `?db=reset`, etc.). Build hrefs with `buildPathQuery()` in `src/lib/list-view-params.ts` so sort/filter state is preserved. Close = link to the same path with that param cleared.
+
+2. **Light row actions** — Table rows use `DetailEyeLink` (plain `<a href>`). Do **not** mount a full `*DetailButton` with modal state on every row.
+
+3. **Heavy modal only when open** — When the URL param matches, render one `*DetailButton` (or dedicated modal component) at **page level**, as a sibling outside any `.glass-panel` — not inside the list panel. Same for admin flows (`DatabaseResetModal`, `DatabaseRestoreModal`).
+
+4. **Portal all modals** — Every modal goes through `src/components/Modal.tsx`, which portals into `#modal-root` (see `src/app/layout.tsx`). `#modal-root` uses a high `z-index` in `globals.css` so overlays sit above the sidebar.
+
+5. **Backdrop & close = real links** — When a modal is URL-driven, pass `closeHref` and let `Modal` render a full-screen `<a href={closeHref}>` behind the panel. Do not use backdrop `onClick` or `router.push` for close/dismiss.
+
+6. **Prefer links and forms over `onClick` for critical actions**
+   - Navigation / open modal → `<Link href>` or `<a href>`
+   - File download → GET API route (e.g. `/api/db/backup`) linked with `<a href>`
+   - Mutations with confirmation → `<form action={serverAction}>` inside the modal; server redirects back with `?dbError=` or `?dbMsg=` for feedback
+   - Reserve `onClick` for in-modal edit mode, pickers, and other truly local UI — not for “open modal” or “submit destructive action”
+
+7. **Keep client islands small** — `*Client.tsx` wrappers should own layout chrome only. Avoid large `useState` blocks that gate whether primary buttons work at all (see `UsersClient` database section: links + URL modals, not `onClick`).
+
+8. **Do not use `body.modal-open` to hide the dashboard** — Use the opaque full-viewport modal overlay only. `ModalCleanup` on dashboard mount clears any stuck `modal-open` / `overflow` from older code.
+
+**Checklist before marking UI “done”**
+
+- [ ] Primary actions (open detail, new record, admin buttons) use `<a>` / `<Link>` / `<form action>`, not `onClick`-only
+- [ ] Modals are rendered outside `.glass-panel` and portal to `#modal-root`
+- [ ] Modal dismiss uses `closeHref` (plain link), not client routing alone
+- [ ] Tested from a **remote browser on the LAN** (dev server bound to `0.0.0.0`), with a hard refresh — not only `localhost`
+
+Copy this section into `AI-ASSISTANT.md` for new Next.js apps with the same stack (App Router, client list wrappers, glass panels, modals).
+
 ### Database & Schema Changes
 - Every change to `prisma/schema.prisma` must be followed by **in this order**:
   1. `npx prisma migrate dev --name <descriptive_name>` — preferred; creates a migration file and applies it to the database
