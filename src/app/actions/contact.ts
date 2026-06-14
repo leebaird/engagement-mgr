@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createContactSchema, updateContactSchema } from '@/lib/validation/contact';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 export async function createContact(prevState: any, formData: FormData) {
   const auth = await requireAdminAuth();
@@ -69,6 +70,19 @@ export async function updateContact(id: string, prevState: any, formData: FormDa
   } catch (e) {
     return { error: 'Failed to update contact.' };
   }
+}
+
+export async function updateContactFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateContact(id, {}, formData);
+  finishDetailUpdate('/contacts', formData, id, result, updateErrorCode(result.error));
+}
+
+export async function deleteContactFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteContact(id);
+  const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  finishDetailDelete('/contacts', formData, id, result, code);
 }
 
 export async function deleteContact(id: string) {

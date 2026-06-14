@@ -17,6 +17,16 @@ interface FindingsClientProps {
   showCreateModal: boolean;
   createCloseHref: string;
   activeDetailId?: string;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
+  detailHrefs?: {
+    view: string;
+    edit: string;
+    deleteConfirm: string;
+    close: string;
+  } | null;
+  deleteError?: string;
+  saveError?: string;
   listCloseHref: string;
   listParams: { sort?: string; dir?: string };
 }
@@ -29,6 +39,11 @@ export function FindingsClient({
   showCreateModal,
   createCloseHref,
   activeDetailId,
+  isEditing = false,
+  showDeleteConfirm = false,
+  detailHrefs,
+  deleteError,
+  saveError,
   listCloseHref,
   listParams,
 }: FindingsClientProps) {
@@ -72,20 +87,30 @@ export function FindingsClient({
   const detailFinding = activeDetailId ? findings.find((finding) => finding.id === activeDetailId) : undefined;
 
   return (
+    <>
+      {detailFinding && detailHrefs ? (
+        <FindingDetailButton
+          finding={detailFinding}
+          onOptimisticDelete={handleOptimisticDelete}
+          isDetailOpen
+          isEditing={isEditing}
+          showDeleteConfirm={showDeleteConfirm}
+          showLink={false}
+          detailHref={detailHrefs.view}
+          editHref={detailHrefs.edit}
+          deleteConfirmHref={detailHrefs.deleteConfirm}
+          viewHref={detailHrefs.view}
+          closeHref={listCloseHref}
+          deleteError={deleteError}
+          saveError={saveError}
+          sort={listParams.sort}
+          dir={listParams.dir}
+        />
+      ) : null}
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <PageHeader title="Findings" addButtonLabel="New Finding" addHref={addHref} />
       
       <div ref={listRef}>
-        {detailFinding ? (
-          <FindingDetailButton
-            finding={detailFinding}
-            onOptimisticDelete={handleOptimisticDelete}
-            isDetailOpen
-            showLink={false}
-            detailHref={buildPathQuery('/findings', listParams, { detail: detailFinding.id, create: null })}
-            closeHref={listCloseHref}
-          />
-        ) : null}
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
             <colgroup>
@@ -180,5 +205,6 @@ export function FindingsClient({
         </Modal>
       )}
     </div>
+    </>
   );
 }

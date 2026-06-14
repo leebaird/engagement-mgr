@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createOperatorSchema, updateOperatorSchema } from '@/lib/validation/operator';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 export async function createOperator(prevState: any, formData: FormData) {
   const auth = await requireAdminAuth();
@@ -72,6 +73,19 @@ export async function updateOperator(id: string, prevState: any, formData: FormD
     console.error(e);
     return { error: 'Failed to update operator.' };
   }
+}
+
+export async function updateOperatorFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateOperator(id, {}, formData);
+  finishDetailUpdate('/operators', formData, id, result, updateErrorCode(result.error));
+}
+
+export async function deleteOperatorFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteOperator(id);
+  const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  finishDetailDelete('/operators', formData, id, result, code);
 }
 
 export async function deleteOperator(id: string) {

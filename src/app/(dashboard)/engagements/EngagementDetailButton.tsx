@@ -1,10 +1,20 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
+import { updateEngagementFromDetail, deleteEngagementFromDetail } from '@/app/actions/engagement';
+import {
+  DetailDeleteConfirmBanner,
+  DetailDeletePrompt,
+  DetailEditCancelLink,
+  DetailEditFormFields,
+  DetailSaveErrorBanner,
+  DetailViewModeActions,
+  deleteErrorMessage,
+  saveErrorMessage,
+} from '@/components/DetailModalActions';
+
+const EDIT_FORM_ID = 'edit-engagement-form';
 import { EngagementScheduleModal } from './EngagementScheduleModal';
 import { focusEditFieldAtStart } from '@/lib/edit-field-focus';
 import { EngagementFormFields, engagementToFormValues } from './EngagementFormFields';
@@ -39,8 +49,17 @@ export function EngagementDetailButton({
   operators,
   isAdmin = false,
   isDetailOpen,
+  isEditing = false,
+  showDeleteConfirm = false,
   detailHref,
+  editHref,
+  deleteConfirmHref,
+  viewHref,
   closeHref,
+  deleteError,
+  saveError,
+  sort,
+  dir,
   activeFindingId,
   listParams = {},
   showLink = true,
@@ -52,22 +71,28 @@ export function EngagementDetailButton({
   operators: { id: string, name: string, title: string | null }[],
   isAdmin?: boolean,
   isDetailOpen: boolean;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
   detailHref: string;
+  editHref: string;
+  deleteConfirmHref: string;
+  viewHref: string;
   closeHref: string;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
   activeFindingId?: string;
   listParams?: SearchParamRecord;
   showLink?: boolean;
   showModal?: boolean;
 }) {
-  const router = useRouter();
   const [engagement, setEngagement] = useState(initialEngagement);
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
     mapEngagementFindings(initialEngagement.findings)
   );
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     setEngagement(initialEngagement);
@@ -105,8 +130,26 @@ export function EngagementDetailButton({
   const taTriggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isEditing) focusEditFieldAtStart(codeNameInputRef.current);
-  }, [isEditing]);
+    if (isEditing) {
+      setFormData({
+        codeName: engagement.codeName,
+        clientName: engagement.client?.company || '',
+        chargeCode: engagement.chargeCode || '',
+        type: engagement.type || '',
+        location: engagement.location || '',
+        status: engagement.status || '',
+        focus: engagement.focus || '',
+        objectives: engagement.objectives || '',
+        targets: engagement.targets || '',
+        exclusions: engagement.exclusions || '',
+        notes: engagement.notes || '',
+      });
+      setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
+      setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
+      setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
+      focusEditFieldAtStart(codeNameInputRef.current);
+    }
+  }, [isEditing, engagement]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -128,54 +171,28 @@ export function EngagementDetailButton({
     };
   }, [opsOpen, contactsOpen, tasOpen]);
 
-  const handleUpdate = async () => {
-    if (!formData.codeName.trim() || !formData.clientName.trim()) {
-      setError('Code Name and Client are required.');
-      return;
-    }
-    
-    setIsPending(true);
-    setError(null);
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value as string);
-      });
-      selectedOps.forEach(id => data.append('operators', id));
-      selectedContacts.forEach(id => data.append('contacts', id));
-      selectedTAs.forEach(id => data.append('trustedAgents', id));
-
-      const result = await updateEngagement(engagement.id, {}, data);
-      
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        const trimmedClientName = formData.clientName.trim();
-        const matchedClient = clients.find(
-          (c) => c.company.toLowerCase() === trimmedClientName.toLowerCase()
-        );
-        const { clientName: _clientName, ...engagementFields } = formData;
-        setEngagement({
-          ...engagement,
-          ...engagementFields,
-          clientId: matchedClient?.id ?? engagement.clientId,
-          client: matchedClient ?? {
-            ...(engagement.client ?? { id: engagement.clientId }),
-            company: trimmedClientName,
-          },
-          operators: selectedOps.map(id => operators.find(o => o.id === id)).filter(Boolean),
-          contacts: selectedContacts.map(id => contacts.find(c => c.id === id)).filter(Boolean),
-          trustedAgents: selectedTAs.map(id => contacts.find(c => c.id === id)).filter(Boolean),
-        });
-        setIsEditing(false);
-        router.refresh();
-      }
-    } catch (e) {
-      setError('An error occurred while updating the engagement.');
-    } finally {
-      setIsPending(false);
-    }
-  };
+  const editFormHiddenFields = isEditing ? (
+    <>
+      <DetailEditFormFields
+        recordId={engagement.id}
+        sort={sort}
+        dir={dir}
+        extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
+      />
+      {Object.entries(formData).map(([key, value]) => (
+        <input key={key} type="hidden" name={key} value={value} />
+      ))}
+      {selectedOps.map((id) => (
+        <input key={`op-${id}`} type="hidden" name="operators" value={id} />
+      ))}
+      {selectedContacts.map((id) => (
+        <input key={`contact-${id}`} type="hidden" name="contacts" value={id} />
+      ))}
+      {selectedTAs.map((id) => (
+        <input key={`ta-${id}`} type="hidden" name="trustedAgents" value={id} />
+      ))}
+    </>
+  ) : null;
 
   const timestampsFooter = (
     <div className="engagement-form-timestamps">
@@ -215,103 +232,117 @@ export function EngagementDetailButton({
         <Modal
           isOpen
           closeHref={closeHref}
-          onClose={() => { setIsScheduleOpen(false); setIsEditing(false); setError(null); }}
-          title={isEditing ? "Edit Engagement" : "Engagement Details"} 
+          onClose={() => { setIsScheduleOpen(false); }}
+          title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : 'Engagement Details'}
         maxWidth="1500px"
         alignTop
         headerExtra={findingsSection}
         headerActions={isEditing ? (
           <>
-            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+            <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
+            <DetailEditCancelLink viewHref={viewHref} />
           </>
         ) : isAdmin ? (
-          <>
-            <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => setIsScheduleOpen(true)}
-            >
-              Schedule
-            </button>
-            <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => {
-                setFormData({
-                  codeName: engagement.codeName,
-                  clientName: engagement.client?.company || '',
-                  chargeCode: engagement.chargeCode || '',
-                  type: engagement.type || '',
-                  location: engagement.location || '',
-                  status: engagement.status || '',
-                  focus: engagement.focus || '',
-                  objectives: engagement.objectives || '',
-                  targets: engagement.targets || '',
-                  exclusions: engagement.exclusions || '',
-                  notes: engagement.notes || '',
-                });
-                setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
-                setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
-                setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
-                setIsEditing(true);
-                setError(null);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              className="modal-action-btn modal-action-btn--danger"
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete this engagement?')) return;
-                const result = await deleteEngagement(engagement.id);
-                if (result.success) {
-                  window.location.assign(closeHref);
-                } else {
-                  alert(result.error || 'Failed to delete engagement');
-                }
-              }}
-            >
-              Delete
-            </button>
-          </>
+          <DetailViewModeActions
+            editHref={editHref}
+            deleteConfirmHref={deleteConfirmHref}
+            showDeleteConfirm={showDeleteConfirm}
+            deleteFormId="delete-engagement-form"
+            deleteFormAction={deleteEngagementFromDetail}
+            recordId={engagement.id}
+            viewHref={viewHref}
+            sort={sort}
+            dir={dir}
+            extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
+            childrenBeforeEdit={
+              <button
+                type="button"
+                className="modal-action-btn"
+                onClick={() => setIsScheduleOpen(true)}
+              >
+                Schedule
+              </button>
+            }
+          />
         ) : undefined}
       >
+        {showDeleteConfirm ? (
+          <>
+            <DetailDeletePrompt />
+            {deleteErrorMessage(deleteError) ? (
+              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+            ) : null}
+          </>
+        ) : (
         <div className="engagement-create-form">
-          <EngagementFormFields
-            readOnly={!isEditing}
-            values={isEditing ? formData : engagementToFormValues(engagement)}
-            onFieldChange={isEditing ? (field, value) => setFormData((prev) => ({ ...prev, [field]: value })) : undefined}
-            clients={clients}
-            contacts={contacts}
-            operators={operators}
-            selectedOps={isEditing ? selectedOps : (engagement.operators?.map((o: any) => o.id) || [])}
-            setSelectedOps={isEditing ? setSelectedOps : noop}
-            opsOpen={isEditing ? opsOpen : false}
-            setOpsOpen={isEditing ? setOpsOpen : noop}
-            selectedContacts={isEditing ? selectedContacts : (engagement.contacts?.map((c: any) => c.id) || [])}
-            setSelectedContacts={isEditing ? setSelectedContacts : noop}
-            contactsOpen={isEditing ? contactsOpen : false}
-            setContactsOpen={isEditing ? setContactsOpen : noop}
-            selectedTAs={isEditing ? selectedTAs : (engagement.trustedAgents?.map((t: any) => t.id) || [])}
-            setSelectedTAs={isEditing ? setSelectedTAs : noop}
-            tasOpen={isEditing ? tasOpen : false}
-            setTasOpen={isEditing ? setTasOpen : noop}
-            dropdownRef={dropdownRef}
-            contactDropdownRef={contactDropdownRef}
-            taDropdownRef={taDropdownRef}
-            codeNameRef={codeNameInputRef}
-            notesRef={notesRef}
-            contactsTriggerRef={contactsTriggerRef}
-            taTriggerRef={taTriggerRef}
-            operatorsTriggerRef={operatorsTriggerRef}
-            footer={timestampsFooter}
-          />
-          {isEditing && error ? (
-            <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>
-          ) : null}
+          {isEditing ? (
+            <form id={EDIT_FORM_ID} action={updateEngagementFromDetail}>
+              {editFormHiddenFields}
+              <EngagementFormFields
+                readOnly={false}
+                values={formData}
+                onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
+                clients={clients}
+                contacts={contacts}
+                operators={operators}
+                selectedOps={selectedOps}
+                setSelectedOps={setSelectedOps}
+                opsOpen={opsOpen}
+                setOpsOpen={setOpsOpen}
+                selectedContacts={selectedContacts}
+                setSelectedContacts={setSelectedContacts}
+                contactsOpen={contactsOpen}
+                setContactsOpen={setContactsOpen}
+                selectedTAs={selectedTAs}
+                setSelectedTAs={setSelectedTAs}
+                tasOpen={tasOpen}
+                setTasOpen={setTasOpen}
+                dropdownRef={dropdownRef}
+                contactDropdownRef={contactDropdownRef}
+                taDropdownRef={taDropdownRef}
+                codeNameRef={codeNameInputRef}
+                notesRef={notesRef}
+                contactsTriggerRef={contactsTriggerRef}
+                taTriggerRef={taTriggerRef}
+                operatorsTriggerRef={operatorsTriggerRef}
+                footer={timestampsFooter}
+              />
+              {saveErrorMessage(saveError) ? (
+                <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+              ) : null}
+            </form>
+          ) : (
+            <EngagementFormFields
+              readOnly
+              values={engagementToFormValues(engagement)}
+              clients={clients}
+              contacts={contacts}
+              operators={operators}
+              selectedOps={engagement.operators?.map((o: any) => o.id) || []}
+              setSelectedOps={noop}
+              opsOpen={false}
+              setOpsOpen={noop}
+              selectedContacts={engagement.contacts?.map((c: any) => c.id) || []}
+              setSelectedContacts={noop}
+              contactsOpen={false}
+              setContactsOpen={noop}
+              selectedTAs={engagement.trustedAgents?.map((t: any) => t.id) || []}
+              setSelectedTAs={noop}
+              tasOpen={false}
+              setTasOpen={noop}
+              dropdownRef={dropdownRef}
+              contactDropdownRef={contactDropdownRef}
+              taDropdownRef={taDropdownRef}
+              codeNameRef={codeNameInputRef}
+              notesRef={notesRef}
+              contactsTriggerRef={contactsTriggerRef}
+              taTriggerRef={taTriggerRef}
+              operatorsTriggerRef={operatorsTriggerRef}
+              footer={timestampsFooter}
+            />
+          )}
         </div>
+        )}
       </Modal>
       )}
 

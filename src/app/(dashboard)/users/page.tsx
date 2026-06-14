@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import { buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
@@ -17,16 +17,20 @@ export default async function UsersPage({
     dir?: string;
     create?: string;
     detail?: string;
+    edit?: string;
+    delete?: string;
+    deleteError?: string;
+    saveError?: string;
     db?: string;
     dbError?: string;
     dbMsg?: string;
   }>;
 }) {
-  const { sort, dir, create, detail, db, dbError, dbMsg } = await searchParams;
+  const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg } = await searchParams;
   const listParams = { sort, dir };
   const addHref = buildPathQuery('/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
   const createCloseHref = buildPathQuery('/users', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/users', listParams, { detail: null });
+  const listCloseHref = buildPathQuery('/users', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
   const dbCloseHref = buildPathQuery('/users', listParams, { db: null, dbError: null });
   const restoreHref = buildPathQuery('/users', listParams, { db: 'restore', dbError: null, dbMsg: null, detail: null, create: null });
   const resetHref = buildPathQuery('/users', listParams, { db: 'reset', dbError: null, dbMsg: null, detail: null, create: null });
@@ -59,6 +63,7 @@ export default async function UsersPage({
   };
 
   const detailUser = detail ? users.find((user) => user.id === detail) : undefined;
+  const detailHrefs = detailUser ? buildDetailHrefs('/users', listParams, detailUser.id) : null;
 
   const dbMessage = dbMsg === 'restore' ? 'Database restored successfully.' : null;
 
@@ -85,9 +90,18 @@ export default async function UsersPage({
           user={detailUser}
           isLastAdmin={detailUser.role === 'Admin' && adminCount <= 1}
           isDetailOpen
+          isEditing={edit === '1'}
+          showDeleteConfirm={deleteConfirm === '1'}
           showLink={false}
-          detailHref={buildPathQuery('/users', listParams, { detail: detailUser.id, create: null })}
+          detailHref={detailHrefs!.view}
+          editHref={detailHrefs!.edit}
+          deleteConfirmHref={detailHrefs!.deleteConfirm}
+          viewHref={detailHrefs!.view}
           closeHref={listCloseHref}
+          deleteError={deleteError}
+          saveError={saveError}
+          sort={sort}
+          dir={dir}
         />
       ) : null}
       <UsersClient

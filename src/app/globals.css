@@ -923,6 +923,9 @@ a.db-action-btn {
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
   transition: all 0.2s ease;
   font-family: inherit;
   outline: none;
@@ -936,6 +939,10 @@ a.db-action-btn {
 .modal-action-btn--danger:hover:not(:disabled) {
   border-color: #ff3366;
   box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+}
+
+a.modal-action-btn {
+  text-decoration: none;
 }
 
 .btn-save {

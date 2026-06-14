@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
-import { buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { OperatorsClient } from './OperatorsClient';
 import { OperatorDetailButton } from './OperatorDetailButton';
@@ -10,17 +10,17 @@ import { formatPhone } from '@/lib/format';
 export default async function OperatorsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
 }) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir, create, detail } = await searchParams;
+  const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const addHref = isAdmin
     ? buildPathQuery('/operators', listParams, { create: '1', detail: null })
     : undefined;
   const createCloseHref = buildPathQuery('/operators', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/operators', listParams, { detail: null });
+  const listCloseHref = buildPathQuery('/operators', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
@@ -68,24 +68,35 @@ export default async function OperatorsPage({
   };
 
   const detailOperator = detail ? operators.find((operator) => operator.id === detail) : undefined;
+  const detailHrefs = detailOperator ? buildDetailHrefs('/operators', listParams, detailOperator.id) : null;
 
   return (
-    <OperatorsClient
-      isAdmin={isAdmin}
-      addHref={addHref}
-      showCreateModal={isAdmin && create === '1'}
-      createCloseHref={createCloseHref}
-    >
+    <>
       {detailOperator ? (
         <OperatorDetailButton
           operator={detailOperator}
           isAdmin={isAdmin}
           isDetailOpen
+          isEditing={edit === '1'}
+          showDeleteConfirm={deleteConfirm === '1'}
           showLink={false}
-          detailHref={buildPathQuery('/operators', listParams, { detail: detailOperator.id, create: null })}
+          detailHref={detailHrefs!.view}
+          editHref={detailHrefs!.edit}
+          deleteConfirmHref={detailHrefs!.deleteConfirm}
+          viewHref={detailHrefs!.view}
           closeHref={listCloseHref}
+          deleteError={deleteError}
+          saveError={saveError}
+          sort={sort}
+          dir={dir}
         />
       ) : null}
+      <OperatorsClient
+        isAdmin={isAdmin}
+        addHref={addHref}
+        showCreateModal={isAdmin && create === '1'}
+        createCloseHref={createCloseHref}
+      >
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -122,6 +133,7 @@ export default async function OperatorsPage({
           </tbody>
         </table>
       </div>
-    </OperatorsClient>
+      </OperatorsClient>
+    </>
   );
 }

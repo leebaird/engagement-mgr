@@ -13,6 +13,7 @@ import {
   updateFindingSchema,
 } from '@/lib/validation/finding';
 import { validateScreenshotBuffer, validateScreenshotUpload } from '@/lib/validation/upload';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -233,6 +234,19 @@ export async function updateFinding(id: string, prevState: any, formData: FormDa
     console.error('Update Finding error:', e);
     return { error: 'Failed to update finding.' };
   }
+}
+
+export async function updateFindingFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateFinding(id, {}, formData);
+  finishDetailUpdate('/findings', formData, id, result, updateErrorCode(result.error));
+}
+
+export async function deleteFindingFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteFinding(id);
+  const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  finishDetailDelete('/findings', formData, id, result, code);
 }
 
 export async function deleteFinding(id: string) {

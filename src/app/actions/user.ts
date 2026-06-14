@@ -7,6 +7,7 @@ import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password'
 import { firstZodError, userIdSchema } from '@/lib/validation/common';
 import { createUserSchema, updateUserSchema } from '@/lib/validation/user';
 import { revalidatePath } from 'next/cache';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 async function wouldRemoveLastAdmin(userId: string, newRole: 'Admin' | 'User'): Promise<boolean> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
@@ -129,6 +130,22 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
     console.error(err);
     return { error: 'Failed to update user.' };
   }
+}
+
+export async function updateUserFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateUser(id, {}, formData);
+  finishDetailUpdate('/users', formData, id, result, updateErrorCode(result.error));
+}
+
+export async function deleteUserFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteUser(id);
+  let code = 'generic';
+  if (result.error?.includes('last admin')) code = 'last-admin';
+  else if (result.error?.includes('yourself')) code = 'self';
+  else if (result.error?.includes('Unauthorized')) code = 'unauthorized';
+  finishDetailDelete('/users', formData, id, result, code);
 }
 
 export async function deleteUser(id: string) {

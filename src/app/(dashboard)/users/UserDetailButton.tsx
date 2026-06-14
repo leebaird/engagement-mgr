@@ -1,10 +1,20 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateUser, deleteUser } from '@/app/actions/user';
+import { updateUserFromDetail, deleteUserFromDetail } from '@/app/actions/user';
+import {
+  DetailDeleteConfirmBanner,
+  DetailDeletePrompt,
+  DetailEditCancelLink,
+  DetailEditFormFields,
+  DetailSaveErrorBanner,
+  DetailViewModeActions,
+  deleteErrorMessage,
+  saveErrorMessage,
+} from '@/components/DetailModalActions';
+
+const EDIT_FORM_ID = 'edit-user-form';
 import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 
@@ -21,69 +31,56 @@ export function UserDetailButton({
   user: initialUser,
   isLastAdmin = false,
   isDetailOpen,
+  isEditing = false,
+  showDeleteConfirm = false,
   detailHref,
+  editHref,
+  deleteConfirmHref,
+  viewHref,
   closeHref,
+  deleteError,
+  saveError,
+  sort,
+  dir,
   showLink = true,
   showModal = true,
 }: {
   user: User;
   isLastAdmin?: boolean;
   isDetailOpen: boolean;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
   detailHref: string;
+  editHref: string;
+  deleteConfirmHref: string;
+  viewHref: string;
   closeHref: string;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
   showLink?: boolean;
   showModal?: boolean;
 }) {
-  const router = useRouter();
-  const [user, setUser] = useState(initialUser);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [user] = useState(initialUser);
   const usernameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing) focusEditFieldAtStart(usernameInputRef.current);
-  }, [isEditing]);
+    if (isEditing) {
+      setFormData({
+        username: user.username,
+        password: '',
+        role: user.role,
+      });
+      focusEditFieldAtStart(usernameInputRef.current);
+    }
+  }, [isEditing, user.username, user.role]);
 
   const [formData, setFormData] = useState({
     username: initialUser.username,
     password: '',
     role: initialUser.role,
   });
-
-  const handleUpdate = async () => {
-    if (!formData.username || !formData.role) {
-      setError('Username and Role are required.');
-      return;
-    }
-
-    setIsPending(true);
-    setError(null);
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value as string);
-      });
-
-      const result = await updateUser(user.id, {}, data);
-
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        setUser({ 
-          ...user, 
-          username: formData.username, 
-          role: formData.role,
-          lastPasswordChange: formData.password ? new Date(0) : user.lastPasswordChange
-        });
-        setIsEditing(false);
-      }
-    } catch (e) {
-      setError('An error occurred while updating the user.');
-    } finally {
-      setIsPending(false);
-    }
-  };
 
   return (
     <>
@@ -101,59 +98,48 @@ export function UserDetailButton({
         <Modal
           isOpen
           closeHref={closeHref}
-          onClose={() => { setIsEditing(false); setError(null); }}
-          title={isEditing ? "Edit User" : "User Details"}
+          title={showDeleteConfirm ? 'Delete User' : isEditing ? 'Edit User' : 'User Details'}
         maxWidth="450px"
         headerActions={isEditing ? (
           <>
-            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+            <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
+            <DetailEditCancelLink viewHref={viewHref} />
           </>
         ) : (
-          <>
-            <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => {
-                setFormData({
-                  username: user.username,
-                  password: '',
-                  role: user.role,
-                });
-                setIsEditing(true);
-                setError(null);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              className="modal-action-btn modal-action-btn--danger"
-              onClick={async () => {
-                if (isLastAdmin) return;
-                if (!confirm('Are you sure you want to delete this user?')) return;
-                const result = await deleteUser(user.id);
-                if (result?.error) {
-                  alert(result.error);
-                } else {
-                  window.location.assign(closeHref);
-                  router.refresh();
-                }
-              }}
-              disabled={isLastAdmin}
-              title={isLastAdmin ? 'Cannot delete the last admin account' : undefined}
-            >
-              Delete
-            </button>
-          </>
+          <DetailViewModeActions
+            editHref={editHref}
+            deleteConfirmHref={deleteConfirmHref}
+            showDeleteConfirm={showDeleteConfirm}
+            deleteFormId="delete-user-form"
+            deleteFormAction={deleteUserFromDetail}
+            recordId={user.id}
+            viewHref={viewHref}
+            sort={sort}
+            dir={dir}
+            deleteLinkDisabled={isLastAdmin}
+            deleteLinkTitle={isLastAdmin ? 'Cannot delete the last admin account' : undefined}
+          />
         )}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+          {showDeleteConfirm ? (
+            <>
+              <DetailDeletePrompt />
+              {deleteErrorMessage(deleteError) ? (
+                <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+              ) : null}
+            </>
+          ) : (
+          <>
+          {isEditing ? (
+            <form id={EDIT_FORM_ID} action={updateUserFromDetail}>
+              <DetailEditFormFields recordId={user.id} sort={sort} dir={dir} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Username</div>
-            {isEditing ? (
               <input
                 ref={usernameInputRef}
+                name="username"
                 type="text"
                 value={formData.username}
                 onChange={e => setFormData({ ...formData, username: e.target.value })}
@@ -172,21 +158,12 @@ export function UserDetailButton({
                   }
                 }}
               />
-            ) : (
-              <input
-                readOnly
-                type="text"
-                value={user.username}
-                className="form-input"
-                style={{ pointerEvents: 'none', width: '100%' }}
-              />
-            )}
           </div>
 
           <div style={{ width: '7rem' }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Role</div>
-            {isEditing ? (
               <select
+                name="role"
                 value={formData.role}
                 onChange={e => {
                   if (isLastAdmin && e.target.value === 'User') return;
@@ -222,23 +199,14 @@ export function UserDetailButton({
                 <option value="Admin">Admin</option>
                 <option value="User" disabled={isLastAdmin}>User</option>
               </select>
-            ) : (
-              <input
-                readOnly
-                type="text"
-                value={user.role === 'Admin' ? 'Admin' : 'User'}
-                className="form-input"
-                style={{ pointerEvents: 'none' }}
-              />
-            )}
           </div>
 
-          {isEditing ? (
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                 New Password (leave blank to keep current)
               </div>
               <input
+                name="password"
                 type="password"
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
@@ -267,19 +235,42 @@ export function UserDetailButton({
                 Password must be at least 16 characters, with one uppercase, one number, and one symbol.
               </div>
             </div>
-          ) : null}
 
-          {isEditing && isLastAdmin ? (
+          {isLastAdmin ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
               This is the only admin account. Role cannot be changed to User.
             </div>
           ) : null}
 
-          {isEditing && error ? (
-            <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.875rem' }}>{error}</div>
+          {saveErrorMessage(saveError) ? (
+            <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
           ) : null}
+              </div>
+            </form>
+          ) : (
+          <>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Username</div>
+              <input
+                readOnly
+                type="text"
+                value={user.username}
+                className="form-input"
+                style={{ pointerEvents: 'none', width: '100%' }}
+              />
+          </div>
 
-          {!isEditing ? (
+          <div style={{ width: '7rem' }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Role</div>
+              <input
+                readOnly
+                type="text"
+                value={user.role === 'Admin' ? 'Admin' : 'User'}
+                className="form-input"
+                style={{ pointerEvents: 'none' }}
+              />
+          </div>
+
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
@@ -288,7 +279,10 @@ export function UserDetailButton({
                 <div>{new Date(user.updatedAt).toLocaleDateString()}</div>
               </div>
             </div>
-          ) : null}
+          </>
+          )}
+          </>
+          )}
         </div>
       </Modal>
       )}

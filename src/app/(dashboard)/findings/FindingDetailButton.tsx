@@ -4,7 +4,19 @@ import { useRouter } from 'next/navigation';
 
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateFinding, deleteFinding } from '@/app/actions/finding';
+import { updateFinding, updateFindingFromDetail, deleteFindingFromDetail } from '@/app/actions/finding';
+import {
+  DetailDeleteConfirmBanner,
+  DetailDeletePrompt,
+  DetailEditCancelLink,
+  DetailEditFormFields,
+  DetailSaveErrorBanner,
+  DetailViewModeActions,
+  deleteErrorMessage,
+  saveErrorMessage,
+} from '@/components/DetailModalActions';
+
+const EDIT_FORM_ID = 'edit-finding-form';
 import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 export function FindingDetailButton({ 
@@ -13,8 +25,17 @@ export function FindingDetailButton({
   engagementScoped = false,
   zIndex,
   isDetailOpen = false,
+  isEditing = false,
+  showDeleteConfirm = false,
   detailHref,
+  editHref,
+  deleteConfirmHref,
+  viewHref,
   closeHref,
+  deleteError,
+  saveError,
+  sort,
+  dir,
   showLink = true,
   showModal = true,
 }: { 
@@ -23,15 +44,23 @@ export function FindingDetailButton({
   engagementScoped?: boolean;
   zIndex?: number;
   isDetailOpen?: boolean;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
   detailHref?: string;
+  editHref?: string;
+  deleteConfirmHref?: string;
+  viewHref?: string;
   closeHref?: string;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
   showLink?: boolean;
   showModal?: boolean;
 }) {
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
   const modalOpen = detailHref ? isDetailOpen : isOpen;
-  const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +72,6 @@ export function FindingDetailButton({
       return;
     }
     setIsOpen(false);
-    setIsEditing(false);
     setError(null);
   }, [closeHref]);
 
@@ -68,8 +96,21 @@ export function FindingDetailButton({
 
     const titleInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
-      if (isEditing) focusEditFieldAtStart(titleInputRef.current);
-    }, [isEditing]);
+      if (isEditing) {
+        setFormData({
+          title: finding.title,
+          observation: engagementScoped ? (finding.observation || '') : '',
+          category: finding.category || '',
+          severity: finding.severity || '',
+          background: finding.background || '',
+          remediation: finding.remediation || '',
+          supportingLinks: finding.supportingLinks || '',
+          affectedHosts: engagementScoped ? (finding.affectedHosts || '') : '',
+        });
+        setError(null);
+        focusEditFieldAtStart(titleInputRef.current);
+      }
+    }, [isEditing, finding, engagementScoped]);
 
   const getSeverityStyle = (severity: string) => {
     switch (severity) {
@@ -82,12 +123,14 @@ export function FindingDetailButton({
     }
   };
 
+  const useFormSave = Boolean(viewHref);
+
   const handleUpdate = async () => {
     if (!formData.title) {
       setError('Title is required');
       return;
     }
-    
+
     setIsPending(true);
     setError(null);
     try {
@@ -99,12 +142,12 @@ export function FindingDetailButton({
       appendEngagementScopedFields(data);
 
       const result = await updateFinding(finding.id, {}, data);
-      
+
       if (result?.error) {
         setError(result.error);
       } else {
         setFinding({ ...finding, ...formData });
-        setIsEditing(false);
+        setIsOpen(false);
       }
     } catch (e) {
       setError('An error occurred while updating the finding.');
@@ -112,6 +155,25 @@ export function FindingDetailButton({
       setIsPending(false);
     }
   };
+
+  const editFormFields = (
+    <>
+      <DetailEditFormFields recordId={finding.id} sort={sort} dir={dir} />
+      {engagementScoped ? <input type="hidden" name="engagementScoped" value="true" /> : null}
+      <input type="hidden" name="title" value={formData.title} />
+      <input type="hidden" name="category" value={formData.category} />
+      <input type="hidden" name="severity" value={formData.severity} />
+      <input type="hidden" name="background" value={formData.background} />
+      <input type="hidden" name="remediation" value={formData.remediation} />
+      <input type="hidden" name="supportingLinks" value={formData.supportingLinks} />
+      {engagementScoped ? (
+        <>
+          <input type="hidden" name="observation" value={formData.observation} />
+          <input type="hidden" name="affectedHosts" value={formData.affectedHosts} />
+        </>
+      ) : null}
+    </>
+  );
 
   return (
     <>
@@ -144,60 +206,51 @@ export function FindingDetailButton({
           isOpen
           closeHref={closeHref}
           onClose={handleClose}
-          title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
+          title={showDeleteConfirm ? 'Delete Finding' : isEditing ? (engagementScoped ? 'Edit Engagement Finding' : 'Edit Finding') : (engagementScoped ? 'Engagement Finding Details' : 'Finding Details')}
         maxWidth={engagementScoped ? "1500px" : "1000px"}
         zIndex={zIndex}
         headerActions={isEditing ? (
           <>
-            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
-          </>
-        ) : (
-          <>
             <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => {
-                setFormData({
-                  title: finding.title,
-                  observation: engagementScoped ? (finding.observation || '') : '',
-                  category: finding.category || '',
-                  severity: finding.severity || '',
-                  background: finding.background || '',
-                  remediation: finding.remediation || '',
-                  supportingLinks: finding.supportingLinks || '',
-                  affectedHosts: engagementScoped ? (finding.affectedHosts || '') : '',
-                });
-                setIsEditing(true);
-                setError(null);
-              }}
+              key="save"
+              type={useFormSave ? 'submit' : 'button'}
+              form={useFormSave ? EDIT_FORM_ID : undefined}
+              onClick={useFormSave ? undefined : handleUpdate}
+              className="btn-save"
+              style={{ boxShadow: 'none' }}
+              disabled={!useFormSave && isPending}
             >
-              Edit
+              {!useFormSave && isPending ? 'Saving...' : 'Save'}
             </button>
-            <button
-              type="button"
-              className="modal-action-btn modal-action-btn--danger"
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete this finding? This will also delete any related screenshots.')) return;
-                const result = await deleteFinding(finding.id);
-                if (result.success) {
-                  onOptimisticDelete?.(finding.id);
-                  if (closeHref) {
-                    window.location.assign(closeHref);
-                  } else {
-                    setIsOpen(false);
-                  }
-                  router.refresh();
-                } else {
-                  alert(result.error || 'Failed to delete finding');
-                }
-              }}
-            >
-              Delete
-            </button>
+            {viewHref ? <DetailEditCancelLink viewHref={viewHref} /> : (
+              <button key="cancel" onClick={() => { setIsOpen(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+            )}
           </>
-        )}
+        ) : editHref && deleteConfirmHref && viewHref ? (
+          <DetailViewModeActions
+            editHref={editHref}
+            deleteConfirmHref={deleteConfirmHref}
+            showDeleteConfirm={showDeleteConfirm}
+            deleteFormId="delete-finding-form"
+            deleteFormAction={deleteFindingFromDetail}
+            recordId={finding.id}
+            viewHref={viewHref}
+            sort={sort}
+            dir={dir}
+          />
+        ) : undefined}
       >
+        {showDeleteConfirm ? (
+          <>
+            <DetailDeletePrompt />
+            <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+              Related screenshots will also be deleted.
+            </p>
+            {deleteErrorMessage(deleteError) ? (
+              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+            ) : null}
+          </>
+        ) : null}
         {!isEditing ? (
           // VIEW MODE (form field style)
           <>
@@ -338,7 +391,103 @@ export function FindingDetailButton({
             </div>
           </>
         ) : engagementScoped ? (
-          // EDIT MODE (engagement-scoped — same structure as view for matching height)
+          useFormSave ? (
+            <form id={EDIT_FORM_ID} action={updateFindingFromDetail}>
+              {editFormFields}
+            <div className="engagement-finding-detail-form">
+                <div className="engagement-finding-detail-form__header">
+                  <div className="engagement-finding-detail-form__left-header">
+                    <div>
+                      <div className="engagement-finding-detail-field__label">Title</div>
+                      <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} style={{ width: '100%' }} />
+                    </div>
+                    <div className="engagement-finding-detail-form__meta">
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Category</div>
+                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                          <option value=""></option>
+                          <option value="AI">AI</option>
+                          <option value="Firewall">Firewall</option>
+                          <option value="Host">Host</option>
+                          <option value="OSINT">OSINT</option>
+                          <option value="Physical">Physical</option>
+                          <option value="Social Eng">Social Eng</option>
+                          <option value="Web App">Web App</option>
+                          <option value="Wireless">Wireless</option>
+                        </select>
+                      </div>
+                      <div>
+                        <div className="engagement-finding-detail-field__label">Severity</div>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                          <option value=""></option>
+                          <option value="Critical">Critical</option>
+                          <option value="High">High</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Low">Low</option>
+                          <option value="Info">Info</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Remediation</div>
+                    <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  </div>
+                </div>
+                <div className="engagement-finding-detail-form__pair">
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Observation</div>
+                    <textarea value={formData.observation} onChange={e => setFormData({...formData, observation: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  </div>
+                  <div>
+                    <div className="engagement-finding-detail-field__label">See Also</div>
+                    <textarea
+                      value={formData.supportingLinks}
+                      onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
+                      className="form-input"
+                      rows={5}
+                      style={{ width: '100%' }}
+                      onFocus={handleEditFieldFocus}
+                    ></textarea>
+                  </div>
+                </div>
+                <div className="engagement-finding-detail-form__pair">
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Background</div>
+                    <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={5} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+                  </div>
+                  <div>
+                    <div className="engagement-finding-detail-field__label">Affected Hosts</div>
+                    <textarea
+                      value={formData.affectedHosts}
+                      onChange={e => setFormData({...formData, affectedHosts: e.target.value})}
+                      className="form-input"
+                      rows={5}
+                      style={{ width: '100%' }}
+                      onFocus={handleEditFieldFocus}
+                      onKeyDown={e => {
+                        if (e.key === 'Tab' && !e.shiftKey) {
+                          e.preventDefault();
+                          const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                          if (modal) {
+                            const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                            if (firstField) firstField.focus();
+                          }
+                        }
+                      }}
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            <div style={{ marginTop: '1rem', height: '2.5rem' }}>
+              {saveErrorMessage(saveError) ? (
+                <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+              ) : error ? (
+                <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.85rem' }}>{error}</div>
+              ) : null}
+            </div>
+            </form>
+          ) : (
           <>
             <div className="engagement-finding-detail-form">
                 <div className="engagement-finding-detail-form__header">
@@ -429,8 +578,85 @@ export function FindingDetailButton({
               {error ? <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.85rem' }}>{error}</div> : null}
             </div>
           </>
+          )
+        ) : useFormSave ? (
+            <form id={EDIT_FORM_ID} action={updateFindingFromDetail}>
+              {editFormFields}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+                  <input ref={titleInputRef} type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
+                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                    <option value=""></option>
+                    <option value="AI">AI</option>
+                    <option value="Firewall">Firewall</option>
+                    <option value="Host">Host</option>
+                    <option value="OSINT">OSINT</option>
+                    <option value="Physical">Physical</option>
+                    <option value="Social Eng">Social Eng</option>
+                    <option value="Web App">Web App</option>
+                    <option value="Wireless">Wireless</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                    <option value=""></option>
+                    <option value="Critical">Critical</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Info">Info</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Background</div>
+                <textarea value={formData.background} onChange={e => setFormData({...formData, background: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Remediation</div>
+                <textarea value={formData.remediation} onChange={e => setFormData({...formData, remediation: e.target.value})} className="form-input" rows={4} style={{ width: '100%' }} onFocus={handleEditFieldFocus}></textarea>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>See Also</div>
+                <textarea
+                  value={formData.supportingLinks}
+                  onChange={e => setFormData({...formData, supportingLinks: e.target.value})}
+                  className="form-input"
+                  rows={4}
+                  style={{ width: '100%' }}
+                  onFocus={handleEditFieldFocus}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Tab' && !e.shiftKey) {
+                      e.preventDefault();
+                      const modal = e.currentTarget.closest('.glass-panel') || e.currentTarget.closest('form');
+                      if (modal) {
+                        const firstField = modal.querySelector('input, select, textarea') as HTMLElement;
+                        if (firstField) firstField.focus();
+                      }
+                    }
+                  }}
+                ></textarea>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
+              {saveErrorMessage(saveError) ? (
+                <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+              ) : error ? (
+                <div style={{ color: '#ff4444', textAlign: 'center', fontSize: '0.85rem' }}>{error}</div>
+              ) : null}
+            </div>
+            </form>
         ) : (
-          // EDIT MODE (global findings — same structure as view for matching height)
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 160px 120px', gap: '1.25rem' }}>

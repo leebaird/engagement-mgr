@@ -1,5 +1,24 @@
 export type SearchParamRecord = Record<string, string | string[] | undefined>;
 
+export function buildDetailHrefs(
+  pathname: string,
+  listParams: SearchParamRecord,
+  id: string,
+  extra: SearchParamRecord = {},
+) {
+  const shared = { ...extra, detail: id, create: null };
+  const clearExtra = Object.fromEntries(
+    Object.keys(extra).map((key) => [key, null]),
+  ) as Record<string, null>;
+
+  return {
+    view: buildPathQuery(pathname, listParams, { ...shared, edit: null, delete: null, deleteError: null, saveError: null }),
+    edit: buildPathQuery(pathname, listParams, { ...shared, edit: '1', delete: null, deleteError: null, saveError: null }),
+    deleteConfirm: buildPathQuery(pathname, listParams, { ...shared, delete: '1', edit: null, deleteError: null, saveError: null }),
+    close: buildPathQuery(pathname, listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, ...clearExtra }),
+  };
+}
+
 export function buildPathQuery(
   pathname: string,
   current: SearchParamRecord,

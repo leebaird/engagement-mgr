@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { createClientSchema, updateClientDataSchema } from '@/lib/validation/client';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 export async function createClient(prevState: any, formData: FormData) {
   const auth = await requireAdminAuth();
@@ -88,6 +89,28 @@ export async function updateClient(id: string, data: {
   } catch (e) {
     return { error: 'Failed to update client.' };
   }
+}
+
+export async function updateClientFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateClient(id, {
+    company: formData.get('company')?.toString() ?? '',
+    address: formData.get('address')?.toString() || null,
+    city: formData.get('city')?.toString() || null,
+    state: formData.get('state')?.toString() || null,
+    zip: formData.get('zip')?.toString() || null,
+    website: formData.get('website')?.toString() || null,
+    phone: formData.get('phone')?.toString() || null,
+    notes: formData.get('notes')?.toString() || null,
+  });
+  finishDetailUpdate('/clients', formData, id, result, updateErrorCode(result.error));
+}
+
+export async function deleteClientFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteClient(id);
+  const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  finishDetailDelete('/clients', formData, id, result, code);
 }
 
 export async function deleteClient(id: string) {

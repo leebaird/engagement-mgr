@@ -47,10 +47,11 @@ Controls that work on `localhost` often **fail when the app is opened from anoth
 | Sidebar stays visible over modal | Fixed modal inside `main` loses to `position: fixed; z-index: 10` nav unless portaled outside `main` |
 | Entire dashboard unclickable | `body.modal-open` + `visibility: hidden` / `pointer-events: none` on `.dashboard-main` (stuck after close) |
 | Modal backdrop click does nothing remotely | `onClick` / `window.location.assign` on backdrop instead of a real link |
+| Edit saves look correct in detail, but list / reopen shows old data | Save used `onClick` + server action return + local `setState` / `window.location.assign`; RSC cache not refreshed — use form submit + server `redirect()` |
 
 **Default patterns — use these for every new list page, modal, and admin action**
 
-1. **URL-driven modals** — Open/create/confirm via search params (`?detail=`, `?create=`, `?db=reset`, etc.). Build hrefs with `buildPathQuery()` in `src/lib/list-view-params.ts` so sort/filter state is preserved. Close = link to the same path with that param cleared.
+1. **URL-driven modals** — Open/create/confirm via search params (`?detail=`, `?create=`, `?edit=1`, `?delete=1`, `?db=reset`, etc.). Build hrefs with `buildPathQuery()` and `buildDetailHrefs()` in `src/lib/list-view-params.ts` so sort/filter state is preserved. Close = link to the same path with modal params cleared.
 
 2. **Light row actions** — Table rows use `DetailEyeLink` (plain `<a href>`). Do **not** mount a full `*DetailButton` with modal state on every row.
 
@@ -63,8 +64,10 @@ Controls that work on `localhost` often **fail when the app is opened from anoth
 6. **Prefer links and forms over `onClick` for critical actions**
    - Navigation / open modal → `<Link href>` or `<a href>`
    - File download → GET API route (e.g. `/api/db/backup`) linked with `<a href>`
-   - Mutations with confirmation → `<form action={serverAction}>` inside the modal; server redirects back with `?dbError=` or `?dbMsg=` for feedback
-   - Reserve `onClick` for in-modal edit mode, pickers, and other truly local UI — not for “open modal” or “submit destructive action”
+   - Detail **delete** → `<form action={delete*FromDetail}>`; `finishDetailDelete()` in `src/lib/detail-delete-form.ts` redirects with `?deleteError=` on failure
+   - Detail **save** → `<form action={update*FromDetail}>` (not `onClick` + `update*` return value); `finishDetailUpdate()` redirects to `?detail=` view on success or `?edit=1&saveError=` on failure. Use `DetailEditFormFields` for hidden `id` / `sort` / `dir` (and extra params like `finding` on engagements). Edit/Delete header actions live in `src/components/DetailModalActions.tsx`.
+   - Admin mutations → `<form action={serverAction}>`; server redirects with `?dbError=` or `?dbMsg=` for feedback
+   - Reserve `onClick` for pickers, dropdowns, and other truly local UI — not for open modal, save, or delete
 
 7. **Keep client islands small** — `*Client.tsx` wrappers should own layout chrome only. Avoid large `useState` blocks that gate whether primary buttons work at all (see `UsersClient` database section: links + URL modals, not `onClick`).
 
@@ -73,8 +76,10 @@ Controls that work on `localhost` often **fail when the app is opened from anoth
 **Checklist before marking UI “done”**
 
 - [ ] Primary actions (open detail, new record, admin buttons) use `<a>` / `<Link>` / `<form action>`, not `onClick`-only
+- [ ] Detail edit save and delete use `<form action={*FromDetail}>` + server `redirect()`, not `onClick` + `window.location.assign`
 - [ ] Modals are rendered outside `.glass-panel` and portal to `#modal-root`
 - [ ] Modal dismiss uses `closeHref` (plain link), not client routing alone
+- [ ] After save, list and reopened detail show fresh data (verify close modal → reopen)
 - [ ] Tested from a **remote browser on the LAN** (dev server bound to `0.0.0.0`), with a hard refresh — not only `localhost`
 
 Copy this section into `AI-ASSISTANT.md` for new Next.js apps with the same stack (App Router, client list wrappers, glass panels, modals).

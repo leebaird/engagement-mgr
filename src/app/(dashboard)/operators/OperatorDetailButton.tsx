@@ -1,38 +1,73 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateOperator, deleteOperator } from '@/app/actions/operator';
+import { updateOperatorFromDetail, deleteOperatorFromDetail } from '@/app/actions/operator';
+import {
+  DetailDeleteConfirmBanner,
+  DetailDeletePrompt,
+  DetailEditCancelLink,
+  DetailEditFormFields,
+  DetailSaveErrorBanner,
+  DetailViewModeActions,
+  deleteErrorMessage,
+  saveErrorMessage,
+} from '@/components/DetailModalActions';
+
+const EDIT_FORM_ID = 'edit-operator-form';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 export function OperatorDetailButton({
   operator: initialOperator,
   isAdmin = false,
   isDetailOpen,
+  isEditing = false,
+  showDeleteConfirm = false,
   detailHref,
+  editHref,
+  deleteConfirmHref,
+  viewHref,
   closeHref,
+  deleteError,
+  saveError,
+  sort,
+  dir,
   showLink = true,
   showModal = true,
 }: {
   operator: any;
   isAdmin?: boolean;
   isDetailOpen: boolean;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
   detailHref: string;
+  editHref: string;
+  deleteConfirmHref: string;
+  viewHref: string;
   closeHref: string;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
   showLink?: boolean;
   showModal?: boolean;
 }) {
-  const router = useRouter();
-  const [operator, setOperator] = useState(initialOperator);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [operator] = useState(initialOperator);
   const nameInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (isEditing) focusEditFieldAtStart(nameInputRef.current);
-  }, [isEditing]);
+    if (isEditing) {
+      setFormData({
+        name: operator.name,
+        title: operator.title || '',
+        email: operator.email || '',
+        phoneNumber: operator.phoneNumber || '',
+        discord: operator.discord || '',
+        github: operator.github || '',
+        notes: operator.notes || '',
+      });
+      focusEditFieldAtStart(nameInputRef.current);
+    }
+  }, [isEditing, operator]);
 
   const [formData, setFormData] = useState({
     name: initialOperator.name,
@@ -43,35 +78,6 @@ export function OperatorDetailButton({
     github: initialOperator.github || '',
     notes: initialOperator.notes || '',
   });
-
-  const handleUpdate = async () => {
-    if (!formData.name) {
-      setError('Name is required');
-      return;
-    }
-    
-    setIsPending(true);
-    setError(null);
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value as string);
-      });
-
-      const result = await updateOperator(operator.id, {}, data);
-      
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        setOperator({ ...operator, ...formData });
-        setIsEditing(false);
-      }
-    } catch (e) {
-      setError('An error occurred while updating the operator.');
-    } finally {
-      setIsPending(false);
-    }
-  };
 
   return (
     <>
@@ -89,53 +95,34 @@ export function OperatorDetailButton({
         <Modal
           isOpen
           closeHref={closeHref}
-          onClose={() => { setIsEditing(false); setError(null); }}
-          title={isEditing ? "Edit Operator" : "Operator Details"} 
+          title={showDeleteConfirm ? 'Delete Operator' : isEditing ? 'Edit Operator' : 'Operator Details'}
         headerActions={isEditing ? (
           <>
-            <button key="save" onClick={handleUpdate} className="btn-save" style={{ boxShadow: 'none' }} disabled={isPending}>{isPending ? 'Saving...' : 'Save'}</button>
-            <button key="cancel" onClick={() => { setIsEditing(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
+            <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
+            <DetailEditCancelLink viewHref={viewHref} />
           </>
         ) : isAdmin ? (
-          <>
-            <button
-              type="button"
-              className="modal-action-btn"
-              onClick={() => {
-                setFormData({
-                  name: operator.name,
-                  title: operator.title || '',
-                  email: operator.email || '',
-                  phoneNumber: operator.phoneNumber || '',
-                  discord: operator.discord || '',
-                  github: operator.github || '',
-                  notes: operator.notes || '',
-                });
-                setIsEditing(true);
-                setError(null);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              className="modal-action-btn modal-action-btn--danger"
-              onClick={async () => {
-                if (!confirm('Are you sure you want to delete this operator?')) return;
-                const result = await deleteOperator(operator.id);
-                if (result.success) {
-                  window.location.assign(closeHref);
-                } else {
-                  alert(result.error || 'Failed to delete operator');
-                }
-              }}
-            >
-              Delete
-            </button>
-          </>
+          <DetailViewModeActions
+            editHref={editHref}
+            deleteConfirmHref={deleteConfirmHref}
+            showDeleteConfirm={showDeleteConfirm}
+            deleteFormId="delete-operator-form"
+            deleteFormAction={deleteOperatorFromDetail}
+            recordId={operator.id}
+            viewHref={viewHref}
+            sort={sort}
+            dir={dir}
+          />
         ) : undefined}
       >
-        {!isEditing ? (
+        {showDeleteConfirm ? (
+          <>
+            <DetailDeletePrompt />
+            {deleteErrorMessage(deleteError) ? (
+              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+            ) : null}
+          </>
+        ) : !isEditing ? (
           // VIEW MODE - styled to match size and layout of EDIT/CREATE views exactly
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
@@ -200,16 +187,17 @@ export function OperatorDetailButton({
             </div>
           </div>
         ) : (
-          // EDIT MODE
+          <form id={EDIT_FORM_ID} action={updateOperatorFromDetail}>
+            <DetailEditFormFields recordId={operator.id} sort={sort} dir={dir} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
-                <input ref={nameInputRef} type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
+                <input ref={nameInputRef} name="name" type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <select value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
                   <option value=""></option>
                   <option value="Director">Director</option>
                   <option value="Red Team Lead">Red Team Lead</option>
@@ -224,29 +212,30 @@ export function OperatorDetailButton({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-                <input {...editEmailInputProps} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+                <input {...editEmailInputProps} name="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
-                <input type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+                <input name="phoneNumber" type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
-                <input type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+                <input name="discord" type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub</div>
-                <input type="text" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+                <input name="github" type="text" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
             </div>
 
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
-              <textarea 
-                value={formData.notes} 
+              <textarea
+                name="notes"
+                value={formData.notes}
                 onChange={e => setFormData({...formData, notes: e.target.value})} 
                 className="form-input" 
                 rows={4} 
@@ -266,8 +255,11 @@ export function OperatorDetailButton({
             </div>
 
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }} />
-            {error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{error}</div>}
+            {saveErrorMessage(saveError) ? (
+              <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+            ) : null}
           </div>
+          </form>
         )}
       </Modal>
       )}

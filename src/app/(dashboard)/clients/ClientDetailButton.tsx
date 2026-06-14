@@ -1,9 +1,20 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { updateClient, deleteClient } from '@/app/actions/client';
+import { updateClientFromDetail, deleteClientFromDetail } from '@/app/actions/client';
+import {
+  DetailDeleteConfirmBanner,
+  DetailDeletePrompt,
+  DetailEditCancelLink,
+  DetailEditFormFields,
+  DetailSaveErrorBanner,
+  DetailViewModeActions,
+  deleteErrorMessage,
+  saveErrorMessage,
+} from '@/components/DetailModalActions';
+
+const EDIT_FORM_ID = 'edit-client-form';
 import { formatPhone } from '@/lib/format';
 import {
   focusEditFieldAtStart,
@@ -29,22 +40,38 @@ export function ClientDetailButton({
   client: initialClient,
   isAdmin = false,
   isDetailOpen,
+  isEditing = false,
+  showDeleteConfirm = false,
   detailHref,
+  editHref,
+  deleteConfirmHref,
+  viewHref,
   closeHref,
+  deleteError,
+  saveError,
+  sort,
+  dir,
   showLink = true,
   showModal = true,
 }: {
   client: Client;
   isAdmin?: boolean;
   isDetailOpen: boolean;
+  isEditing?: boolean;
+  showDeleteConfirm?: boolean;
   detailHref: string;
+  editHref: string;
+  deleteConfirmHref: string;
+  viewHref: string;
   closeHref: string;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
   showLink?: boolean;
   showModal?: boolean;
 }) {
-  const router = useRouter();
-  const [client, setClient] = useState(initialClient);
-  const [isEditing, setIsEditing] = useState(false);
+  const [client] = useState(initialClient);
   const [formData, setFormData] = useState({
     company: initialClient.company,
     address: initialClient.address || '',
@@ -91,8 +118,20 @@ export function ClientDetailButton({
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isEditing) focusEditFieldAtStart(nameInputRef.current);
-  }, [isEditing]);
+    if (isEditing) {
+      setFormData({
+        company: client.company,
+        address: client.address || '',
+        city: client.city || '',
+        state: client.state || '',
+        zip: client.zip || '',
+        website: client.website || '',
+        phone: client.phone || '',
+        notes: client.notes || '',
+      });
+      focusEditFieldAtStart(nameInputRef.current);
+    }
+  }, [isEditing, client]);
 
   return (
     <>
@@ -110,112 +149,42 @@ export function ClientDetailButton({
         <Modal
           isOpen
           closeHref={closeHref}
-          onClose={() => { setIsEditing(false); }}
-          title={isEditing ? "Edit Client" : "Client Details"} 
+          title={showDeleteConfirm ? 'Delete Client' : isEditing ? 'Edit Client' : 'Client Details'}
           headerActions={isEditing ? (
             <>
-              <button 
+              <button
                 key="save"
-                onClick={async () => {
-                  if (cityError || stateError || zipError) {
-                    alert('Please fix the highlighted fields before saving.');
-                    return;
-                  }
-
-                  const result = await updateClient(client.id, {
-                    company: formData.company,
-                    address: formData.address || null,
-                    city: formData.city || null,
-                    state: formData.state || null,
-                    zip: formData.zip || null,
-                    website: formData.website || null,
-                    phone: formData.phone || null,
-                    notes: formData.notes || null,
-                  });
-
-                  if (result.success) {
-                    setClient(prev => ({
-                      ...prev,
-                      company: formData.company,
-                      address: formData.address || null,
-                      city: formData.city || null,
-                      state: formData.state || null,
-                      zip: formData.zip || null,
-                      website: formData.website || null,
-                      phone: formData.phone || null,
-                      notes: formData.notes || null,
-                    }));
-                    setIsEditing(false);
-                  } else {
-                    alert(result.error || 'Failed to save changes');
-                  }
-                }}
+                type="submit"
+                form={EDIT_FORM_ID}
                 className="btn-save"
                 style={{ boxShadow: 'none' }}
               >
                 Save
               </button>
-              <button 
-                key="cancel"
-                onClick={() => {
-                  setFormData({
-                    company: client.company,
-                    address: client.address || "",
-                    city: client.city || "",
-                    state: client.state || "",
-                    zip: client.zip || "",
-                    website: client.website || "",
-                    phone: client.phone || "",
-                    notes: client.notes || "",
-                  });
-                  setIsEditing(false);
-                }}
-                className="btn-cancel"
-                style={{ boxShadow: 'none' }}
-              >
-                Cancel
-              </button>
+              <DetailEditCancelLink viewHref={viewHref} />
             </>
           ) : isAdmin ? (
-            <>
-              <button
-                type="button"
-                className="modal-action-btn"
-                onClick={() => {
-                  setFormData({
-                    company: client.company,
-                    address: client.address || '',
-                    city: client.city || '',
-                    state: client.state || '',
-                    zip: client.zip || '',
-                    website: client.website || '',
-                    phone: client.phone || '',
-                    notes: client.notes || '',
-                  });
-                  setIsEditing(true);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="modal-action-btn modal-action-btn--danger"
-                onClick={async () => {
-                  if (!confirm('Are you sure you want to delete this client?')) return;
-                  const result = await deleteClient(client.id);
-                  if (result.success) {
-                    window.location.assign(closeHref);
-                  } else {
-                    alert(result.error || 'Failed to delete client');
-                  }
-                }}
-              >
-                Delete
-              </button>
-            </>
+            <DetailViewModeActions
+              editHref={editHref}
+              deleteConfirmHref={deleteConfirmHref}
+              showDeleteConfirm={showDeleteConfirm}
+              deleteFormId="delete-client-form"
+              deleteFormAction={deleteClientFromDetail}
+              recordId={client.id}
+              viewHref={viewHref}
+              sort={sort}
+              dir={dir}
+            />
           ) : undefined}
         >
-          {!isEditing ? (
+          {showDeleteConfirm ? (
+            <>
+              <DetailDeletePrompt />
+              {deleteErrorMessage(deleteError) ? (
+                <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+              ) : null}
+            </>
+          ) : !isEditing ? (
           // VIEW MODE - matching edit layout & typography
           <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             {/* Left column - Name, Address, City, State, Zip */}
@@ -273,7 +242,17 @@ export function ClientDetailButton({
             </div>
           </div>
         ) : (
-          // EDIT MODE - matching view layout & typography
+          <form
+            id={EDIT_FORM_ID}
+            action={updateClientFromDetail}
+            onSubmit={(e) => {
+              if (cityError || stateError || zipError) {
+                e.preventDefault();
+                alert('Please fix the highlighted fields before saving.');
+              }
+            }}
+          >
+            <DetailEditFormFields recordId={client.id} sort={sort} dir={dir} />
           <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
             {/* Left column - matches new record form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -281,6 +260,7 @@ export function ClientDetailButton({
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
                 <input
                   ref={nameInputRef}
+                  name="company"
                   type="text"
                   value={formData.company}
                   onChange={e => setFormData({ ...formData, company: e.target.value })}
@@ -294,6 +274,7 @@ export function ClientDetailButton({
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Address</div>
                 <input
+                  name="address"
                   type="text"
                   value={formData.address}
                   onChange={e => setFormData({ ...formData, address: e.target.value })}
@@ -307,6 +288,7 @@ export function ClientDetailButton({
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>City</div>
                 <input
+                  name="city"
                   type="text"
                   value={formData.city}
                   onChange={handleCityChange}
@@ -325,6 +307,7 @@ export function ClientDetailButton({
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>State</div>
                     <input
+                      name="state"
                       type="text"
                       value={formData.state}
                       onChange={handleStateChange}
@@ -340,6 +323,7 @@ export function ClientDetailButton({
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Zip</div>
                     <input
+                      name="zip"
                       type="text"
                       value={formData.zip}
                       onChange={handleZipChange}
@@ -362,6 +346,7 @@ export function ClientDetailButton({
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Website</div>
                 <input
+                  name="website"
                   type="text"
                   value={formData.website}
                   onChange={e => setFormData({ ...formData, website: e.target.value })}
@@ -374,6 +359,7 @@ export function ClientDetailButton({
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input
+                  name="phone"
                   type="text"
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
@@ -389,6 +375,7 @@ export function ClientDetailButton({
             <div style={{ gridColumn: '1 / -1' }}>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Notes</div>
               <textarea
+                name="notes"
                 value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
                 className="form-input"
@@ -405,6 +392,12 @@ export function ClientDetailButton({
               />
             </div>
 
+            {saveErrorMessage(saveError) ? (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+              </div>
+            ) : null}
+
             <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem', visibility: 'hidden' }}>
                 <div>Created</div>
@@ -414,6 +407,7 @@ export function ClientDetailButton({
               </div>
             </div>
           </div>
+          </form>
         )}
       </Modal>
       )}

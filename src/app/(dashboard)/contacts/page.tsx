@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
-import { buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
@@ -10,17 +10,17 @@ import { formatPhone } from '@/lib/format';
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
 }) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir, create, detail } = await searchParams;
+  const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const addHref = isAdmin
     ? buildPathQuery('/contacts', listParams, { create: '1', detail: null })
     : undefined;
   const createCloseHref = buildPathQuery('/contacts', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/contacts', listParams, { detail: null });
+  const listCloseHref = buildPathQuery('/contacts', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber', 'client'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
@@ -60,26 +60,37 @@ export default async function ContactsPage({
   };
 
   const detailContact = detail ? contacts.find((contact) => contact.id === detail) : undefined;
+  const detailHrefs = detailContact ? buildDetailHrefs('/contacts', listParams, detailContact.id) : null;
 
   return (
-    <ContactsClient
-      clients={clients}
-      isAdmin={isAdmin}
-      addHref={addHref}
-      showCreateModal={isAdmin && create === '1'}
-      createCloseHref={createCloseHref}
-    >
+    <>
       {detailContact ? (
         <ContactDetailButton
           contact={detailContact}
           clients={clients}
           isAdmin={isAdmin}
           isDetailOpen
+          isEditing={edit === '1'}
+          showDeleteConfirm={deleteConfirm === '1'}
           showLink={false}
-          detailHref={buildPathQuery('/contacts', listParams, { detail: detailContact.id, create: null })}
+          detailHref={detailHrefs!.view}
+          editHref={detailHrefs!.edit}
+          deleteConfirmHref={detailHrefs!.deleteConfirm}
+          viewHref={detailHrefs!.view}
           closeHref={listCloseHref}
+          deleteError={deleteError}
+          saveError={saveError}
+          sort={sort}
+          dir={dir}
         />
       ) : null}
+      <ContactsClient
+        clients={clients}
+        isAdmin={isAdmin}
+        addHref={addHref}
+        showCreateModal={isAdmin && create === '1'}
+        createCloseHref={createCloseHref}
+      >
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -118,6 +129,7 @@ export default async function ContactsPage({
           </tbody>
         </table>
       </div>
-    </ContactsClient>
+      </ContactsClient>
+    </>
   );
 }

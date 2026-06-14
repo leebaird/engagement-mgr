@@ -10,6 +10,7 @@ import {
   updateEngagementSchema,
 } from '@/lib/validation/engagement';
 import { parseFormUuidList } from '@/lib/validation/form';
+import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 async function resolveClientId(clientId: string, clientName: string): Promise<string | null> {
   const trimmedName = clientName.trim();
@@ -243,6 +244,19 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
     console.error(e);
     return { error: 'Failed to update engagement schedule.' };
   }
+}
+
+export async function updateEngagementFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateEngagement(id, {}, formData);
+  finishDetailUpdate('/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
+}
+
+export async function deleteEngagementFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await deleteEngagement(id);
+  const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  finishDetailDelete('/engagements', formData, id, result, code, ['finding']);
 }
 
 export async function deleteEngagement(id: string) {
