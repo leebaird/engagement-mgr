@@ -389,6 +389,11 @@ a.engagement-calendar__nav-btn {
   color: var(--text-main);
   text-align: left;
   width: 100%;
+  box-sizing: border-box;
+}
+
+a.db-action-btn {
+  text-decoration: none;
 }
 
 .db-action-btn:hover:not(:disabled) {

@@ -6,17 +6,30 @@ import { buildPathQuery } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
+import { DatabaseResetModal } from './DatabaseResetModal';
+import { DatabaseRestoreModal } from './DatabaseRestoreModal';
 
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+  searchParams: Promise<{
+    sort?: string;
+    dir?: string;
+    create?: string;
+    detail?: string;
+    db?: string;
+    dbError?: string;
+    dbMsg?: string;
+  }>;
 }) {
-  const { sort, dir, create, detail } = await searchParams;
+  const { sort, dir, create, detail, db, dbError, dbMsg } = await searchParams;
   const listParams = { sort, dir };
-  const addHref = buildPathQuery('/users', listParams, { create: '1', detail: null });
+  const addHref = buildPathQuery('/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
   const createCloseHref = buildPathQuery('/users', listParams, { create: null });
   const listCloseHref = buildPathQuery('/users', listParams, { detail: null });
+  const dbCloseHref = buildPathQuery('/users', listParams, { db: null, dbError: null });
+  const restoreHref = buildPathQuery('/users', listParams, { db: 'restore', dbError: null, dbMsg: null, detail: null, create: null });
+  const resetHref = buildPathQuery('/users', listParams, { db: 'reset', dbError: null, dbMsg: null, detail: null, create: null });
   const session = await getSession();
   if (session?.role !== 'Admin') {
     redirect('/');
@@ -47,8 +60,26 @@ export default async function UsersPage({
 
   const detailUser = detail ? users.find((user) => user.id === detail) : undefined;
 
+  const dbMessage = dbMsg === 'restore' ? 'Database restored successfully.' : null;
+
   return (
     <>
+      {db === 'reset' ? (
+        <DatabaseResetModal
+          closeHref={dbCloseHref}
+          sort={sort}
+          dir={dir}
+          dbError={dbError}
+        />
+      ) : null}
+      {db === 'restore' ? (
+        <DatabaseRestoreModal
+          closeHref={dbCloseHref}
+          sort={sort}
+          dir={dir}
+          dbError={dbError}
+        />
+      ) : null}
       {detailUser ? (
         <UserDetailButton
           user={detailUser}
@@ -63,6 +94,10 @@ export default async function UsersPage({
         addHref={addHref}
         showCreateModal={create === '1'}
         createCloseHref={createCloseHref}
+        backupHref="/api/db/backup"
+        restoreHref={restoreHref}
+        resetHref={resetHref}
+        dbMessage={dbMessage}
       >
       {users.length === 0 ? (
         <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>

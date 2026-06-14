@@ -3,6 +3,7 @@
 import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { buildPathQuery } from '@/lib/list-view-params';
 import {
   backupFilename,
   ensureBackupDirectory,
@@ -19,6 +20,12 @@ import { verifyUserPassword } from '@/lib/auth/verify-password';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
 import { firstZodError } from '@/lib/validation/common';
+
+function usersListParams(formData: FormData) {
+  const sort = formData.get('sort')?.toString();
+  const dir = formData.get('dir')?.toString();
+  return { sort, dir };
+}
 
 export async function exportDatabaseBackup():
   Promise<{ error: string } | { filename: string; savedPath: string; data: number[] }> {
@@ -51,28 +58,27 @@ export async function exportDatabaseBackup():
   }
 }
 
-export async function importDatabaseBackup(
-  formData: FormData
-): Promise<{ error?: string; success?: boolean }> {
+export async function importDatabaseBackup(formData: FormData): Promise<void> {
+  const listParams = usersListParams(formData);
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
-    return { error: 'Unauthorized' };
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'unauthorized' }));
   }
 
   const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
   if (!passwordParsed.success) {
-    return { error: firstZodError(passwordParsed.error) };
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
   const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
   if (!passwordValid) {
-    return { error: 'Incorrect password.' };
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
   try {
     const fileResult = validateBackupFile(formData.get('file'));
     if (!fileResult.ok) {
-      return { error: fileResult.error };
+      redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
     }
 
     const file = fileResult.file;
@@ -84,42 +90,44 @@ export async function importDatabaseBackup(
     } else {
       const sql = await file.text();
       if (!sql.trim()) {
-        return { error: 'Backup file is empty' };
+        redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
       }
       await importDatabaseSql(sql);
     }
 
     revalidatePath('/', 'layout');
-    return { success: true };
+    redirect(buildPathQuery('/users', listParams, { dbMsg: 'restore' }));
   } catch {
-    return {
-      error:
-        'Restore failed. Use a backup from Backup (.zip), or ensure psql/unzip are installed and the file is valid.',
-    };
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'generic' }));
   }
 }
 
-export async function resetDatabase(formData: FormData): Promise<{ error?: string }> {
+export async function resetDatabase(formData: FormData): Promise<void> {
+  const listParams = usersListParams(formData);
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
-    return { error: 'Unauthorized' };
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'unauthorized' }));
+  }
+
+  if (formData.get('confirm')?.toString() !== 'RESET') {
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'confirm' }));
   }
 
   const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
   if (!passwordParsed.success) {
-    return { error: firstZodError(passwordParsed.error) };
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
   const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
   if (!passwordValid) {
-    return { error: 'Incorrect password.' };
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
   try {
     await deleteAllDatabaseData();
     revalidatePath('/', 'layout');
   } catch {
-    return { error: 'Reset failed.' };
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'generic' }));
   }
 
   redirect('/login');
