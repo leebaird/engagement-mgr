@@ -53,6 +53,26 @@ export function DetailDeletePrompt() {
   );
 }
 
+export const DETAIL_DELETE_MODAL_WIDTH = '450px';
+
+export function DetailDeleteConfirmBody({
+  deleteError,
+  children,
+}: {
+  deleteError?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
+      <DetailDeletePrompt />
+      {children}
+      {deleteErrorMessage(deleteError) ? (
+        <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
+      ) : null}
+    </div>
+  );
+}
+
 type HiddenFields = Record<string, string | undefined>;
 
 export function DetailViewModeActions({
@@ -71,7 +91,7 @@ export function DetailViewModeActions({
   childrenBeforeEdit,
 }: {
   editHref: string;
-  deleteConfirmHref: string;
+  deleteConfirmHref?: string;
   showDeleteConfirm: boolean;
   deleteFormId: string;
   deleteFormAction: (formData: FormData) => Promise<void>;
@@ -123,7 +143,7 @@ export function DetailViewModeActions({
         >
           Delete
         </span>
-      ) : (
+      ) : deleteConfirmHref ? (
         <a
           href={deleteConfirmHref}
           className="modal-action-btn modal-action-btn--danger"
@@ -131,7 +151,7 @@ export function DetailViewModeActions({
         >
           Delete
         </a>
-      )}
+      ) : null}
     </>
   );
 }

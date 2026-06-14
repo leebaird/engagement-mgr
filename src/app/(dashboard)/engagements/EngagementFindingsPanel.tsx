@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { buildPathQuery, type SearchParamRecord } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery, type SearchParamRecord } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from '../findings/CreateFindingForm';
@@ -30,6 +30,13 @@ export function EngagementFindingsPanel({
   findings,
   onFindingsChange,
   activeFindingId,
+  findingIsEditing = false,
+  findingShowDeleteConfirm = false,
+  deleteError,
+  saveError,
+  sort,
+  dir,
+  isAdmin = false,
   listParams = {},
   engagementIdForLinks,
 }: {
@@ -37,6 +44,13 @@ export function EngagementFindingsPanel({
   findings: EngagementFindingSummary[];
   onFindingsChange: (findings: EngagementFindingSummary[]) => void;
   activeFindingId?: string;
+  findingIsEditing?: boolean;
+  findingShowDeleteConfirm?: boolean;
+  deleteError?: string;
+  saveError?: string;
+  sort?: string;
+  dir?: string;
+  isAdmin?: boolean;
   listParams?: SearchParamRecord;
   engagementIdForLinks?: string;
 }) {
@@ -60,12 +74,27 @@ export function EngagementFindingsPanel({
   };
 
   const detailFinding = activeFindingId ? findings.find((finding) => finding.id === activeFindingId) : undefined;
+  const findingHrefs = detailFinding && engagementIdForLinks
+    ? buildDetailHrefs('/engagements', listParams, engagementIdForLinks, { finding: detailFinding.id })
+    : null;
+  const findingCloseHref = engagementIdForLinks
+    ? buildPathQuery('/engagements', listParams, {
+        detail: engagementIdForLinks,
+        finding: null,
+        edit: null,
+        delete: null,
+        deleteError: null,
+        saveError: null,
+        create: null,
+      })
+    : undefined;
 
   return (
     <>
-      {detailFinding && engagementIdForLinks ? (
+      {detailFinding && engagementIdForLinks && findingHrefs ? (
         <FindingDetailButton
           engagementScoped
+          engagementId={engagementIdForLinks}
           zIndex={1200}
           finding={{
             ...detailFinding,
@@ -78,9 +107,19 @@ export function EngagementFindingsPanel({
             handleRefresh();
           }}
           isDetailOpen
+          isEditing={findingIsEditing}
+          showDeleteConfirm={findingShowDeleteConfirm}
           showLink={false}
-          detailHref={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: detailFinding.id, create: null })}
-          closeHref={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: null, create: null })}
+          detailHref={findingHrefs.view}
+          editHref={findingHrefs.edit}
+          deleteConfirmHref={findingHrefs.deleteConfirm}
+          viewHref={findingHrefs.view}
+          closeHref={findingCloseHref}
+          deleteError={deleteError}
+          saveError={saveError}
+          sort={sort}
+          dir={dir}
+          showDelete={isAdmin}
         />
       ) : null}
       <button

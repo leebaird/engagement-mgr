@@ -244,8 +244,15 @@ export async function updateFindingFromDetail(formData: FormData): Promise<void>
 
 export async function deleteFindingFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
+  const engagementId = formData.get('engagementId')?.toString();
   const result = await deleteFinding(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
+  if (engagementId) {
+    finishDetailDelete('/engagements', formData, engagementId, result, code, ['finding'], {
+      successDetailId: engagementId,
+    });
+    return;
+  }
   finishDetailDelete('/findings', formData, id, result, code);
 }
 

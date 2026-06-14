@@ -6,13 +6,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateFinding, updateFindingFromDetail, deleteFindingFromDetail } from '@/app/actions/finding';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -23,6 +22,7 @@ export function FindingDetailButton({
   finding: initialFinding, 
   onOptimisticDelete,
   engagementScoped = false,
+  engagementId,
   zIndex,
   isDetailOpen = false,
   isEditing = false,
@@ -38,11 +38,14 @@ export function FindingDetailButton({
   dir,
   showLink = true,
   showModal = true,
+  showDelete = true,
 }: { 
   finding: any; 
   onOptimisticDelete?: (id: string) => void;
   engagementScoped?: boolean;
+  engagementId?: string;
   zIndex?: number;
+  showDelete?: boolean;
   isDetailOpen?: boolean;
   isEditing?: boolean;
   showDeleteConfirm?: boolean;
@@ -207,7 +210,7 @@ export function FindingDetailButton({
           closeHref={closeHref}
           onClose={handleClose}
           title={showDeleteConfirm ? 'Delete Finding' : isEditing ? (engagementScoped ? 'Edit Engagement Finding' : 'Edit Finding') : (engagementScoped ? 'Engagement Finding Details' : 'Finding Details')}
-        maxWidth={engagementScoped ? "1500px" : "1000px"}
+        maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : engagementScoped ? '1500px' : '1000px'}
         zIndex={zIndex}
         headerActions={isEditing ? (
           <>
@@ -226,10 +229,10 @@ export function FindingDetailButton({
               <button key="cancel" onClick={() => { setIsOpen(false); setError(null); }} className="btn-cancel" style={{ boxShadow: 'none' }}>Cancel</button>
             )}
           </>
-        ) : editHref && deleteConfirmHref && viewHref ? (
+        ) : editHref && viewHref ? (
           <DetailViewModeActions
             editHref={editHref}
-            deleteConfirmHref={deleteConfirmHref}
+            deleteConfirmHref={showDelete ? deleteConfirmHref : undefined}
             showDeleteConfirm={showDeleteConfirm}
             deleteFormId="delete-finding-form"
             deleteFormAction={deleteFindingFromDetail}
@@ -237,21 +240,21 @@ export function FindingDetailButton({
             viewHref={viewHref}
             sort={sort}
             dir={dir}
+            extraFields={
+              engagementScoped && engagementId
+                ? { finding: finding.id, engagementId }
+                : undefined
+            }
           />
         ) : undefined}
       >
         {showDeleteConfirm ? (
-          <>
-            <DetailDeletePrompt />
-            <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <DetailDeleteConfirmBody deleteError={deleteError}>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               Related screenshots will also be deleted.
             </p>
-            {deleteErrorMessage(deleteError) ? (
-              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-            ) : null}
-          </>
-        ) : null}
-        {!isEditing ? (
+          </DetailDeleteConfirmBody>
+        ) : !isEditing ? (
           // VIEW MODE (form field style)
           <>
             {engagementScoped ? (

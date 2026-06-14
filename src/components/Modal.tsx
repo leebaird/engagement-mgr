@@ -122,7 +122,7 @@ export function Modal({
         <div
           className={`glass-panel modal-panel${headerExtra ? ' modal-panel--has-centered-extra' : ''}`}
           style={{
-            width: '100%',
+            width: `min(100%, ${maxWidth || '775px'})`,
             maxWidth: maxWidth || '775px',
             margin: '0 auto',
             padding: '2rem',

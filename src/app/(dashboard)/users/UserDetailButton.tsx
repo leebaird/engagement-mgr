@@ -4,13 +4,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateUserFromDetail, deleteUserFromDetail } from '@/app/actions/user';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -99,7 +98,7 @@ export function UserDetailButton({
           isOpen
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete User' : isEditing ? 'Edit User' : 'User Details'}
-        maxWidth="450px"
+        maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : '450px'}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
@@ -123,12 +122,7 @@ export function UserDetailButton({
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
           {showDeleteConfirm ? (
-            <>
-              <DetailDeletePrompt />
-              {deleteErrorMessage(deleteError) ? (
-                <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-              ) : null}
-            </>
+            <DetailDeleteConfirmBody deleteError={deleteError} />
           ) : (
           <>
           {isEditing ? (

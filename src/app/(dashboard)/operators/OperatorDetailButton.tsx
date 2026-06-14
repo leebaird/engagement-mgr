@@ -4,13 +4,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateOperatorFromDetail, deleteOperatorFromDetail } from '@/app/actions/operator';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -96,6 +95,7 @@ export function OperatorDetailButton({
           isOpen
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete Operator' : isEditing ? 'Edit Operator' : 'Operator Details'}
+          maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : undefined}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
@@ -116,12 +116,7 @@ export function OperatorDetailButton({
         ) : undefined}
       >
         {showDeleteConfirm ? (
-          <>
-            <DetailDeletePrompt />
-            {deleteErrorMessage(deleteError) ? (
-              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-            ) : null}
-          </>
+          <DetailDeleteConfirmBody deleteError={deleteError} />
         ) : !isEditing ? (
           // VIEW MODE - styled to match size and layout of EDIT/CREATE views exactly
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>

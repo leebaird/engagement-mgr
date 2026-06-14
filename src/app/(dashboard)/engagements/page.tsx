@@ -125,8 +125,10 @@ export default async function EngagementsPage({
           operators={operators}
           isAdmin={isAdmin}
           isDetailOpen
-          isEditing={edit === '1'}
-          showDeleteConfirm={deleteConfirm === '1'}
+          isEditing={edit === '1' && !finding}
+          showDeleteConfirm={deleteConfirm === '1' && !finding}
+          findingIsEditing={edit === '1' && !!finding}
+          findingShowDeleteConfirm={deleteConfirm === '1' && !!finding}
           showLink={false}
           detailHref={detailHrefs!.view}
           editHref={detailHrefs!.edit}

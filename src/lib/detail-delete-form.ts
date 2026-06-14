@@ -34,6 +34,11 @@ export function extraParamsFromForm(
   return params;
 }
 
+type FinishDetailDeleteOptions = {
+  /** Keep this `detail` param after a successful delete (e.g. engagement overlay). */
+  successDetailId?: string;
+};
+
 export function finishDetailDelete(
   pathname: string,
   formData: FormData,
@@ -41,6 +46,7 @@ export function finishDetailDelete(
   result: DeleteActionResult,
   deleteError = 'generic',
   extraParamKeys: string[] = [],
+  options: FinishDetailDeleteOptions = {},
 ) {
   const listParams = listParamsFromForm(formData);
   const extra = extraParamsFromForm(formData, extraParamKeys);
@@ -60,7 +66,7 @@ export function finishDetailDelete(
 
   redirect(
     buildPathQuery(pathname, listParams, {
-      detail: null,
+      detail: options.successDetailId ?? null,
       edit: null,
       delete: null,
       deleteError: null,

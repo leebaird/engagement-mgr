@@ -4,13 +4,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateClientFromDetail, deleteClientFromDetail } from '@/app/actions/client';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -150,6 +149,7 @@ export function ClientDetailButton({
           isOpen
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete Client' : isEditing ? 'Edit Client' : 'Client Details'}
+          maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : undefined}
           headerActions={isEditing ? (
             <>
               <button
@@ -178,12 +178,7 @@ export function ClientDetailButton({
           ) : undefined}
         >
           {showDeleteConfirm ? (
-            <>
-              <DetailDeletePrompt />
-              {deleteErrorMessage(deleteError) ? (
-                <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-              ) : null}
-            </>
+            <DetailDeleteConfirmBody deleteError={deleteError} />
           ) : !isEditing ? (
           // VIEW MODE - matching edit layout & typography
           <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>

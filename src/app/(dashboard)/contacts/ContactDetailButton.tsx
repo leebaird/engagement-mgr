@@ -4,13 +4,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateContactFromDetail, deleteContactFromDetail } from '@/app/actions/contact';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -116,6 +115,7 @@ export function ContactDetailButton({
           isOpen
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete Contact' : isEditing ? 'Edit Contact' : 'Contact Details'}
+          maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : undefined}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
@@ -136,12 +136,7 @@ export function ContactDetailButton({
         ) : undefined}
       >
         {showDeleteConfirm ? (
-          <>
-            <DetailDeletePrompt />
-            {deleteErrorMessage(deleteError) ? (
-              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-            ) : null}
-          </>
+          <DetailDeleteConfirmBody deleteError={deleteError} />
         ) : !isEditing ? (
           // VIEW MODE (form field style)
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>

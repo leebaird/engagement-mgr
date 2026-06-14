@@ -4,13 +4,12 @@ import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagementFromDetail, deleteEngagementFromDetail } from '@/app/actions/engagement';
 import {
-  DetailDeleteConfirmBanner,
-  DetailDeletePrompt,
+  DetailDeleteConfirmBody,
+  DETAIL_DELETE_MODAL_WIDTH,
   DetailEditCancelLink,
   DetailEditFormFields,
   DetailSaveErrorBanner,
   DetailViewModeActions,
-  deleteErrorMessage,
   saveErrorMessage,
 } from '@/components/DetailModalActions';
 
@@ -61,6 +60,8 @@ export function EngagementDetailButton({
   sort,
   dir,
   activeFindingId,
+  findingIsEditing = false,
+  findingShowDeleteConfirm = false,
   listParams = {},
   showLink = true,
   showModal = true,
@@ -83,6 +84,8 @@ export function EngagementDetailButton({
   sort?: string;
   dir?: string;
   activeFindingId?: string;
+  findingIsEditing?: boolean;
+  findingShowDeleteConfirm?: boolean;
   listParams?: SearchParamRecord;
   showLink?: boolean;
   showModal?: boolean;
@@ -210,6 +213,13 @@ export function EngagementDetailButton({
         findings={findings}
         onFindingsChange={setFindings}
         activeFindingId={activeFindingId}
+        findingIsEditing={findingIsEditing}
+        findingShowDeleteConfirm={findingShowDeleteConfirm}
+        deleteError={deleteError}
+        saveError={saveError}
+        sort={sort}
+        dir={dir}
+        isAdmin={isAdmin}
         listParams={listParams}
         engagementIdForLinks={engagement.id}
       />
@@ -234,9 +244,9 @@ export function EngagementDetailButton({
           closeHref={closeHref}
           onClose={() => { setIsScheduleOpen(false); }}
           title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : 'Engagement Details'}
-        maxWidth="1500px"
-        alignTop
-        headerExtra={findingsSection}
+        maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : '1500px'}
+        alignTop={!showDeleteConfirm}
+        headerExtra={showDeleteConfirm ? undefined : findingsSection}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
@@ -267,12 +277,7 @@ export function EngagementDetailButton({
         ) : undefined}
       >
         {showDeleteConfirm ? (
-          <>
-            <DetailDeletePrompt />
-            {deleteErrorMessage(deleteError) ? (
-              <DetailDeleteConfirmBanner message={deleteErrorMessage(deleteError)!} />
-            ) : null}
-          </>
+          <DetailDeleteConfirmBody deleteError={deleteError} />
         ) : (
         <div className="engagement-create-form">
           {isEditing ? (
