@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Modal } from '@/components/Modal';
-import { updateEngagementSchedule } from '@/app/actions/engagement';
-import {
-  EngagementScheduleFields,
-  engagementToScheduleValues,
-  type EngagementScheduleValues,
-} from './EngagementScheduleFields';
+import { updateEngagementScheduleFromDetail } from '@/app/actions/engagement';
+import { DetailEditCancelLink, DetailEditFormFields, DetailSaveErrorBanner, saveErrorMessage } from '@/components/DetailModalActions';
+import { engagementToScheduleValues } from '@/lib/date-input-value';
+import { EngagementScheduleFields } from './EngagementScheduleFields';
+
+const EDIT_SCHEDULE_FORM_ID = 'edit-engagement-schedule-form';
 
 export type ScheduleEngagement = {
   id: string;
@@ -24,140 +24,83 @@ export type ScheduleEngagement = {
 };
 
 type EngagementScheduleModalProps = {
-  engagement: ScheduleEngagement | null;
+  engagement: ScheduleEngagement;
   isAdmin?: boolean;
   isOpen: boolean;
-  onClose: () => void;
-  onUpdated?: (engagement: ScheduleEngagement) => void;
+  isEditing?: boolean;
+  closeHref: string;
+  scheduleViewHref: string;
+  scheduleEditHref: string;
+  scheduleError?: string;
+  scheduleEditFields?: ReactNode;
+  sort?: string;
+  dir?: string;
+  activeFindingId?: string;
 };
 
 export function EngagementScheduleModal({
   engagement,
   isAdmin = false,
   isOpen,
-  onClose,
-  onUpdated,
+  isEditing = false,
+  closeHref,
+  scheduleViewHref,
+  scheduleEditHref,
+  scheduleError,
+  scheduleEditFields,
+  sort,
+  dir,
+  activeFindingId,
 }: EngagementScheduleModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<EngagementScheduleValues>(
-    engagement ? engagementToScheduleValues(engagement) : engagementToScheduleValues({})
-  );
+  const scheduleValues = engagementToScheduleValues(engagement);
 
-  useEffect(() => {
-    if (!engagement) return;
-    setFormData(engagementToScheduleValues(engagement));
-    setError(null);
-    setIsEditing(false);
-  }, [engagement, isOpen]);
-
-  const handleClose = () => {
-    onClose();
-    setIsEditing(false);
-    setError(null);
-  };
-
-  const handleSave = async () => {
-    if (!engagement) return;
-
-    setIsPending(true);
-    setError(null);
-    try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        data.append(key, value);
-      });
-      const result = await updateEngagementSchedule(engagement.id, data);
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        const toNullableIso = (iso: string) => iso || null;
-        onUpdated?.({
-          ...engagement,
-          startPrep: toNullableIso(formData.startPrep),
-          endPrep: toNullableIso(formData.endPrep),
-          startRecon: toNullableIso(formData.startRecon),
-          endRecon: toNullableIso(formData.endRecon),
-          startTesting: toNullableIso(formData.startTesting),
-          endTesting: toNullableIso(formData.endTesting),
-          startReporting: toNullableIso(formData.startReporting),
-          endReporting: toNullableIso(formData.endReporting),
-          outbrief: toNullableIso(formData.outbrief),
-        });
-        setIsEditing(false);
-      }
-    } catch {
-      setError('An error occurred while saving the schedule.');
-    } finally {
-      setIsPending(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (!engagement) return;
-    setFormData(engagementToScheduleValues(engagement));
-    setError(null);
-    setIsEditing(false);
-  };
-
-  if (!engagement) return null;
+  if (!isOpen) return null;
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
+      isOpen
+      closeHref={closeHref}
       title={isEditing ? 'Edit Engagement Schedule' : 'Engagement Schedule'}
       maxWidth="560px"
       zIndex={1100}
       headerActions={isEditing ? (
         <>
           <button
-            type="button"
-            onClick={handleSave}
+            type="submit"
+            form={EDIT_SCHEDULE_FORM_ID}
             className="btn-save"
             style={{ boxShadow: 'none' }}
-            disabled={isPending}
           >
-            {isPending ? 'Saving...' : 'Save'}
+            Save
           </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="btn-cancel"
-            style={{ boxShadow: 'none' }}
-            disabled={isPending}
-          >
-            Cancel
-          </button>
+          <DetailEditCancelLink viewHref={scheduleViewHref} />
         </>
       ) : isAdmin ? (
-        <button
-          type="button"
-          className="modal-action-btn"
-          onClick={() => {
-            setFormData(engagementToScheduleValues(engagement));
-            setError(null);
-            setIsEditing(true);
-          }}
-        >
+        <a href={scheduleEditHref} className="modal-action-btn" style={{ textDecoration: 'none' }}>
           Edit
-        </button>
+        </a>
       ) : undefined}
     >
-      <div style={{ marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-        {engagement.codeName}
-      </div>
-      <EngagementScheduleFields
-        values={formData}
-        readOnly={!isEditing}
-        onFieldChange={(field, value) => setFormData((prev) => ({ ...prev, [field]: value }))}
-      />
-      {error ? (
-        <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.75rem', fontSize: '0.85rem' }}>
-          {error}
-        </div>
-      ) : null}
+      {isEditing ? (
+        <form
+          id={EDIT_SCHEDULE_FORM_ID}
+          key={`schedule-edit-${engagement.id}`}
+          action={updateEngagementScheduleFromDetail}
+        >
+          <DetailEditFormFields
+            recordId={engagement.id}
+            sort={sort}
+            dir={dir}
+            extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
+          />
+          {scheduleEditFields}
+          {saveErrorMessage(scheduleError) ? (
+            <DetailSaveErrorBanner message={saveErrorMessage(scheduleError)!} />
+          ) : null}
+        </form>
+      ) : (
+        <EngagementScheduleFields values={scheduleValues} />
+      )}
     </Modal>
   );
 }

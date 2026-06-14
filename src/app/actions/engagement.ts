@@ -10,7 +10,7 @@ import {
   updateEngagementSchema,
 } from '@/lib/validation/engagement';
 import { parseFormUuidList } from '@/lib/validation/form';
-import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
+import { finishDetailDelete, finishDetailUpdate, finishScheduleUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
 async function resolveClientId(clientId: string, clientName: string): Promise<string | null> {
   const trimmedName = clientName.trim();
@@ -244,6 +244,12 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
     console.error(e);
     return { error: 'Failed to update engagement schedule.' };
   }
+}
+
+export async function updateEngagementScheduleFromDetail(formData: FormData): Promise<void> {
+  const id = formData.get('id')?.toString() ?? '';
+  const result = await updateEngagementSchedule(id, formData);
+  finishScheduleUpdate('/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
 }
 
 export async function updateEngagementFromDetail(formData: FormData): Promise<void> {

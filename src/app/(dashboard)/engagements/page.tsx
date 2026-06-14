@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
+import { engagementToScheduleValues, serializeEngagementScheduleDates } from '@/lib/date-input-value';
 import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
+import { EngagementScheduleEditFields } from './EngagementScheduleEditFields';
 
 function formatEngagementType(type: string): string {
   return type
@@ -20,17 +22,17 @@ function formatEngagementType(type: string): string {
 export default async function EngagementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string }>;
 }) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
+  const { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
   const listParams = { sort, dir };
   const addHref = isAdmin
     ? buildPathQuery('/engagements', listParams, { create: '1', detail: null })
     : undefined;
   const createCloseHref = buildPathQuery('/engagements', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null });
+  const listCloseHref = buildPathQuery('/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, schedule: null, scheduleEdit: null, scheduleError: null });
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
@@ -99,11 +101,19 @@ export default async function EngagementsPage({
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
-  const detailEngagement = detail ? engagements.find((engagement) => engagement.id === detail) : undefined;
+  const rawDetailEngagement = detail ? engagements.find((engagement) => engagement.id === detail) : undefined;
+  const detailEngagement = rawDetailEngagement
+    ? serializeEngagementScheduleDates(rawDetailEngagement)
+    : undefined;
   const detailHrefs = detailEngagement
     ? buildDetailHrefs('/engagements', listParams, detailEngagement.id, finding ? { finding } : {})
     : null;
-
+  const scheduleFormValues = detailEngagement
+    ? engagementToScheduleValues(detailEngagement)
+    : undefined;
+  const scheduleEditFields = scheduleEdit === '1' && scheduleFormValues
+    ? <EngagementScheduleEditFields values={scheduleFormValues} />
+    : undefined;
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
   const contacts = await prisma.contact.findMany({ orderBy: { name: 'asc' } });
   const operators = await prisma.operator.findMany({ orderBy: { name: 'asc' } });
@@ -140,6 +150,14 @@ export default async function EngagementsPage({
           sort={sort}
           dir={dir}
           activeFindingId={finding}
+          showSchedule={schedule === '1' && !finding && !edit && deleteConfirm !== '1'}
+          scheduleIsEditing={scheduleEdit === '1'}
+          scheduleHref={detailHrefs!.schedule}
+          scheduleViewHref={detailHrefs!.schedule}
+          scheduleEditHref={detailHrefs!.scheduleEdit}
+          scheduleCloseHref={detailHrefs!.view}
+          scheduleError={scheduleError}
+          scheduleEditFields={scheduleEditFields}
           listParams={listParams}
         />
       ) : null}

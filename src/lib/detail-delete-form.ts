@@ -71,7 +71,52 @@ export function finishDetailDelete(
       delete: null,
       deleteError: null,
       saveError: null,
+      schedule: null,
+      scheduleEdit: null,
+      scheduleError: null,
       ...clearExtra,
+    }),
+  );
+}
+
+export function finishScheduleUpdate(
+  pathname: string,
+  formData: FormData,
+  id: string,
+  result: UpdateActionResult,
+  scheduleError = 'generic',
+  extraParamKeys: string[] = [],
+) {
+  const listParams = listParamsFromForm(formData);
+  const extra = extraParamsFromForm(formData, extraParamKeys);
+
+  if (result.error) {
+    redirect(
+      buildPathQuery(pathname, listParams, {
+        ...extra,
+        detail: id,
+        schedule: '1',
+        scheduleEdit: '1',
+        scheduleError,
+        edit: null,
+        delete: null,
+        deleteError: null,
+        saveError: null,
+      }),
+    );
+  }
+
+  redirect(
+    buildPathQuery(pathname, listParams, {
+      ...extra,
+      detail: id,
+      schedule: '1',
+      scheduleEdit: null,
+      scheduleError: null,
+      edit: null,
+      delete: null,
+      deleteError: null,
+      saveError: null,
     }),
   );
 }
@@ -108,6 +153,9 @@ export function finishDetailUpdate(
       saveError: null,
       delete: null,
       deleteError: null,
+      schedule: null,
+      scheduleEdit: null,
+      scheduleError: null,
     }),
   );
 }

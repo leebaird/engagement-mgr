@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -13,10 +12,7 @@ import {
   type ScheduleEvent,
   type SchedulePhase,
 } from '@/lib/engagement-schedule-events';
-import {
-  EngagementScheduleModal,
-  type ScheduleEngagement,
-} from './engagements/EngagementScheduleModal';
+import { buildEngagementScheduleHref } from '@/lib/list-view-params';
 import { Modal } from '@/components/Modal';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
@@ -24,7 +20,6 @@ const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbr
 
 type EngagementCalendarProps = {
   engagements: EngagementCalendarItem[];
-  isAdmin?: boolean;
   viewYear: number;
   viewMonth: number;
   prevHref: string;
@@ -87,27 +82,18 @@ function formatPickerDate(dateKey: string): string {
 }
 
 export function EngagementCalendar({
-  engagements: initialEngagements,
-  isAdmin = false,
+  engagements,
   viewYear,
   viewMonth,
   prevHref,
   nextHref,
   todayHref,
 }: EngagementCalendarProps) {
-  const router = useRouter();
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const [engagements, setEngagements] = useState(initialEngagements);
   const [pickerDateKey, setPickerDateKey] = useState<string | null>(null);
-  const [pickerEngagements, setPickerEngagements] = useState<ScheduleEngagement[]>([]);
-  const [scheduleEngagement, setScheduleEngagement] = useState<ScheduleEngagement | null>(null);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-
-  useEffect(() => {
-    setEngagements(initialEngagements);
-  }, [initialEngagements]);
+  const [pickerEngagements, setPickerEngagements] = useState<EngagementCalendarItem[]>([]);
 
   const events = useMemo(() => extractScheduleEvents(engagements), [engagements]);
   const eventsByDate = useMemo(() => {
@@ -120,45 +106,17 @@ export function EngagementCalendar({
     return map;
   }, [events]);
 
-  const engagementsById = useMemo(() => {
-    const map = new Map<string, ScheduleEngagement>();
-    for (const engagement of engagements) {
-      map.set(engagement.id, engagement);
-    }
-    return map;
-  }, [engagements]);
-
   const weekRows = useMemo(
     () => buildWorkWeekMonthGrid(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
 
-  const openScheduleForEngagement = (engagement: ScheduleEngagement) => {
-    setScheduleEngagement(engagement);
-    setIsScheduleOpen(true);
-    setPickerDateKey(null);
-    setPickerEngagements([]);
-  };
-
   const handleDayClick = (dateKey: string) => {
     const dayEngagements = getEngagementsOnDate(dateKey, engagements, eventsByDate);
     if (dayEngagements.length === 0) return;
 
-    if (dayEngagements.length === 1) {
-      openScheduleForEngagement(dayEngagements[0]);
-      return;
-    }
-
     setPickerDateKey(dateKey);
     setPickerEngagements(dayEngagements);
-  };
-
-  const handleScheduleUpdated = (updated: ScheduleEngagement) => {
-    setEngagements((prev) =>
-      prev.map((engagement) => (engagement.id === updated.id ? { ...engagement, ...updated } : engagement)),
-    );
-    setScheduleEngagement(updated);
-    router.refresh();
   };
 
   return (
@@ -229,8 +187,26 @@ export function EngagementCalendar({
                     const isToday = dateKey === todayKey;
                     const dayNumber = Number(dateKey.split('-')[2]);
                     const isInteractive = dayEngagements.length > 0;
+                    const singleEngagementHref = dayEngagements.length === 1
+                      ? buildEngagementScheduleHref(dayEngagements[0].id)
+                      : undefined;
 
-                    return (
+                    return isInteractive && singleEngagementHref ? (
+                      <a
+                        key={dateKey}
+                        href={singleEngagementHref}
+                        className={[
+                          'engagement-calendar__day',
+                          'engagement-calendar__day--interactive',
+                          isToday ? 'engagement-calendar__day--today' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-label={`${dateKey}, ${dayEngagements.length} scheduled engagements`}
+                      >
+                        <span className="engagement-calendar__day-number">{dayNumber}</span>
+                      </a>
+                    ) : (
                       <button
                         key={dateKey}
                         type="button"
@@ -256,23 +232,20 @@ export function EngagementCalendar({
                     style={{ gridTemplateRows: `repeat(${laneCount}, 1.35rem)` }}
                   >
                     {banners.map((banner) => (
-                      <button
+                      <a
                         key={`${banner.engagementId}-${banner.phase}-${rowIndex}-${banner.gridColumnStart}-${banner.lane}`}
-                        type="button"
+                        href={buildEngagementScheduleHref(banner.engagementId)}
                         className="engagement-calendar__banner"
                         style={{
                           gridColumn: `${banner.gridColumnStart} / ${banner.gridColumnEnd}`,
                           gridRow: banner.lane + 1,
                           backgroundColor: banner.color,
+                          textDecoration: 'none',
                         }}
                         title={banner.label}
-                        onClick={() => {
-                          const engagement = engagementsById.get(banner.engagementId);
-                          if (engagement) openScheduleForEngagement(engagement);
-                        }}
                       >
                         {banner.label}
-                      </button>
+                      </a>
                     ))}
                   </div>
                 ) : null}
@@ -298,30 +271,18 @@ export function EngagementCalendar({
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {pickerEngagements.map((engagement) => (
-              <button
+              <a
                 key={engagement.id}
-                type="button"
+                href={buildEngagementScheduleHref(engagement.id)}
                 className="btn-secondary"
-                style={{ width: '100%', textAlign: 'left' }}
-                onClick={() => openScheduleForEngagement(engagement)}
+                style={{ width: '100%', textAlign: 'left', textDecoration: 'none', display: 'block' }}
               >
                 {engagement.codeName}
-              </button>
+              </a>
             ))}
           </div>
         </Modal>
       ) : null}
-
-      <EngagementScheduleModal
-        engagement={scheduleEngagement}
-        isAdmin={isAdmin}
-        isOpen={isScheduleOpen}
-        onClose={() => {
-          setIsScheduleOpen(false);
-          setScheduleEngagement(null);
-        }}
-        onUpdated={handleScheduleUpdated}
-      />
     </>
   );
 }

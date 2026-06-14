@@ -10,12 +10,23 @@ export function buildDetailHrefs(
   const clearExtra = Object.fromEntries(
     Object.keys(extra).map((key) => [key, null]),
   ) as Record<string, null>;
+  const clearModal = {
+    edit: null,
+    delete: null,
+    deleteError: null,
+    saveError: null,
+    schedule: null,
+    scheduleEdit: null,
+    scheduleError: null,
+  };
 
   return {
-    view: buildPathQuery(pathname, listParams, { ...shared, edit: null, delete: null, deleteError: null, saveError: null }),
-    edit: buildPathQuery(pathname, listParams, { ...shared, edit: '1', delete: null, deleteError: null, saveError: null }),
-    deleteConfirm: buildPathQuery(pathname, listParams, { ...shared, delete: '1', edit: null, deleteError: null, saveError: null }),
-    close: buildPathQuery(pathname, listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, ...clearExtra }),
+    view: buildPathQuery(pathname, listParams, { ...shared, ...clearModal }),
+    edit: buildPathQuery(pathname, listParams, { ...shared, ...clearModal, edit: '1' }),
+    deleteConfirm: buildPathQuery(pathname, listParams, { ...shared, ...clearModal, delete: '1' }),
+    schedule: buildPathQuery(pathname, listParams, { ...shared, ...clearModal, schedule: '1' }),
+    scheduleEdit: buildPathQuery(pathname, listParams, { ...shared, ...clearModal, schedule: '1', scheduleEdit: '1' }),
+    close: buildPathQuery(pathname, listParams, { detail: null, ...clearModal, ...clearExtra }),
   };
 }
 
@@ -55,6 +66,10 @@ export function parseCalendarView(
     : today.getMonth();
 
   return { viewYear, viewMonth };
+}
+
+export function buildEngagementScheduleHref(engagementId: string) {
+  return buildPathQuery('/engagements', {}, { detail: engagementId, schedule: '1' });
 }
 
 export function buildCalendarNavHrefs(viewYear: number, viewMonth: number) {

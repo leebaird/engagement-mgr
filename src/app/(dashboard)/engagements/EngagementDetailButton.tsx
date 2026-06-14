@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagementFromDetail, deleteEngagementFromDetail } from '@/app/actions/engagement';
@@ -62,6 +62,14 @@ export function EngagementDetailButton({
   activeFindingId,
   findingIsEditing = false,
   findingShowDeleteConfirm = false,
+  showSchedule = false,
+  scheduleIsEditing = false,
+  scheduleHref,
+  scheduleViewHref,
+  scheduleEditHref,
+  scheduleCloseHref,
+  scheduleError,
+  scheduleEditFields,
   listParams = {},
   showLink = true,
   showModal = true,
@@ -86,6 +94,14 @@ export function EngagementDetailButton({
   activeFindingId?: string;
   findingIsEditing?: boolean;
   findingShowDeleteConfirm?: boolean;
+  showSchedule?: boolean;
+  scheduleIsEditing?: boolean;
+  scheduleHref?: string;
+  scheduleViewHref?: string;
+  scheduleEditHref?: string;
+  scheduleCloseHref?: string;
+  scheduleError?: string;
+  scheduleEditFields?: ReactNode;
   listParams?: SearchParamRecord;
   showLink?: boolean;
   showModal?: boolean;
@@ -94,9 +110,6 @@ export function EngagementDetailButton({
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
     mapEngagementFindings(initialEngagement.findings)
   );
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-
-
   useEffect(() => {
     setEngagement(initialEngagement);
     setFindings(mapEngagementFindings(initialEngagement.findings));
@@ -238,11 +251,10 @@ export function EngagementDetailButton({
         </a>
       ) : null}
 
-      {showModal && isDetailOpen && (
+      {showModal && isDetailOpen && !showSchedule && (
         <Modal
           isOpen
           closeHref={closeHref}
-          onClose={() => { setIsScheduleOpen(false); }}
           title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : 'Engagement Details'}
         maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : '1500px'}
         alignTop={!showDeleteConfirm}
@@ -265,13 +277,11 @@ export function EngagementDetailButton({
             dir={dir}
             extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
             childrenBeforeEdit={
-              <button
-                type="button"
-                className="modal-action-btn"
-                onClick={() => setIsScheduleOpen(true)}
-              >
-                Schedule
-              </button>
+              scheduleHref ? (
+                <a href={scheduleHref} className="modal-action-btn" style={{ textDecoration: 'none' }}>
+                  Schedule
+                </a>
+              ) : null
             }
           />
         ) : undefined}
@@ -351,30 +361,22 @@ export function EngagementDetailButton({
       </Modal>
       )}
 
-      <EngagementScheduleModal
-        engagement={engagement}
-        isAdmin={isAdmin}
-        isOpen={isScheduleOpen}
-        onClose={() => setIsScheduleOpen(false)}
-        onUpdated={(updated) => {
-          const toNullableDate = (value: string | Date | null | undefined) => {
-            if (!value) return null;
-            return value instanceof Date ? value : new Date(value);
-          };
-          setEngagement({
-            ...engagement,
-            startPrep: toNullableDate(updated.startPrep),
-            endPrep: toNullableDate(updated.endPrep),
-            startRecon: toNullableDate(updated.startRecon),
-            endRecon: toNullableDate(updated.endRecon),
-            startTesting: toNullableDate(updated.startTesting),
-            endTesting: toNullableDate(updated.endTesting),
-            startReporting: toNullableDate(updated.startReporting),
-            endReporting: toNullableDate(updated.endReporting),
-            outbrief: toNullableDate(updated.outbrief),
-          });
-        }}
-      />
+      {showSchedule && scheduleViewHref && scheduleEditHref && scheduleCloseHref ? (
+        <EngagementScheduleModal
+          engagement={engagement}
+          isAdmin={isAdmin}
+          isOpen
+          isEditing={scheduleIsEditing}
+          closeHref={scheduleCloseHref}
+          scheduleViewHref={scheduleViewHref}
+          scheduleEditHref={scheduleEditHref}
+          scheduleError={scheduleError}
+          scheduleEditFields={scheduleEditFields}
+          sort={sort}
+          dir={dir}
+          activeFindingId={activeFindingId}
+        />
+      ) : null}
     </>
   );
 }

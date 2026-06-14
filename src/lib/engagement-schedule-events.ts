@@ -1,3 +1,5 @@
+import { toDateInputValue } from '@/lib/date-input-value';
+
 export type SchedulePhase = 'Prep' | 'Recon' | 'Testing' | 'Reporting' | 'Outbrief';
 export type ScheduleEventKind = 'start' | 'end';
 
@@ -70,10 +72,8 @@ const SCHEDULE_FIELD_MAP: {
 ];
 
 export function toDateKey(value: string | Date | null | undefined): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString().split('T')[0];
+  const dateKey = toDateInputValue(value);
+  return dateKey || null;
 }
 
 export function extractScheduleEvents(engagements: EngagementScheduleSource[]): ScheduleEvent[] {
