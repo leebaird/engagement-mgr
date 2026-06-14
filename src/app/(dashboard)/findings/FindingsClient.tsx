@@ -2,20 +2,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { buildPathQuery } from '@/lib/list-view-params';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from './CreateFindingForm';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { FindingDetailButton } from './FindingDetailButton';
 
 interface FindingsClientProps {
   initialFindings: any[];
   sortCol: string;
   sortDir: 'asc' | 'desc';
+  addHref: string;
+  showCreateModal: boolean;
+  createCloseHref: string;
+  activeDetailId?: string;
+  listCloseHref: string;
+  listParams: { sort?: string; dir?: string };
 }
 
-export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsClientProps) {
+export function FindingsClient({
+  initialFindings,
+  sortCol,
+  sortDir,
+  addHref,
+  showCreateModal,
+  createCloseHref,
+  activeDetailId,
+  listCloseHref,
+  listParams,
+}: FindingsClientProps) {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [findings, setFindings] = useState(initialFindings);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -52,12 +69,23 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
   };
 
   const sortLinkStyle = { color: 'inherit', textDecoration: 'none' as const };
+  const detailFinding = activeDetailId ? findings.find((finding) => finding.id === activeDetailId) : undefined;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Findings" onAddClick={() => setIsModalOpen(true)} />
+      <PageHeader title="Findings" addButtonLabel="New Finding" addHref={addHref} />
       
       <div ref={listRef}>
+        {detailFinding ? (
+          <FindingDetailButton
+            finding={detailFinding}
+            onOptimisticDelete={handleOptimisticDelete}
+            isDetailOpen
+            showLink={false}
+            detailHref={buildPathQuery('/findings', listParams, { detail: detailFinding.id, create: null })}
+            closeHref={listCloseHref}
+          />
+        ) : null}
         <div className="glass-panel" style={{ padding: '2rem' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
             <colgroup>
@@ -66,7 +94,7 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
               <col style={{ width: '120px' }} />
               <col style={{ width: '150px' }} />
               <col style={{ width: '150px' }} />
-              <col style={{ width: '40px' }} />
+              <col style={{ width: '52px' }} />
             </colgroup>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
@@ -118,11 +146,8 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
                   </td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.createdAt).toLocaleDateString()}</td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.updatedAt).toLocaleDateString()}</td>
-                  <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                    <FindingDetailButton 
-                      finding={f} 
-                      onOptimisticDelete={handleOptimisticDelete}
-                    />
+                  <td className="table-action-cell">
+                    <DetailEyeLink href={buildPathQuery('/findings', listParams, { detail: f.id, create: null })} />
                   </td>
                 </tr>
               ))}
@@ -131,10 +156,10 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
         </div>
       </div>
 
-      {isModalOpen && (
-        <Modal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+      {showCreateModal && (
+        <Modal
+          isOpen
+          closeHref={createCloseHref}
           title="Add New Finding"
           maxWidth="1000px"
           headerActions={
@@ -149,11 +174,8 @@ export function FindingsClient({ initialFindings, sortCol, sortDir }: FindingsCl
           }
         >
           <CreateFindingForm onSuccess={() => {
-              setIsModalOpen(false);
               router.refresh();
-              setTimeout(() => {
-                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 120);
+              window.location.assign(createCloseHref);
             }} />
         </Modal>
       )}

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateFinding, deleteFinding } from '@/app/actions/finding';
@@ -11,14 +12,25 @@ export function FindingDetailButton({
   onOptimisticDelete,
   engagementScoped = false,
   zIndex,
+  isDetailOpen = false,
+  detailHref,
+  closeHref,
+  showLink = true,
+  showModal = true,
 }: { 
   finding: any; 
   onOptimisticDelete?: (id: string) => void;
   engagementScoped?: boolean;
   zIndex?: number;
+  isDetailOpen?: boolean;
+  detailHref?: string;
+  closeHref?: string;
+  showLink?: boolean;
+  showModal?: boolean;
 }) {
   const [finding, setFinding] = useState(initialFinding);
   const [isOpen, setIsOpen] = useState(false);
+  const modalOpen = detailHref ? isDetailOpen : isOpen;
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +38,14 @@ export function FindingDetailButton({
   const router = useRouter();
 
   const handleClose = useCallback(() => {
+    if (closeHref) {
+      window.location.assign(closeHref);
+      return;
+    }
     setIsOpen(false);
     setIsEditing(false);
     setError(null);
-  }, []);
+  }, [closeHref]);
 
   const [formData, setFormData] = useState({
     title: initialFinding.title,
@@ -99,22 +115,35 @@ export function FindingDetailButton({
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(true);
-        }}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        detailHref ? (
+          <a
+            href={detailHref}
+            className="detail-icon-btn"
+            title="View details"
+          >
+            <Eye size={16} />
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="detail-icon-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(true);
+            }}
+            title="View details"
+          >
+            <Eye size={16} />
+          </button>
+        )
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={handleClose} 
+      {showModal && modalOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={handleClose}
           title={isEditing ? (engagementScoped ? "Edit Engagement Finding" : "Edit Finding") : (engagementScoped ? "Engagement Finding Details" : "Finding Details")} 
         maxWidth={engagementScoped ? "1500px" : "1000px"}
         zIndex={zIndex}
@@ -153,7 +182,11 @@ export function FindingDetailButton({
                 const result = await deleteFinding(finding.id);
                 if (result.success) {
                   onOptimisticDelete?.(finding.id);
-                  setIsOpen(false);
+                  if (closeHref) {
+                    window.location.assign(closeHref);
+                  } else {
+                    setIsOpen(false);
+                  }
                   router.refresh();
                 } else {
                   alert(result.error || 'Failed to delete finding');

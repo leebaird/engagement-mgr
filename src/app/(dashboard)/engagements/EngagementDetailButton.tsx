@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateEngagement, deleteEngagement } from '@/app/actions/engagement';
@@ -11,6 +12,7 @@ import {
   EngagementFindingsPanel,
   type EngagementFindingSummary,
 } from './EngagementFindingsPanel';
+import type { SearchParamRecord } from '@/lib/list-view-params';
 
 const noop = () => {};
 
@@ -36,19 +38,32 @@ export function EngagementDetailButton({
   contacts,
   operators,
   isAdmin = false,
+  isDetailOpen,
+  detailHref,
+  closeHref,
+  activeFindingId,
+  listParams = {},
+  showLink = true,
+  showModal = true,
 }: {
   engagement: any,
   clients: { id: string, company: string }[],
   contacts: { id: string, name: string, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
   isAdmin?: boolean,
+  isDetailOpen: boolean;
+  detailHref: string;
+  closeHref: string;
+  activeFindingId?: string;
+  listParams?: SearchParamRecord;
+  showLink?: boolean;
+  showModal?: boolean;
 }) {
   const router = useRouter();
   const [engagement, setEngagement] = useState(initialEngagement);
   const [findings, setFindings] = useState<EngagementFindingSummary[]>(
     mapEngagementFindings(initialEngagement.findings)
   );
-  const [isOpen, setIsOpen] = useState(false);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -177,25 +192,30 @@ export function EngagementDetailButton({
         engagementId={engagement.id}
         findings={findings}
         onFindingsChange={setFindings}
+        activeFindingId={activeFindingId}
+        listParams={listParams}
+        engagementIdForLinks={engagement.id}
       />
     </section>
   );
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        <a
+          href={detailHref}
+          className="detail-icon-btn"
+          title="View details"
+        >
+          <Eye size={16} />
+        </a>
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsScheduleOpen(false); setIsEditing(false); setError(null); }} 
+      {showModal && isDetailOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={() => { setIsScheduleOpen(false); setIsEditing(false); setError(null); }}
           title={isEditing ? "Edit Engagement" : "Engagement Details"} 
         maxWidth="1500px"
         alignTop
@@ -247,7 +267,7 @@ export function EngagementDetailButton({
                 if (!confirm('Are you sure you want to delete this engagement?')) return;
                 const result = await deleteEngagement(engagement.id);
                 if (result.success) {
-                  setIsOpen(false);
+                  window.location.assign(closeHref);
                 } else {
                   alert(result.error || 'Failed to delete engagement');
                 }

@@ -25,10 +25,25 @@ interface Client {
   updatedAt: Date;
 }
 
-export function ClientDetailButton({ client: initialClient, isAdmin = false }: { client: Client; isAdmin?: boolean }) {
+export function ClientDetailButton({
+  client: initialClient,
+  isAdmin = false,
+  isDetailOpen,
+  detailHref,
+  closeHref,
+  showLink = true,
+  showModal = true,
+}: {
+  client: Client;
+  isAdmin?: boolean;
+  isDetailOpen: boolean;
+  detailHref: string;
+  closeHref: string;
+  showLink?: boolean;
+  showModal?: boolean;
+}) {
   const router = useRouter();
   const [client, setClient] = useState(initialClient);
-  const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     company: initialClient.company,
@@ -81,19 +96,21 @@ export function ClientDetailButton({ client: initialClient, isAdmin = false }: {
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        <a
+          href={detailHref}
+          className="detail-icon-btn"
+          title="View details"
+        >
+          <Eye size={16} />
+        </a>
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsEditing(false); }} 
+      {showModal && isDetailOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={() => { setIsEditing(false); }}
           title={isEditing ? "Edit Client" : "Client Details"} 
           headerActions={isEditing ? (
             <>
@@ -187,7 +204,7 @@ export function ClientDetailButton({ client: initialClient, isAdmin = false }: {
                   if (!confirm('Are you sure you want to delete this client?')) return;
                   const result = await deleteClient(client.id);
                   if (result.success) {
-                    setIsOpen(false);
+                    window.location.assign(closeHref);
                   } else {
                     alert(result.error || 'Failed to delete client');
                   }

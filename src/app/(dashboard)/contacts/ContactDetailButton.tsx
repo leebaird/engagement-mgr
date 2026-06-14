@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateContact, deleteContact } from '@/app/actions/contact';
@@ -25,10 +26,27 @@ interface Contact {
   updatedAt: Date;
 }
 
-export function ContactDetailButton({ contact: initialContact, clients, isAdmin = false }: { contact: Contact, clients: Client[], isAdmin?: boolean }) {
+export function ContactDetailButton({
+  contact: initialContact,
+  clients,
+  isAdmin = false,
+  isDetailOpen,
+  detailHref,
+  closeHref,
+  showLink = true,
+  showModal = true,
+}: {
+  contact: Contact;
+  clients: Client[];
+  isAdmin?: boolean;
+  isDetailOpen: boolean;
+  detailHref: string;
+  closeHref: string;
+  showLink?: boolean;
+  showModal?: boolean;
+}) {
   const router = useRouter();
   const [contact, setContact] = useState(initialContact);
-  const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +79,7 @@ export function ContactDetailButton({ contact: initialContact, clients, isAdmin 
       data.append('name', formData.name);
       data.append('title', formData.title);
       data.append('email', formData.email);
-      data.append('phone', formData.phone);
+      data.append('phoneNumber', formData.phone);
       data.append('notes', formData.notes);
 
       const result = await updateContact(contact.id, {}, data);
@@ -90,19 +108,21 @@ export function ContactDetailButton({ contact: initialContact, clients, isAdmin 
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        <a
+          href={detailHref}
+          className="detail-icon-btn"
+          title="View details"
+        >
+          <Eye size={16} />
+        </a>
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+      {showModal && isDetailOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={() => { setIsEditing(false); setError(null); }}
           title={isEditing ? "Edit Contact" : "Contact Details"} 
         headerActions={isEditing ? (
           <>
@@ -136,7 +156,7 @@ export function ContactDetailButton({ contact: initialContact, clients, isAdmin 
                 if (!confirm('Are you sure you want to delete this contact?')) return;
                 const result = await deleteContact(contact.id);
                 if (result.success) {
-                  setIsOpen(false);
+                  window.location.assign(closeHref);
                 } else {
                   alert(result.error || 'Failed to delete contact');
                 }

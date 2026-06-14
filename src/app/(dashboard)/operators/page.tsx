@@ -1,14 +1,26 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
+import { buildPathQuery } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { OperatorsClient } from './OperatorsClient';
 import { OperatorDetailButton } from './OperatorDetailButton';
 import { formatPhone } from '@/lib/format';
 
-export default async function OperatorsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+export default async function OperatorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+}) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir } = await searchParams;
+  const { sort, dir, create, detail } = await searchParams;
+  const listParams = { sort, dir };
+  const addHref = isAdmin
+    ? buildPathQuery('/operators', listParams, { create: '1', detail: null })
+    : undefined;
+  const createCloseHref = buildPathQuery('/operators', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/operators', listParams, { detail: null });
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
@@ -55,8 +67,25 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const detailOperator = detail ? operators.find((operator) => operator.id === detail) : undefined;
+
   return (
-    <OperatorsClient isAdmin={isAdmin}>
+    <OperatorsClient
+      isAdmin={isAdmin}
+      addHref={addHref}
+      showCreateModal={isAdmin && create === '1'}
+      createCloseHref={createCloseHref}
+    >
+      {detailOperator ? (
+        <OperatorDetailButton
+          operator={detailOperator}
+          isAdmin={isAdmin}
+          isDetailOpen
+          showLink={false}
+          detailHref={buildPathQuery('/operators', listParams, { detail: detailOperator.id, create: null })}
+          closeHref={listCloseHref}
+        />
+      ) : null}
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -85,8 +114,8 @@ export default async function OperatorsPage({ searchParams }: { searchParams: Pr
                 <td style={{ padding: '0.75rem' }}>{op.email || ''}</td>
                 <td style={{ padding: '0.75rem 0.75rem 0.75rem 3rem' }}>{formatPhone(op.phoneNumber)}</td>
 
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <OperatorDetailButton operator={op} isAdmin={isAdmin} />
+                <td className="table-action-cell">
+                  <DetailEyeLink href={buildPathQuery('/operators', listParams, { detail: op.id, create: null })} />
                 </td>
               </tr>
             ))}

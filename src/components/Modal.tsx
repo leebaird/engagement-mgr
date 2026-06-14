@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  closeHref?: string;
   title: string;
   children: React.ReactNode;
   onEdit?: () => void;
@@ -19,16 +20,36 @@ interface ModalProps {
   alignTop?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hideHeaderActions, maxWidth, zIndex = 1000, headerExtra, headerActions, alignTop = false }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
+export function Modal({
+  isOpen,
+  onClose,
+  closeHref,
+  title,
+  children,
+  onEdit,
+  onDelete,
+  hideHeaderActions,
+  maxWidth,
+  zIndex = 1000,
+  headerExtra,
+  headerActions,
+  alignTop = false,
+}: ModalProps) {
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
+  useLayoutEffect(() => {
+    setPortalRoot(document.getElementById('modal-root') ?? document.body);
   }, []);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (closeHref) {
+          window.location.assign(closeHref);
+        } else {
+          onClose?.();
+        }
+      }
     };
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -38,76 +59,144 @@ export function Modal({ isOpen, onClose, title, children, onEdit, onDelete, hide
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleEsc);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeHref]);
 
-  if (!isOpen || !mounted) return null;
+  if (!isOpen) return null;
 
-  return createPortal(
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: '#0f1115',
-      display: 'flex',
-      alignItems: alignTop ? 'flex-start' : 'center',
-      justifyContent: 'center',
-      zIndex,
-      padding: maxWidth ? '0.5rem' : '1rem'
-    }} onMouseDown={onClose} onClick={onClose}>
-      <div 
-        className={`glass-panel modal-panel${headerExtra ? ' modal-panel--has-centered-extra' : ''}`}
-        style={{ 
-          width: maxWidth ? maxWidth : '100%',
-          minWidth: maxWidth || undefined,
-          maxWidth: maxWidth || '775px',
-          padding: '2rem',
-          position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+  const handleBackdropClose = () => {
+    onClose?.();
+  };
+
+  const content = (
+    <>
+      <div
+        className="modal-overlay"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          margin: 0,
+          backgroundColor: '#0f1115',
+          display: 'flex',
+          alignItems: alignTop ? 'flex-start' : 'center',
+          justifyContent: 'center',
           boxSizing: 'border-box',
+          zIndex,
+          padding: maxWidth ? '0.5rem' : '1rem',
+          overflow: 'auto',
         }}
-        onMouseDown={e => e.stopPropagation()}
-        onClick={e => e.stopPropagation()}
       >
-        {headerExtra ? <div className="modal-panel__centered-extra">{headerExtra}</div> : null}
-        <div className="modal-header">
-          <h2 className="modal-header__title">{title}</h2>
-          <div className="modal-header__actions">
-            {headerActions ? headerActions : (
-              <>
-                {!hideHeaderActions && onEdit && (
-                  <button type="button" onClick={onEdit} className="modal-action-btn">
-                    Edit
-                  </button>
-                )}
-                {!hideHeaderActions && onDelete && (
-                  <button type="button" onClick={onDelete} className="modal-action-btn modal-action-btn--danger">
-                    Delete
-                  </button>
-                )}
-                {!hideHeaderActions && !onEdit && !onDelete && (
-                  <button 
-                    onClick={onClose}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: 'var(--text-muted)', 
-                      cursor: 'pointer',
-                      padding: '0.5rem',
-                      display: 'flex'
-                    }}
-                  >
-                    <X size={20} />
-                  </button>
-                )}
-              </>
-            )}
+        {closeHref ? (
+          <a
+            href={closeHref}
+            aria-label="Close dialog"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            aria-label="Close dialog"
+            onClick={handleBackdropClose}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              background: 'transparent',
+              cursor: 'default',
+            }}
+          />
+        )}
+        <div
+          className={`glass-panel modal-panel${headerExtra ? ' modal-panel--has-centered-extra' : ''}`}
+          style={{
+            width: '100%',
+            maxWidth: maxWidth || '775px',
+            margin: '0 auto',
+            padding: '2rem',
+            position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxSizing: 'border-box',
+            flex: '0 0 auto',
+            zIndex: 1,
+          }}
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+        >
+          {headerExtra ? <div className="modal-panel__centered-extra">{headerExtra}</div> : null}
+          <div className="modal-header">
+            <h2 className="modal-header__title">{title}</h2>
+            <div className="modal-header__actions">
+              {headerActions ? headerActions : (
+                <>
+                  {!hideHeaderActions && onEdit && (
+                    <button type="button" onClick={onEdit} className="modal-action-btn">
+                      Edit
+                    </button>
+                  )}
+                  {!hideHeaderActions && onDelete && (
+                    <button type="button" onClick={onDelete} className="modal-action-btn modal-action-btn--danger">
+                      Delete
+                    </button>
+                  )}
+                  {!hideHeaderActions && !onEdit && !onDelete && (
+                    closeHref ? (
+                      <a
+                        href={closeHref}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '0.5rem',
+                          display: 'flex',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <X size={20} />
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          padding: '0.5rem',
+                          display: 'flex',
+                        }}
+                      >
+                        <X size={20} />
+                      </button>
+                    )
+                  )}
+                </>
+              )}
+            </div>
           </div>
+          {children}
         </div>
-        {children}
       </div>
-    </div>,
-    document.body
+    </>
   );
+
+  if (portalRoot) {
+    return createPortal(content, portalRoot);
+  }
+
+  return content;
 }

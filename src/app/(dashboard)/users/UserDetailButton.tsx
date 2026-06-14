@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateUser, deleteUser } from '@/app/actions/user';
@@ -16,10 +17,25 @@ interface User {
   lastPasswordChange: any;
 }
 
-export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { user: User; isLastAdmin?: boolean }) {
+export function UserDetailButton({
+  user: initialUser,
+  isLastAdmin = false,
+  isDetailOpen,
+  detailHref,
+  closeHref,
+  showLink = true,
+  showModal = true,
+}: {
+  user: User;
+  isLastAdmin?: boolean;
+  isDetailOpen: boolean;
+  detailHref: string;
+  closeHref: string;
+  showLink?: boolean;
+  showModal?: boolean;
+}) {
   const router = useRouter();
   const [user, setUser] = useState(initialUser);
-  const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,19 +87,21 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        <a
+          href={detailHref}
+          className="detail-icon-btn"
+          title="View details"
+        >
+          <Eye size={16} />
+        </a>
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+      {showModal && isDetailOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={() => { setIsEditing(false); setError(null); }}
           title={isEditing ? "Edit User" : "User Details"}
         maxWidth="450px"
         headerActions={isEditing ? (
@@ -118,7 +136,7 @@ export function UserDetailButton({ user: initialUser, isLastAdmin = false }: { u
                 if (result?.error) {
                   alert(result.error);
                 } else {
-                  setIsOpen(false);
+                  window.location.assign(closeHref);
                   router.refresh();
                 }
               }}

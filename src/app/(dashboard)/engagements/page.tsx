@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
+import { buildPathQuery } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
 
@@ -15,10 +17,20 @@ function formatEngagementType(type: string): string {
     .join(' ');
 }
 
-export default async function EngagementsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+export default async function EngagementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string }>;
+}) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir } = await searchParams;
+  const { sort, dir, create, detail, finding } = await searchParams;
+  const listParams = { sort, dir };
+  const addHref = isAdmin
+    ? buildPathQuery('/engagements', listParams, { create: '1', detail: null })
+    : undefined;
+  const createCloseHref = buildPathQuery('/engagements', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/engagements', listParams, { detail: null });
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
@@ -87,12 +99,37 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const detailEngagement = detail ? engagements.find((engagement) => engagement.id === detail) : undefined;
+
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
   const contacts = await prisma.contact.findMany({ orderBy: { name: 'asc' } });
   const operators = await prisma.operator.findMany({ orderBy: { name: 'asc' } });
 
   return (
-    <EngagementsClient clients={clients} contacts={contacts} operators={operators} isAdmin={isAdmin}>
+    <EngagementsClient
+      clients={clients}
+      contacts={contacts}
+      operators={operators}
+      isAdmin={isAdmin}
+      addHref={addHref}
+      showCreateModal={isAdmin && create === '1'}
+      createCloseHref={createCloseHref}
+      overlay={detailEngagement ? (
+        <EngagementDetailButton
+          engagement={detailEngagement}
+          clients={clients}
+          contacts={contacts}
+          operators={operators}
+          isAdmin={isAdmin}
+          isDetailOpen
+          showLink={false}
+          detailHref={buildPathQuery('/engagements', listParams, { detail: detailEngagement.id, create: null, finding: null })}
+          closeHref={listCloseHref}
+          activeFindingId={finding}
+          listParams={listParams}
+        />
+      ) : null}
+    >
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -131,8 +168,8 @@ export default async function EngagementsPage({ searchParams }: { searchParams: 
                 <td style={{ padding: '0.75rem' }}>{eng.type ? formatEngagementType(eng.type) : ''}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <EngagementDetailButton engagement={eng} clients={clients} contacts={contacts} operators={operators} isAdmin={isAdmin} />
+                <td className="table-action-cell">
+                  <DetailEyeLink href={buildPathQuery('/engagements', listParams, { detail: eng.id, create: null, finding: null })} />
                 </td>
               </tr>
             ))}

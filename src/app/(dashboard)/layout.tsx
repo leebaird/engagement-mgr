@@ -1,4 +1,5 @@
 import { Navigation } from '@/components/Navigation';
+import { ModalCleanup } from '@/components/ModalCleanup';
 import { getSession } from '@/lib/auth/session';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -6,11 +7,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session?.role === 'Admin';
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <>
+      <ModalCleanup />
       <Navigation isAdmin={isAdmin} />
-      <main style={{ flex: 1, marginLeft: '200px', padding: '2rem', overflowY: 'auto' }}>
+      <main className="dashboard-main">
         {children}
       </main>
-    </div>
+    </>
   );
 }

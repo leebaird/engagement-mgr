@@ -26,7 +26,10 @@ export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
-      position: 'fixed'
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      zIndex: 10,
     }}>
       <div style={{ padding: '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

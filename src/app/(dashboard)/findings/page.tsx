@@ -1,8 +1,17 @@
 import { prisma } from '@/lib/db';
+import { buildPathQuery } from '@/lib/list-view-params';
 import { FindingsClient } from './FindingsClient';
 
-export default async function FindingsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
-  const { sort, dir } = await searchParams;
+export default async function FindingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+}) {
+  const { sort, dir, create, detail } = await searchParams;
+  const listParams = { sort, dir };
+  const addHref = buildPathQuery('/findings', listParams, { create: '1', detail: null });
+  const createCloseHref = buildPathQuery('/findings', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/findings', listParams, { detail: null });
 
   const validSortColumns = ['title', 'category', 'severity', 'createdAt', 'updatedAt'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'title';
@@ -29,6 +38,16 @@ export default async function FindingsPage({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <FindingsClient initialFindings={findings} sortCol={sortCol} sortDir={sortDir} />
+    <FindingsClient
+      initialFindings={findings}
+      sortCol={sortCol}
+      sortDir={sortDir}
+      addHref={addHref}
+      showCreateModal={create === '1'}
+      createCloseHref={createCloseHref}
+      activeDetailId={detail}
+      listCloseHref={listCloseHref}
+      listParams={listParams}
+    />
   );
 }

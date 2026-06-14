@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
@@ -11,25 +11,33 @@ interface EngagementsClientProps {
   operators: any[];
   isAdmin?: boolean;
   children: React.ReactNode;
+  overlay?: React.ReactNode;
+  addHref?: string;
+  showCreateModal: boolean;
+  createCloseHref: string;
 }
 
-export function EngagementsClient({ clients, contacts, operators, isAdmin = false, children }: EngagementsClientProps) {
+export function EngagementsClient({
+  clients,
+  contacts,
+  operators,
+  isAdmin = false,
+  children,
+  overlay,
+  addHref,
+  showCreateModal,
+  createCloseHref,
+}: EngagementsClientProps) {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <PageHeader title="Engagements" showAddButton={isAdmin} onAddClick={() => setIsModalOpen(true)} />
-      
-      <div ref={listRef}>
-        {children}
-      </div>
-
-      {isAdmin && isModalOpen && (
-        <Modal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
+    <>
+      {overlay}
+      {isAdmin && showCreateModal && (
+        <Modal
+          isOpen
+          closeHref={createCloseHref}
           title="Add New Engagement"
           maxWidth="1500px"
           headerActions={
@@ -43,21 +51,29 @@ export function EngagementsClient({ clients, contacts, operators, isAdmin = fals
             </button>
           }
         >
-          <CreateEngagementForm 
-            clients={clients} 
-            contacts={contacts} 
-            operators={operators} 
+          <CreateEngagementForm
+            clients={clients}
+            contacts={contacts}
+            operators={operators}
             onSuccess={() => {
-              setIsModalOpen(false);
               router.refresh();
-              // Smoothly return to the list view after adding
-              setTimeout(() => {
-                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 120);
-            }} 
+              window.location.assign(createCloseHref);
+            }}
           />
         </Modal>
       )}
-    </div>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <PageHeader
+          title="Engagements"
+          showAddButton={isAdmin}
+          addButtonLabel="New Engagement"
+          addHref={addHref}
+        />
+
+        <div ref={listRef}>
+          {children}
+        </div>
+      </div>
+    </>
   );
 }

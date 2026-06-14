@@ -1,14 +1,26 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
+import { buildPathQuery } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ClientsClient } from './ClientsClient';
 import { ClientDetailButton } from './ClientDetailButton';
 import { formatPhone } from '@/lib/format';
 
-export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+}) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir } = await searchParams;
+  const { sort, dir, create, detail } = await searchParams;
+  const listParams = { sort, dir };
+  const addHref = isAdmin
+    ? buildPathQuery('/clients', listParams, { create: '1', detail: null })
+    : undefined;
+  const createCloseHref = buildPathQuery('/clients', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/clients', listParams, { detail: null });
 
   const validSortColumns = ['company', 'website', 'phoneNumber'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'company';
@@ -33,8 +45,25 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const detailClient = detail ? clients.find((client) => client.id === detail) : undefined;
+
   return (
-    <ClientsClient isAdmin={isAdmin}>
+    <ClientsClient
+      isAdmin={isAdmin}
+      addHref={addHref}
+      showCreateModal={isAdmin && create === '1'}
+      createCloseHref={createCloseHref}
+    >
+      {detailClient ? (
+        <ClientDetailButton
+          client={detailClient}
+          isAdmin={isAdmin}
+          isDetailOpen
+          showLink={false}
+          detailHref={buildPathQuery('/clients', listParams, { detail: detailClient.id, create: null })}
+          closeHref={listCloseHref}
+        />
+      ) : null}
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -57,8 +86,8 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
                 <td style={{ padding: '0.75rem', fontWeight: 500 }}>{client.company}</td>
                 <td style={{ padding: '0.75rem' }}>{client.website || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(client.phone)}</td>
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <ClientDetailButton client={client} isAdmin={isAdmin} />
+                <td className="table-action-cell">
+                  <DetailEyeLink href={buildPathQuery('/clients', listParams, { detail: client.id, create: null })} />
                 </td>
               </tr>
             ))}

@@ -1,15 +1,31 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { updateOperator, deleteOperator } from '@/app/actions/operator';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
-export function OperatorDetailButton({ operator: initialOperator, isAdmin = false }: { operator: any; isAdmin?: boolean }) {
+export function OperatorDetailButton({
+  operator: initialOperator,
+  isAdmin = false,
+  isDetailOpen,
+  detailHref,
+  closeHref,
+  showLink = true,
+  showModal = true,
+}: {
+  operator: any;
+  isAdmin?: boolean;
+  isDetailOpen: boolean;
+  detailHref: string;
+  closeHref: string;
+  showLink?: boolean;
+  showModal?: boolean;
+}) {
   const router = useRouter();
   const [operator, setOperator] = useState(initialOperator);
-  const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,19 +75,21 @@ export function OperatorDetailButton({ operator: initialOperator, isAdmin = fals
 
   return (
     <>
-      <button
-        type="button"
-        className="detail-icon-btn"
-        onClick={() => setIsOpen(true)}
-        title="View details"
-      >
-        <Eye size={16} />
-      </button>
+      {showLink ? (
+        <a
+          href={detailHref}
+          className="detail-icon-btn"
+          title="View details"
+        >
+          <Eye size={16} />
+        </a>
+      ) : null}
 
-      {isOpen && (
-        <Modal 
-          isOpen={isOpen} 
-          onClose={() => { setIsOpen(false); setIsEditing(false); setError(null); }} 
+      {showModal && isDetailOpen && (
+        <Modal
+          isOpen
+          closeHref={closeHref}
+          onClose={() => { setIsEditing(false); setError(null); }}
           title={isEditing ? "Edit Operator" : "Operator Details"} 
         headerActions={isEditing ? (
           <>
@@ -106,7 +124,7 @@ export function OperatorDetailButton({ operator: initialOperator, isAdmin = fals
                 if (!confirm('Are you sure you want to delete this operator?')) return;
                 const result = await deleteOperator(operator.id);
                 if (result.success) {
-                  setIsOpen(false);
+                  window.location.assign(closeHref);
                 } else {
                   alert(result.error || 'Failed to delete operator');
                 }

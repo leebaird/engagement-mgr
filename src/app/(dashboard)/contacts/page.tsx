@@ -1,14 +1,26 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
+import { buildPathQuery } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
 import { formatPhone } from '@/lib/format';
 
-export default async function ContactsPage({ searchParams }: { searchParams: Promise<{ sort?: string, dir?: string }> }) {
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string }>;
+}) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir } = await searchParams;
+  const { sort, dir, create, detail } = await searchParams;
+  const listParams = { sort, dir };
+  const addHref = isAdmin
+    ? buildPathQuery('/contacts', listParams, { create: '1', detail: null })
+    : undefined;
+  const createCloseHref = buildPathQuery('/contacts', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/contacts', listParams, { detail: null });
 
   const validSortColumns = ['name', 'title', 'email', 'phoneNumber', 'client'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
@@ -47,8 +59,27 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
     return sortDir === 'asc' ? ' ↑' : ' ↓';
   };
 
+  const detailContact = detail ? contacts.find((contact) => contact.id === detail) : undefined;
+
   return (
-    <ContactsClient clients={clients} isAdmin={isAdmin}>
+    <ContactsClient
+      clients={clients}
+      isAdmin={isAdmin}
+      addHref={addHref}
+      showCreateModal={isAdmin && create === '1'}
+      createCloseHref={createCloseHref}
+    >
+      {detailContact ? (
+        <ContactDetailButton
+          contact={detailContact}
+          clients={clients}
+          isAdmin={isAdmin}
+          isDetailOpen
+          showLink={false}
+          detailHref={buildPathQuery('/contacts', listParams, { detail: detailContact.id, create: null })}
+          closeHref={listCloseHref}
+        />
+      ) : null}
       <div className="glass-panel" style={{ padding: '2rem' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
           <thead>
@@ -65,7 +96,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
               <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '180px' }}>
                 <Link href={getSortHref('email')} style={{ color: 'inherit', textDecoration: 'none' }}>Email{getSortIcon('email')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}>
+              <th style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', color: 'var(--text-muted)', width: '160px' }}>
                 <Link href={getSortHref('phoneNumber')} style={{ color: 'inherit', textDecoration: 'none' }}>Phone{getSortIcon('phoneNumber')}</Link>
               </th>
               <th style={{ padding: '0.75rem', width: '40px' }}></th>
@@ -78,9 +109,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
                 <td style={{ padding: '0.75rem', width: '170px' }}>{c.title || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{c.client.company}</td>
                 <td style={{ padding: '0.75rem' }}>{c.email || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{formatPhone(c.phone)}</td>
-                <td style={{ padding: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-                  <ContactDetailButton contact={c} clients={clients} isAdmin={isAdmin} />
+                <td style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', fontVariantNumeric: 'tabular-nums' }}>{formatPhone(c.phone)}</td>
+                <td className="table-action-cell">
+                  <DetailEyeLink href={buildPathQuery('/contacts', listParams, { detail: c.id, create: null })} />
                 </td>
               </tr>
             ))}

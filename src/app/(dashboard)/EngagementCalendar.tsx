@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   buildBannerSegmentsForRow,
@@ -24,6 +25,11 @@ const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbr
 type EngagementCalendarProps = {
   engagements: EngagementCalendarItem[];
   isAdmin?: boolean;
+  viewYear: number;
+  viewMonth: number;
+  prevHref: string;
+  nextHref: string;
+  todayHref: string;
 };
 
 function toDateKeyFromParts(year: number, month: number, day: number): string {
@@ -80,14 +86,20 @@ function formatPickerDate(dateKey: string): string {
   return new Date(year, month - 1, day).toLocaleDateString();
 }
 
-export function EngagementCalendar({ engagements: initialEngagements, isAdmin = false }: EngagementCalendarProps) {
+export function EngagementCalendar({
+  engagements: initialEngagements,
+  isAdmin = false,
+  viewYear,
+  viewMonth,
+  prevHref,
+  nextHref,
+  todayHref,
+}: EngagementCalendarProps) {
   const router = useRouter();
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
 
   const [engagements, setEngagements] = useState(initialEngagements);
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [pickerDateKey, setPickerDateKey] = useState<string | null>(null);
   const [pickerEngagements, setPickerEngagements] = useState<ScheduleEngagement[]>([]);
   const [scheduleEngagement, setScheduleEngagement] = useState<ScheduleEngagement | null>(null);
@@ -120,17 +132,6 @@ export function EngagementCalendar({ engagements: initialEngagements, isAdmin = 
     () => buildWorkWeekMonthGrid(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
-
-  const shiftMonth = (delta: number) => {
-    const next = new Date(viewYear, viewMonth + delta, 1);
-    setViewYear(next.getFullYear());
-    setViewMonth(next.getMonth());
-  };
-
-  const goToToday = () => {
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
-  };
 
   const openScheduleForEngagement = (engagement: ScheduleEngagement) => {
     setScheduleEngagement(engagement);
@@ -176,26 +177,26 @@ export function EngagementCalendar({ engagements: initialEngagements, isAdmin = 
             ))}
           </div>
           <div className="engagement-calendar__nav">
-            <button
-              type="button"
+            <Link
+              href={prevHref}
               className="engagement-calendar__nav-btn"
-              onClick={() => shiftMonth(-1)}
               aria-label="Previous month"
+              scroll={false}
             >
               <ChevronLeft size={16} />
-            </button>
+            </Link>
             <span className="engagement-calendar__month">{formatMonthYear(viewYear, viewMonth)}</span>
-            <button
-              type="button"
+            <Link
+              href={nextHref}
               className="engagement-calendar__nav-btn"
-              onClick={() => shiftMonth(1)}
               aria-label="Next month"
+              scroll={false}
             >
               <ChevronRight size={16} />
-            </button>
-            <button type="button" className="btn-secondary engagement-calendar__today-btn" onClick={goToToday}>
+            </Link>
+            <Link href={todayHref} className="btn-secondary engagement-calendar__today-btn" scroll={false}>
               Today
-            </button>
+            </Link>
           </div>
         </div>
 

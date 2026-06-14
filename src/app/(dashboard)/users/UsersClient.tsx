@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Database, Upload, Download, Trash2, Users } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CreateUserForm } from './CreateUserForm';
@@ -8,11 +9,13 @@ import { exportDatabaseBackup, importDatabaseBackup, resetDatabase } from '@/app
 
 interface UsersClientProps {
   children: React.ReactNode;
+  addHref: string;
+  showCreateModal: boolean;
+  createCloseHref: string;
 }
 
-export function UsersClient({ children }: UsersClientProps) {
+export function UsersClient({ children, addHref, showCreateModal, createCloseHref }: UsersClientProps) {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [importPending, setImportPending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
@@ -122,15 +125,53 @@ export function UsersClient({ children }: UsersClientProps) {
   };
 
   return (
-    <div
-      style={{
-        margin: '0 auto',
-        minHeight: 'calc(100vh - 4rem)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <>
+      {showCreateModal && (
+        <Modal
+          isOpen
+          closeHref={createCloseHref}
+          title="Add New User"
+          maxWidth="450px"
+          headerActions={
+            <button
+              type="submit"
+              form="create-user-form"
+              className="btn-save"
+              tabIndex={4}
+              onKeyDown={(e) => {
+                const modal = e.currentTarget.closest('.glass-panel');
+                if (modal) {
+                  if (e.key === 'Tab' && !e.shiftKey) {
+                    e.preventDefault();
+                    const first = modal.querySelector('[tabindex="1"]') as HTMLElement;
+                    if (first) first.focus();
+                  } else if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    const last = modal.querySelector('[tabindex="3"]') as HTMLElement;
+                    if (last) last.focus();
+                  }
+                }
+              }}
+            >
+              Add User
+            </button>
+          }
+        >
+          <CreateUserForm onSuccess={() => {
+              router.refresh();
+              window.location.assign(createCloseHref);
+            }} />
+        </Modal>
+      )}
+      <div
+        style={{
+          margin: '0 auto',
+          minHeight: 'calc(100vh - 4rem)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
       <input
         ref={importInputRef}
         type="file"
@@ -212,14 +253,14 @@ export function UsersClient({ children }: UsersClientProps) {
             <div style={{ flex: 1 }}>
               <h2 className="db-panel-title">Users</h2>
             </div>
-            <button
-              type="button"
+            <Link
+              href={addHref}
               className="btn-secondary"
-              style={{ width: 'fit-content', flexShrink: 0 }}
-              onClick={() => setIsModalOpen(true)}
+              style={{ width: 'fit-content', flexShrink: 0, textDecoration: 'none' }}
+              scroll={false}
             >
               New User
-            </button>
+            </Link>
           </div>
 
           <div ref={listRef}>
@@ -351,46 +392,7 @@ export function UsersClient({ children }: UsersClientProps) {
         </div>
       </Modal>
 
-      {isModalOpen && (
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title="Add New User"
-          maxWidth="450px"
-          headerActions={
-            <button
-              type="submit"
-              form="create-user-form"
-              className="btn-save"
-              tabIndex={4}
-              onKeyDown={(e) => {
-                const modal = e.currentTarget.closest('.glass-panel');
-                if (modal) {
-                  if (e.key === 'Tab' && !e.shiftKey) {
-                    e.preventDefault();
-                    const first = modal.querySelector('[tabindex="1"]') as HTMLElement;
-                    if (first) first.focus();
-                  } else if (e.key === 'Tab' && e.shiftKey) {
-                    e.preventDefault();
-                    const last = modal.querySelector('[tabindex="3"]') as HTMLElement;
-                    if (last) last.focus();
-                  }
-                }
-              }}
-            >
-              Add User
-            </button>
-          }
-        >
-          <CreateUserForm onSuccess={() => {
-              setIsModalOpen(false);
-              router.refresh();
-              setTimeout(() => {
-                listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 120);
-            }} />
-        </Modal>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

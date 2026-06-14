@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { buildPathQuery, type SearchParamRecord } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from '../findings/CreateFindingForm';
 import { FindingDetailButton } from '../findings/FindingDetailButton';
@@ -27,10 +29,16 @@ export function EngagementFindingsPanel({
   engagementId,
   findings,
   onFindingsChange,
+  activeFindingId,
+  listParams = {},
+  engagementIdForLinks,
 }: {
   engagementId: string;
   findings: EngagementFindingSummary[];
   onFindingsChange: (findings: EngagementFindingSummary[]) => void;
+  activeFindingId?: string;
+  listParams?: SearchParamRecord;
+  engagementIdForLinks?: string;
 }) {
   const router = useRouter();
   const [viewOpen, setViewOpen] = useState(false);
@@ -51,8 +59,30 @@ export function EngagementFindingsPanel({
     handleRefresh();
   };
 
+  const detailFinding = activeFindingId ? findings.find((finding) => finding.id === activeFindingId) : undefined;
+
   return (
     <>
+      {detailFinding && engagementIdForLinks ? (
+        <FindingDetailButton
+          engagementScoped
+          zIndex={1200}
+          finding={{
+            ...detailFinding,
+            supportingLinks: detailFinding.supportingData ?? '',
+            observation: detailFinding.observation ?? '',
+            affectedHosts: detailFinding.affectedHosts ?? '',
+          }}
+          onOptimisticDelete={(id) => {
+            handleOptimisticDelete(id);
+            handleRefresh();
+          }}
+          isDetailOpen
+          showLink={false}
+          detailHref={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: detailFinding.id, create: null })}
+          closeHref={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: null, create: null })}
+        />
+      ) : null}
       <button
         type="button"
         className="engagement-findings-panel"
@@ -129,21 +159,12 @@ export function EngagementFindingsPanel({
                         </span>
                       ) : null}
                     </td>
-                    <td style={{ padding: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                      <FindingDetailButton
-                        engagementScoped
-                        zIndex={1200}
-                        finding={{
-                          ...f,
-                          supportingLinks: f.supportingData ?? '',
-                          observation: f.observation ?? '',
-                          affectedHosts: f.affectedHosts ?? '',
-                        }}
-                        onOptimisticDelete={(id) => {
-                          handleOptimisticDelete(id);
-                          handleRefresh();
-                        }}
-                      />
+                    <td className="table-action-cell">
+                      {engagementIdForLinks ? (
+                        <DetailEyeLink
+                          href={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: f.id, create: null })}
+                        />
+                      ) : null}
                     </td>
                   </tr>
                 ))}
