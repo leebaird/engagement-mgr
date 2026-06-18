@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config';
+import { prisma } from '../src/lib/db';
 import { seedDefaultAdminUser } from '../src/lib/seed-default-admin';
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('Start seeding...');
