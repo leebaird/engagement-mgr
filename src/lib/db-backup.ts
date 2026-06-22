@@ -28,7 +28,7 @@ function isPathInsideDirectory(targetPath: string, rootDir: string): boolean {
   return target === root || target.startsWith(`${root}/`);
 }
 
-async function assertExtractedPathsContained(rootDir: string): Promise<void> {
+export async function assertExtractedPathsContained(rootDir: string): Promise<void> {
   async function walk(dir: string): Promise<void> {
     const entries = await readdir(dir, { withFileTypes: true });
 

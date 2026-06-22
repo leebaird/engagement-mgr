@@ -3,7 +3,7 @@ import * as argon2 from 'argon2';
 import { ARGON2_OPTIONS, validatePasswordComplexity } from '@/lib/auth/password';
 import { randomBytes } from 'crypto';
 
-function generateTemporaryAdminPassword(): string {
+export function generateTemporaryAdminPassword(): string {
   return `${randomBytes(18).toString('base64')}aA1!`;
 }
 
