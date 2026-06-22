@@ -39,7 +39,9 @@ export function CreateFindingForm({
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
-      resetForm();
+      queueMicrotask(() => {
+        resetForm();
+      });
       onSuccess?.();
     }
   }, [state, onSuccess]);
@@ -49,8 +51,10 @@ export function CreateFindingForm({
 
     const q = form.title.trim();
     if (q.length < 1) {
-      setSuggestions([]);
-      setSuggestionsOpen(false);
+      queueMicrotask(() => {
+        setSuggestions([]);
+        setSuggestionsOpen(false);
+      });
       return;
     }
 

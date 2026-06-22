@@ -74,21 +74,6 @@ export function ContactDetailButton({
 }) {
   const [contact] = useState(initialContact);
   const nameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isEditing) {
-      setFormData({
-        clientId: contact.clientId,
-        name: contact.name,
-        title: contact.title || '',
-        email: contact.email || '',
-        phone: contact.phone || '',
-        notes: contact.notes || '',
-      });
-      focusEditFieldAtStart(nameInputRef.current);
-    }
-  }, [isEditing, contact]);
-
   const [formData, setFormData] = useState({
     clientId: initialContact.clientId,
     name: initialContact.name,
@@ -97,6 +82,22 @@ export function ContactDetailButton({
     phone: initialContact.phone || '',
     notes: initialContact.notes || '',
   });
+
+  useEffect(() => {
+    if (isEditing) {
+      queueMicrotask(() => {
+        setFormData({
+          clientId: contact.clientId,
+          name: contact.name,
+          title: contact.title || '',
+          email: contact.email || '',
+          phone: contact.phone || '',
+          notes: contact.notes || '',
+        });
+        focusEditFieldAtStart(nameInputRef.current);
+      });
+    }
+  }, [isEditing, contact]);
 
   return (
     <>
@@ -225,7 +226,7 @@ export function ContactDetailButton({
                   onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                   className="form-input"
                   style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-                  onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}
+                  onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}
                 >
                   <option value=""></option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}

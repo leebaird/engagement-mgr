@@ -1,6 +1,5 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { Eye } from 'lucide-react';
 import { Modal } from '@/components/Modal';
@@ -18,9 +17,22 @@ import {
 const EDIT_FORM_ID = 'edit-finding-form';
 import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
+export type FindingDetail = {
+  id: string;
+  title: string;
+  observation?: string | null;
+  category?: string | null;
+  severity?: string | null;
+  background?: string | null;
+  remediation?: string | null;
+  supportingLinks?: string | null;
+  affectedHosts?: string | null;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
 export function FindingDetailButton({ 
   finding: initialFinding, 
-  onOptimisticDelete,
   engagementScoped = false,
   engagementId,
   zIndex,
@@ -40,7 +52,7 @@ export function FindingDetailButton({
   showModal = true,
   showDelete = true,
 }: { 
-  finding: any; 
+  finding: FindingDetail;
   onOptimisticDelete?: (id: string) => void;
   engagementScoped?: boolean;
   engagementId?: string;
@@ -66,8 +78,6 @@ export function FindingDetailButton({
   const modalOpen = detailHref ? isDetailOpen : isOpen;
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const router = useRouter();
 
   const handleClose = useCallback(() => {
     if (closeHref) {
@@ -100,31 +110,22 @@ export function FindingDetailButton({
     const titleInputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
       if (isEditing) {
-        setFormData({
-          title: finding.title,
-          observation: engagementScoped ? (finding.observation || '') : '',
-          category: finding.category || '',
-          severity: finding.severity || '',
-          background: finding.background || '',
-          remediation: finding.remediation || '',
-          supportingLinks: finding.supportingLinks || '',
-          affectedHosts: engagementScoped ? (finding.affectedHosts || '') : '',
+        queueMicrotask(() => {
+          setFormData({
+            title: finding.title,
+            observation: engagementScoped ? (finding.observation || '') : '',
+            category: finding.category || '',
+            severity: finding.severity || '',
+            background: finding.background || '',
+            remediation: finding.remediation || '',
+            supportingLinks: finding.supportingLinks || '',
+            affectedHosts: engagementScoped ? (finding.affectedHosts || '') : '',
+          });
+          setError(null);
+          focusEditFieldAtStart(titleInputRef.current);
         });
-        setError(null);
-        focusEditFieldAtStart(titleInputRef.current);
       }
     }, [isEditing, finding, engagementScoped]);
-
-  const getSeverityStyle = (severity: string) => {
-    switch (severity) {
-      case 'Critical': return { color: '#b366ff', background: 'rgba(179,102,255,0.1)', border: '1px solid rgba(179,102,255,0.3)' };
-      case 'High': return { color: '#ff4d4d', background: 'rgba(255,77,77,0.1)', border: '1px solid rgba(255,77,77,0.3)' };
-      case 'Medium': return { color: '#ffa64d', background: 'rgba(255,166,77,0.1)', border: '1px solid rgba(255,166,77,0.3)' };
-      case 'Low': return { color: '#4ade80', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)' };
-      case 'Info': return { color: '#66b3ff', background: 'rgba(102,179,255,0.1)', border: '1px solid rgba(102,179,255,0.3)' };
-      default: return { color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)' };
-    }
-  };
 
   const useFormSave = Boolean(viewHref);
 
@@ -152,7 +153,7 @@ export function FindingDetailButton({
         setFinding({ ...finding, ...formData });
         setIsOpen(false);
       }
-    } catch (e) {
+    } catch {
       setError('An error occurred while updating the finding.');
     } finally {
       setIsPending(false);
@@ -387,9 +388,9 @@ export function FindingDetailButton({
             <div style={{ marginTop: engagementScoped ? '1rem' : '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{new Date(finding.createdAt).toLocaleDateString()}</div>
+                <div>{finding.createdAt ? new Date(finding.createdAt).toLocaleDateString() : ''}</div>
                 <div>Updated</div>
-                <div>{new Date(finding.updatedAt).toLocaleDateString()}</div>
+                <div>{finding.updatedAt ? new Date(finding.updatedAt).toLocaleDateString() : ''}</div>
               </div>
             </div>
           </>
@@ -421,7 +422,7 @@ export function FindingDetailButton({
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                           <option value=""></option>
                           <option value="Critical">Critical</option>
                           <option value="High">High</option>
@@ -516,7 +517,7 @@ export function FindingDetailButton({
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                           <option value=""></option>
                           <option value="Critical">Critical</option>
                           <option value="High">High</option>
@@ -607,7 +608,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                     <option value=""></option>
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>
@@ -683,7 +684,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                     <option value=""></option>
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>

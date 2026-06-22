@@ -34,7 +34,7 @@ function parseRelationIds(
   return parseFormUuidList(formData.getAll(key));
 }
 
-export async function createEngagement(prevState: any, formData: FormData) {
+export async function createEngagement(_prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -111,7 +111,7 @@ export async function createEngagement(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateEngagement(id: string, prevState: any, formData: FormData) {
+export async function updateEngagement(id: string, _prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 

@@ -49,7 +49,7 @@ export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
             style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} 
             defaultValue={state?.fields?.role || ''}
             tabIndex={2}
-            onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}
+            onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}
           >
             <option value=""></option>
             <option value="Admin">Admin</option>

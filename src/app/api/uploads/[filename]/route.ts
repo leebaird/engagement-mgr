@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
 import { resolveUploadFilePath } from '@/lib/uploads-path';
-import { readFile } from 'fs/promises';
+import { lstat, readFile } from 'fs/promises';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ filename: string }> }) {
   const session = await getSession();
@@ -18,6 +18,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
+    const stats = await lstat(filePath);
+    if (!stats.isFile()) {
+      return new NextResponse('File not found', { status: 404 });
+    }
+
     const file = await readFile(filePath);
 
     const ext = filePath.split('.').pop()?.toLowerCase();

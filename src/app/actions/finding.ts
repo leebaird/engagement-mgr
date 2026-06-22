@@ -60,7 +60,7 @@ export async function searchFindingsByTitle(query: string): Promise<FindingTempl
   }));
 }
 
-export async function createFinding(prevState: any, formData: FormData) {
+export async function createFinding(_prevState: unknown, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
@@ -140,7 +140,7 @@ export async function createFinding(prevState: any, formData: FormData) {
   }
 }
 
-export async function updateFinding(id: string, prevState: any, formData: FormData) {
+export async function updateFinding(id: string, _prevState: unknown, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
@@ -282,12 +282,12 @@ export async function deleteFinding(id: string) {
       revalidatePath('/engagements');
     }
     return { success: true };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to delete finding.' };
   }
 }
 
-export async function uploadScreenshot(prevState: any, formData: FormData) {
+export async function uploadScreenshot(_prevState: unknown, formData: FormData) {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
@@ -313,6 +313,14 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
   const { file } = fileResult;
   const { absolutePath, fileName } = uploadPath;
 
+  const finding = await prisma.finding.findUnique({
+    where: { id: findingId },
+    select: { id: true },
+  });
+  if (!finding) {
+    return { error: 'Finding not found.' };
+  }
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
@@ -332,7 +340,8 @@ export async function uploadScreenshot(prevState: any, formData: FormData) {
     });
     revalidatePath(`/findings/${findingId}`);
     return { success: 'Screenshot uploaded.' };
-  } catch (e) {
+  } catch {
+    await unlink(absolutePath).catch(() => {});
     return { error: 'Upload failed.' };
   }
 }

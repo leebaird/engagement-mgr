@@ -21,9 +21,9 @@ interface User {
   id: string;
   username: string;
   role: string;
-  createdAt: any;
-  updatedAt: any;
-  lastPasswordChange: any;
+  createdAt: Date;
+  updatedAt: Date;
+  lastPasswordChange: Date;
 }
 
 export function UserDetailButton({
@@ -63,23 +63,24 @@ export function UserDetailButton({
 }) {
   const [user] = useState(initialUser);
   const usernameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isEditing) {
-      setFormData({
-        username: user.username,
-        password: '',
-        role: user.role,
-      });
-      focusEditFieldAtStart(usernameInputRef.current);
-    }
-  }, [isEditing, user.username, user.role]);
-
   const [formData, setFormData] = useState({
     username: initialUser.username,
     password: '',
     role: initialUser.role,
   });
+
+  useEffect(() => {
+    if (isEditing) {
+      queueMicrotask(() => {
+        setFormData({
+          username: user.username,
+          password: '',
+          role: user.role,
+        });
+        focusEditFieldAtStart(usernameInputRef.current);
+      });
+    }
+  }, [isEditing, user.username, user.role]);
 
   return (
     <>
@@ -169,9 +170,7 @@ export function UserDetailButton({
                 style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
                 onFocus={(e) => {
                   try {
-                    if (typeof (e.target as HTMLSelectElement).showPicker === 'function') {
-                      (e.target as HTMLSelectElement).showPicker();
-                    }
+                    e.currentTarget.showPicker?.();
                   } catch {
                     // ignore
                   }

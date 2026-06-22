@@ -118,17 +118,19 @@ export function ClientDetailButton({
 
   useEffect(() => {
     if (isEditing) {
-      setFormData({
-        company: client.company,
-        address: client.address || '',
-        city: client.city || '',
-        state: client.state || '',
-        zip: client.zip || '',
-        website: client.website || '',
-        phone: client.phone || '',
-        notes: client.notes || '',
+      queueMicrotask(() => {
+        setFormData({
+          company: client.company,
+          address: client.address || '',
+          city: client.city || '',
+          state: client.state || '',
+          zip: client.zip || '',
+          website: client.website || '',
+          phone: client.phone || '',
+          notes: client.notes || '',
+        });
+        focusEditFieldAtStart(nameInputRef.current);
       });
-      focusEditFieldAtStart(nameInputRef.current);
     }
   }, [isEditing, client]);
 

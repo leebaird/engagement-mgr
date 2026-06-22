@@ -4,6 +4,7 @@ import { resetDatabase } from '@/app/actions/db';
 const DB_ERRORS: Record<string, string> = {
   confirm: 'Type RESET to confirm.',
   password: 'Incorrect password.',
+  passwordPolicy: 'Your current password must meet the current password policy before it can be reused for the reset admin account.',
   unauthorized: 'Unauthorized.',
   generic: 'Reset failed.',
 };
@@ -48,7 +49,7 @@ export function DatabaseResetModal({
         {dir ? <input type="hidden" name="dir" value={dir} /> : null}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            This will permanently remove all database records and uploaded screenshots, then recreate the default admin account (username: admin, password: admin).
+            This will permanently remove all database records and uploaded screenshots, then recreate the default admin account. Your current password becomes the temporary admin password and must be changed on first login.
           </p>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>

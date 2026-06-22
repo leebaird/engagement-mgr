@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
+import type { Prisma } from '@prisma/client';
 import { getSession } from '@/lib/auth/session';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 import { firstZodError, userIdSchema } from '@/lib/validation/common';
@@ -18,7 +19,7 @@ async function wouldRemoveLastAdmin(userId: string, newRole: 'Admin' | 'User'): 
   return adminCount <= 1;
 }
 
-export async function createUser(prevState: any, formData: FormData) {
+export async function createUser(_prevState: unknown, formData: FormData) {
   const session = await getSession();
   if (!session || session.role !== 'Admin') {
     return { error: 'Unauthorized: Only admins can create users.' };
@@ -66,12 +67,12 @@ export async function createUser(prevState: any, formData: FormData) {
 
     revalidatePath('/users');
     return { success: 'User created successfully.' };
-  } catch (err) {
+  } catch {
     return { error: 'Failed to create user.', fields: { username, role } };
   }
 }
 
-export async function updateUser(id: string, prevState: any, formData: FormData) {
+export async function updateUser(id: string, _prevState: unknown, formData: FormData) {
   const session = await getSession();
   if (!session || session.role !== 'Admin') {
     return { error: 'Unauthorized: Only admins can update users.' };
@@ -104,7 +105,7 @@ export async function updateUser(id: string, prevState: any, formData: FormData)
       return { error: 'Username already exists.' };
     }
 
-    const data: any = {
+    const data: Prisma.UserUpdateInput = {
       username,
       role,
     };

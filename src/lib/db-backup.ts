@@ -39,6 +39,10 @@ async function assertExtractedPathsContained(rootDir: string): Promise<void> {
         throw new Error('Invalid backup: archive contains unsafe paths');
       }
 
+      if (entry.isSymbolicLink()) {
+        throw new Error('Invalid backup: archive contains symlinks');
+      }
+
       if (entry.isDirectory()) {
         await walk(fullPath);
       }
@@ -155,7 +159,7 @@ export async function importDatabaseArchive(buffer: Buffer): Promise<void> {
 }
 
 /** Remove all application data (keeps schema and _prisma_migrations). */
-export async function deleteAllDatabaseData(): Promise<void> {
+export async function deleteAllDatabaseData(defaultAdminPassword?: string): Promise<void> {
   await prisma.$executeRawUnsafe(`
     DO $$ DECLARE r RECORD;
     BEGIN
@@ -174,5 +178,5 @@ export async function deleteAllDatabaseData(): Promise<void> {
   }
   await mkdir(uploadsDest, { recursive: true });
 
-  await seedDefaultAdminUser();
+  await seedDefaultAdminUser(defaultAdminPassword);
 }

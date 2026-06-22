@@ -15,7 +15,7 @@ import { getClientIp } from '@/lib/request-client-ip';
 import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
 import { firstZodError } from '@/lib/validation/common';
 
-export async function login(prevState: any, formData: FormData) {
+export async function login(_prevState: unknown, formData: FormData) {
   const parsed = loginSchema.safeParse({
     username: formData.get('username'),
     password: formData.get('password'),
@@ -44,6 +44,8 @@ export async function login(prevState: any, formData: FormData) {
     return { error: 'Invalid credentials' };
   }
 
+  let needsPasswordChange = false;
+
   try {
     const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
 
@@ -64,7 +66,7 @@ export async function login(prevState: any, formData: FormData) {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-    const needsPasswordChange = lastPasswordChange < ninetyDaysAgo;
+    needsPasswordChange = lastPasswordChange < ninetyDaysAgo;
 
     await createSession({
       userId: user.id,
@@ -72,13 +74,13 @@ export async function login(prevState: any, formData: FormData) {
       lastPasswordChange: lastPasswordChange.toISOString(),
     });
 
-    if (needsPasswordChange) {
-      redirect('/change-password');
-    }
-
   } catch (error) {
     console.error('Login error:', error);
     return { error: 'An error occurred during login' };
+  }
+
+  if (needsPasswordChange) {
+    redirect('/change-password');
   }
 
   redirect('/');
@@ -89,7 +91,7 @@ export async function logout() {
   redirect('/login');
 }
 
-export async function changePassword(prevState: any, formData: FormData) {
+export async function changePassword(_prevState: unknown, formData: FormData) {
   const session = await getSession();
   if (!session) {
     return { error: 'You must be logged in to change your password.' };
@@ -104,20 +106,15 @@ export async function changePassword(prevState: any, formData: FormData) {
   if (!parsed.success) {
     return {
       error: firstZodError(parsed.error),
-      fields: {
-        password: String(formData.get('password') ?? ''),
-        confirmPassword: String(formData.get('confirmPassword') ?? ''),
-      },
     };
   }
 
-  const { currentPassword, password: newPassword, confirmPassword } = parsed.data;
+  const { currentPassword, password: newPassword } = parsed.data;
 
   const complexity = validatePasswordComplexity(newPassword);
   if (!complexity.valid) {
     return {
       error: 'The password must be at least 16 characters long, contain at least one uppercase letter, one number, and one symbol.',
-      fields: { password: newPassword, confirmPassword },
     };
   }
 
@@ -140,7 +137,6 @@ export async function changePassword(prevState: any, formData: FormData) {
     if (!currentPasswordValid) {
       return {
         error: 'Current password is incorrect.',
-        fields: { password: newPassword, confirmPassword },
       };
     }
 
@@ -170,7 +166,6 @@ export async function changePassword(prevState: any, formData: FormData) {
     console.error('Change password error:', error);
     return {
       error: 'An error occurred while changing your password.',
-      fields: { password: newPassword, confirmPassword: parsed.data.confirmPassword },
     };
   }
 

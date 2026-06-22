@@ -42,7 +42,6 @@ export default function ChangePasswordPage() {
               className="form-input" 
               required
               autoComplete="new-password"
-              defaultValue={state?.fields?.password || ''}
             />
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
               Password must be:
@@ -64,7 +63,6 @@ export default function ChangePasswordPage() {
               className="form-input" 
               required
               autoComplete="new-password"
-              defaultValue={state?.fields?.confirmPassword || ''}
             />
           </div>
 

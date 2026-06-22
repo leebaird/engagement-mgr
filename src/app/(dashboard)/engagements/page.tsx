@@ -65,7 +65,7 @@ export default async function EngagementsPage({
     orderBy = { endTesting: sortDir };
   }
 
-  let engagements = await prisma.engagement.findMany({
+  const engagements = await prisma.engagement.findMany({
     include: {
       client: true,
       trustedAgents: true,

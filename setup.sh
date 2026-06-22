@@ -368,10 +368,10 @@ Start the development server:
 Then open http://localhost:3000 and sign in with:
 
   Username: admin
-  Password: admin
+  Password: use the temporary password printed by the database seed step
 
 Important:
-- Change the default admin password before exposing this app to others.
+- Change the temporary admin password before exposing this app to others.
 - Back up $ROOT_DIR/.env securely; it contains database credentials and JWT_SECRET.
 EOF
 

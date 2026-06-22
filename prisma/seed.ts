@@ -10,8 +10,9 @@ async function main() {
   });
 
   if (!existingAdmin) {
-    await seedDefaultAdminUser();
-    console.log('Created default admin user (username: admin, password: admin)');
+    const admin = await seedDefaultAdminUser();
+    console.log(`Created default admin user (username: ${admin.username}, temporary password: ${admin.password})`);
+    console.log('This temporary password must be changed on first login.');
   } else {
     console.log('Admin user already exists, skipping...');
   }

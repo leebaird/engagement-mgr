@@ -7,10 +7,17 @@ import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from './CreateFindingForm';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
-import { FindingDetailButton } from './FindingDetailButton';
+import { FindingDetailButton, type FindingDetail } from './FindingDetailButton';
+
+type FindingListItem = FindingDetail & {
+  category: string | null;
+  severity: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
 
 interface FindingsClientProps {
-  initialFindings: any[];
+  initialFindings: FindingListItem[];
   sortCol: string;
   sortDir: 'asc' | 'desc';
   addHref: string;
@@ -53,7 +60,9 @@ export function FindingsClient({
 
   // Keep local state in sync when server data refreshes (e.g. after create)
   useEffect(() => {
-    setFindings(initialFindings);
+    queueMicrotask(() => {
+      setFindings(initialFindings);
+    });
   }, [initialFindings]);
 
   const getSeverityStyle = (severity: string) => {
@@ -152,7 +161,7 @@ export function FindingsClient({
               </tr>
             </thead>
             <tbody>
-              {findings.map((f: any) => (
+              {findings.map((f) => (
                 <tr key={f.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
                   <td style={{ padding: '0.75rem', fontWeight: 500 }}>{f.title}</td>
                   <td style={{ padding: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.category || ''}>

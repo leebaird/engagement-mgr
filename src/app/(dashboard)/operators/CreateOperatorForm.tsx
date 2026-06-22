@@ -23,7 +23,7 @@ export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-          <select name="title" className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+          <select name="title" className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
             <option value=""></option>
             <option value="Director">Director</option>
             <option value="Red Team Lead">Red Team Lead</option>

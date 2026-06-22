@@ -6,7 +6,7 @@ import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createOperatorSchema, updateOperatorSchema } from '@/lib/validation/operator';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
-export async function createOperator(prevState: any, formData: FormData) {
+export async function createOperator(_prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -32,12 +32,12 @@ export async function createOperator(prevState: any, formData: FormData) {
     });
     revalidatePath('/operators');
     return { success: 'Operator created successfully.' };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to create operator.' };
   }
 }
 
-export async function updateOperator(id: string, prevState: any, formData: FormData) {
+export async function updateOperator(id: string, _prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -101,7 +101,7 @@ export async function deleteOperator(id: string) {
     await prisma.operator.delete({ where: { id: idParsed.data } });
     revalidatePath('/operators');
     return { success: true };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to delete operator.' };
   }
 }

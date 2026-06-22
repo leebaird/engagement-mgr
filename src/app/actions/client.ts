@@ -6,7 +6,7 @@ import { createClientSchema, updateClientDataSchema } from '@/lib/validation/cli
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
-export async function createClient(prevState: any, formData: FormData) {
+export async function createClient(_prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -42,7 +42,7 @@ export async function createClient(prevState: any, formData: FormData) {
     });
     revalidatePath('/clients');
     return { success: 'Client created successfully.' };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to create client.' };
   }
 }
@@ -86,7 +86,7 @@ export async function updateClient(id: string, data: {
     });
     revalidatePath('/clients');
     return { success: true };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to update client.' };
   }
 }
@@ -126,7 +126,7 @@ export async function deleteClient(id: string) {
     await prisma.client.delete({ where: { id: idParsed.data } });
     revalidatePath('/clients');
     return { success: true };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to delete client.' };
   }
 }

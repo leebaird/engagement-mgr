@@ -38,7 +38,9 @@ export function Modal({
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
   useLayoutEffect(() => {
-    setPortalRoot(document.getElementById('modal-root') ?? document.body);
+    queueMicrotask(() => {
+      setPortalRoot(document.getElementById('modal-root') ?? document.body);
+    });
   }, []);
 
   useEffect(() => {

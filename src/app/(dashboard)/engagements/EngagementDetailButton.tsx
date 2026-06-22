@@ -25,7 +25,55 @@ import type { SearchParamRecord } from '@/lib/list-view-params';
 
 const noop = () => {};
 
-function mapEngagementFindings(findings: any[] = []): EngagementFindingSummary[] {
+type EngagementRelation = { id: string };
+
+type EngagementFindingForDetail = {
+  id: string;
+  title: string;
+  severity: string;
+  category: string | null;
+  background: string | null;
+  remediation: string | null;
+  supportingData: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  engagementContext?: {
+    observation?: string | null;
+    affectedHosts?: string | null;
+  } | null;
+};
+
+type EngagementForDetail = {
+  id: string;
+  codeName: string;
+  client?: { company: string } | null;
+  chargeCode?: string | null;
+  status?: string | null;
+  focus?: string | null;
+  type?: string | null;
+  location?: string | null;
+  objectives?: string | null;
+  targets?: string | null;
+  exclusions?: string | null;
+  notes?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  operators?: EngagementRelation[];
+  contacts?: EngagementRelation[];
+  trustedAgents?: EngagementRelation[];
+  findings?: EngagementFindingForDetail[];
+  startPrep?: string | Date | null;
+  endPrep?: string | Date | null;
+  startRecon?: string | Date | null;
+  endRecon?: string | Date | null;
+  startTesting?: string | Date | null;
+  endTesting?: string | Date | null;
+  startReporting?: string | Date | null;
+  endReporting?: string | Date | null;
+  outbrief?: string | Date | null;
+};
+
+function mapEngagementFindings(findings: EngagementFindingForDetail[] = []): EngagementFindingSummary[] {
   return findings.map((f) => ({
     id: f.id,
     title: f.title,
@@ -74,7 +122,7 @@ export function EngagementDetailButton({
   showLink = true,
   showModal = true,
 }: {
-  engagement: any,
+  engagement: EngagementForDetail,
   clients: { id: string, company: string }[],
   contacts: { id: string, name: string, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
@@ -111,15 +159,17 @@ export function EngagementDetailButton({
     mapEngagementFindings(initialEngagement.findings)
   );
   useEffect(() => {
-    setEngagement(initialEngagement);
-    setFindings(mapEngagementFindings(initialEngagement.findings));
+    queueMicrotask(() => {
+      setEngagement(initialEngagement);
+      setFindings(mapEngagementFindings(initialEngagement.findings));
+    });
   }, [initialEngagement]);
 
-  const [selectedOps, setSelectedOps] = useState<string[]>(initialEngagement.operators?.map((o: any) => o.id) || []);
+  const [selectedOps, setSelectedOps] = useState<string[]>(initialEngagement.operators?.map((o) => o.id) || []);
   const [opsOpen, setOpsOpen] = useState(false);
-  const [selectedContacts, setSelectedContacts] = useState<string[]>(initialEngagement.contacts?.map((c: any) => c.id) || []);
+  const [selectedContacts, setSelectedContacts] = useState<string[]>(initialEngagement.contacts?.map((c) => c.id) || []);
   const [contactsOpen, setContactsOpen] = useState(false);
-  const [selectedTAs, setSelectedTAs] = useState<string[]>(initialEngagement.trustedAgents?.map((t: any) => t.id) || []);
+  const [selectedTAs, setSelectedTAs] = useState<string[]>(initialEngagement.trustedAgents?.map((t) => t.id) || []);
   const [tasOpen, setTasOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -133,10 +183,12 @@ export function EngagementDetailButton({
 
   useEffect(() => {
     if (isEditing) {
-      setSelectedOps(engagement.operators?.map((o: any) => o.id) || []);
-      setSelectedContacts(engagement.contacts?.map((c: any) => c.id) || []);
-      setSelectedTAs(engagement.trustedAgents?.map((t: any) => t.id) || []);
-      focusEditFieldAtStart(codeNameInputRef.current);
+      queueMicrotask(() => {
+        setSelectedOps(engagement.operators?.map((o) => o.id) || []);
+        setSelectedContacts(engagement.contacts?.map((c) => c.id) || []);
+        setSelectedTAs(engagement.trustedAgents?.map((t) => t.id) || []);
+        focusEditFieldAtStart(codeNameInputRef.current);
+      });
     }
   }, [isEditing, engagement]);
 
@@ -303,15 +355,15 @@ export function EngagementDetailButton({
               clients={clients}
               contacts={contacts}
               operators={operators}
-              selectedOps={engagement.operators?.map((o: any) => o.id) || []}
+              selectedOps={engagement.operators?.map((o) => o.id) || []}
               setSelectedOps={noop}
               opsOpen={false}
               setOpsOpen={noop}
-              selectedContacts={engagement.contacts?.map((c: any) => c.id) || []}
+              selectedContacts={engagement.contacts?.map((c) => c.id) || []}
               setSelectedContacts={noop}
               contactsOpen={false}
               setContactsOpen={noop}
-              selectedTAs={engagement.trustedAgents?.map((t: any) => t.id) || []}
+              selectedTAs={engagement.trustedAgents?.map((t) => t.id) || []}
               setSelectedTAs={noop}
               tasOpen={false}
               setTasOpen={noop}

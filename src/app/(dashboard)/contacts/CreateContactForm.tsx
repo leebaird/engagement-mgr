@@ -28,7 +28,7 @@ export function CreateContactForm({ clients, onSuccess }: { clients: { id: strin
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
-            <select name="clientId" className="form-input" required style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+            <select name="clientId" className="form-input" required style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
               <option value=""></option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
             </select>

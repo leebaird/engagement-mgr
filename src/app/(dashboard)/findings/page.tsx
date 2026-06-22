@@ -26,7 +26,7 @@ export default async function FindingsPage({
     'Info': 5
   };
 
-  let findings = await prisma.finding.findMany({
+  const findings = await prisma.finding.findMany({
     orderBy: sortCol === 'severity' ? undefined : { [sortCol]: sortDir }
   });
 

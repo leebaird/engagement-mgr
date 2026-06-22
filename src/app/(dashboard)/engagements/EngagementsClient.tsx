@@ -6,9 +6,9 @@ import { Modal } from '@/components/Modal';
 import { CreateEngagementForm } from './CreateEngagementForm';
 
 interface EngagementsClientProps {
-  clients: any[];
-  contacts: any[];
-  operators: any[];
+  clients: { id: string; company: string }[];
+  contacts: { id: string; name: string; clientId: string }[];
+  operators: { id: string; name: string; title: string | null }[];
   isAdmin?: boolean;
   children: React.ReactNode;
   overlay?: React.ReactNode;

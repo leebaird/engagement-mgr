@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { optionalUuidSchema, uuidSchema } from '@/lib/validation/common';
 import { findingSeveritySchema } from '@/lib/validation/enums';
-import { optionalFormString, requiredFormString, trimmedFormString } from '@/lib/validation/form';
+import { requiredFormString, trimmedFormString } from '@/lib/validation/form';
 
 export const findingSearchQuerySchema = z.string().trim().max(200);
 

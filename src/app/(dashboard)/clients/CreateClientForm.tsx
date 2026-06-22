@@ -12,9 +12,11 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
-      setCityError(false);
-      setStateError(false);
-      setZipError(false);
+      queueMicrotask(() => {
+        setCityError(false);
+        setStateError(false);
+        setZipError(false);
+      });
       onSuccess?.();
     }
   }, [state, onSuccess]);
@@ -41,7 +43,6 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
   const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     // Only show error if field is non-empty and does not match the full pattern
-    const isValid = val === '' || /^\d{5}(-\d{4})?$/.test(val);
     setZipError(val !== '' && !/^\d{5}(-\d{4})?$/.test(val));
   };
 

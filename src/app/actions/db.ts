@@ -16,10 +16,10 @@ import {
   importDatabaseArchive,
   importDatabaseSql,
 } from '@/lib/db-backup';
+import { validatePasswordComplexity } from '@/lib/auth/password';
 import { verifyUserPassword } from '@/lib/auth/verify-password';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
-import { firstZodError } from '@/lib/validation/common';
 
 function usersListParams(formData: FormData) {
   const sort = formData.get('sort')?.toString();
@@ -75,12 +75,14 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
     redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
-  try {
-    const fileResult = validateBackupFile(formData.get('file'));
-    if (!fileResult.ok) {
-      redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
-    }
+  const fileResult = validateBackupFile(formData.get('file'));
+  if (!fileResult.ok) {
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
+  }
 
+  let restoreError = 'generic';
+
+  try {
     const file = fileResult.file;
     const name = file.name.toLowerCase();
 
@@ -90,16 +92,18 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
     } else {
       const sql = await file.text();
       if (!sql.trim()) {
-        redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
+        restoreError = 'file';
+        throw new Error('Backup SQL file is empty');
       }
       await importDatabaseSql(sql);
     }
 
     revalidatePath('/', 'layout');
-    redirect(buildPathQuery('/users', listParams, { dbMsg: 'restore' }));
   } catch {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'generic' }));
+    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: restoreError }));
   }
+
+  redirect(buildPathQuery('/users', listParams, { dbMsg: 'restore' }));
 }
 
 export async function resetDatabase(formData: FormData): Promise<void> {
@@ -123,8 +127,12 @@ export async function resetDatabase(formData: FormData): Promise<void> {
     redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
+  if (!validatePasswordComplexity(passwordParsed.data).valid) {
+    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'passwordPolicy' }));
+  }
+
   try {
-    await deleteAllDatabaseData();
+    await deleteAllDatabaseData(passwordParsed.data);
     revalidatePath('/', 'layout');
   } catch {
     redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'generic' }));

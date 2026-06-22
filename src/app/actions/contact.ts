@@ -6,7 +6,7 @@ import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createContactSchema, updateContactSchema } from '@/lib/validation/contact';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
-export async function createContact(prevState: any, formData: FormData) {
+export async function createContact(_prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -31,12 +31,12 @@ export async function createContact(prevState: any, formData: FormData) {
     });
     revalidatePath('/contacts');
     return { success: 'Contact created successfully.' };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to create contact.' };
   }
 }
 
-export async function updateContact(id: string, prevState: any, formData: FormData) {
+export async function updateContact(id: string, _prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
@@ -67,7 +67,7 @@ export async function updateContact(id: string, prevState: any, formData: FormDa
     });
     revalidatePath('/contacts');
     return { success: 'Contact updated successfully.' };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to update contact.' };
   }
 }
@@ -98,7 +98,7 @@ export async function deleteContact(id: string) {
     await prisma.contact.delete({ where: { id: idParsed.data } });
     revalidatePath('/contacts');
     return { success: true };
-  } catch (e) {
+  } catch {
     return { error: 'Failed to delete contact.' };
   }
 }

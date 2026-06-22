@@ -163,7 +163,7 @@ Then open `http://<this-machine-ip>:3000` from the other device. Use this only o
 
    For a real server, run this under a process manager (systemd, PM2, etc.) and place a reverse proxy in front for TLS termination.
 
-6. Create the first admin account through the database seed (development only) or by restoring from a backup. **Change any default password immediately** before exposing the app to users.
+6. Create the first admin account through the database seed (development only) or by restoring from a backup. **Change the temporary seed password immediately** before exposing the app to users.
 
 ### Production checklist
 
@@ -177,12 +177,12 @@ Then open `http://<this-machine-ip>:3000` from the other device. Use this only o
 
 ## Default Credentials
 
-After seeding the database, you can log in using the default admin account:
+After seeding the database, you can log in using the generated temporary admin account:
 
 - **Username**: `admin`
-- **Password**: `admin`
+- **Password**: printed once by `npx prisma db seed` / `npm run db:seed`
 
-> **Note:** You will be required to change this password after 90 days. All passwords must be at least 16 characters and include an uppercase letter, lowercase letter, number, and a symbol.
+> **Note:** You will be required to change this temporary password on first login. All passwords must be at least 16 characters and include an uppercase letter, lowercase letter, number, and a symbol.
 
 ## Server migration (Backup / Restore / Reset)
 
@@ -226,7 +226,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
    NODE_ENV=production npm run start
    ```
 
-7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI (`admin` / `admin`); the import step replaces that data with the backup.
+7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI with the generated temporary admin password; the import step replaces that data with the backup.
 8. Open **Admin** (`/users`), click **Restore** (under **Database**), select the `.zip` from the old server, enter your admin password, and confirm.
 9. Restart the app if it was already running so it picks up the restored data.
 

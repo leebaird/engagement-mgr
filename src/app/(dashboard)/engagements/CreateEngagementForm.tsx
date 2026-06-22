@@ -51,9 +51,11 @@ export function CreateEngagementForm({
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
-      setSelectedOps([]);
-      setSelectedContacts([]);
-      setSelectedTAs([]);
+      queueMicrotask(() => {
+        setSelectedOps([]);
+        setSelectedContacts([]);
+        setSelectedTAs([]);
+      });
       onSuccess?.();
     }
   }, [state, onSuccess]);

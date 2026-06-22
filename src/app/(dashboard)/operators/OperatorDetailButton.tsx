@@ -16,6 +16,19 @@ import {
 const EDIT_FORM_ID = 'edit-operator-form';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
+interface Operator {
+  id: string;
+  name: string;
+  title: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  discord: string | null;
+  github: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export function OperatorDetailButton({
   operator: initialOperator,
   isAdmin = false,
@@ -34,7 +47,7 @@ export function OperatorDetailButton({
   showLink = true,
   showModal = true,
 }: {
-  operator: any;
+  operator: Operator;
   isAdmin?: boolean;
   isDetailOpen: boolean;
   isEditing?: boolean;
@@ -53,21 +66,6 @@ export function OperatorDetailButton({
 }) {
   const [operator] = useState(initialOperator);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (isEditing) {
-      setFormData({
-        name: operator.name,
-        title: operator.title || '',
-        email: operator.email || '',
-        phoneNumber: operator.phoneNumber || '',
-        discord: operator.discord || '',
-        github: operator.github || '',
-        notes: operator.notes || '',
-      });
-      focusEditFieldAtStart(nameInputRef.current);
-    }
-  }, [isEditing, operator]);
-
   const [formData, setFormData] = useState({
     name: initialOperator.name,
     title: initialOperator.title || '',
@@ -77,6 +75,23 @@ export function OperatorDetailButton({
     github: initialOperator.github || '',
     notes: initialOperator.notes || '',
   });
+
+  useEffect(() => {
+    if (isEditing) {
+      queueMicrotask(() => {
+        setFormData({
+          name: operator.name,
+          title: operator.title || '',
+          email: operator.email || '',
+          phoneNumber: operator.phoneNumber || '',
+          discord: operator.discord || '',
+          github: operator.github || '',
+          notes: operator.notes || '',
+        });
+        focusEditFieldAtStart(nameInputRef.current);
+      });
+    }
+  }, [isEditing, operator]);
 
   return (
     <>
@@ -192,7 +207,7 @@ export function OperatorDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { if (typeof (e.target as any).showPicker === 'function') { (e.target as any).showPicker(); } } catch(err) {} }}>
+                <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                   <option value=""></option>
                   <option value="Director">Director</option>
                   <option value="Red Team Lead">Red Team Lead</option>
