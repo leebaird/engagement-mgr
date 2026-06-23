@@ -186,7 +186,7 @@ After seeding the database, you can log in using the generated temporary admin a
 
 ## Server migration (Backup / Restore / Reset)
 
-- Admin can back up and restore the full application data from the **Admin** page (`/users`).
+- Admin can back up and restore the full application data from the **Admin** page (`/dashboard/users`).
 - Use this when moving from an old server to a new one: clone the app on the new host, then restore a backup from the old host.
 
 On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
@@ -227,7 +227,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
    ```
 
 7. Log in as an admin. If the database is empty, run `npx prisma db seed` once so you can reach the UI with the generated temporary admin password; the import step replaces that data with the backup.
-8. Open **Admin** (`/users`), click **Restore** (under **Database**), select the `.zip` from the old server, enter your admin password, and confirm.
+8. Open **Admin** (`/dashboard/users`), click **Restore** (under **Database**), select the `.zip` from the old server, enter your admin password, and confirm.
 9. Restart the app if it was already running so it picks up the restored data.
 
 **Notes**
@@ -288,7 +288,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Only admins can access the Admin page (`/users`), manage accounts, and back up, restore, or reset the database. Destructive database operations require password re-confirmation.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Only admins can access the Admin page (`/dashboard/users`), manage accounts, and back up, restore, or reset the database. Destructive database operations require password re-confirmation.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

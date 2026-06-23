@@ -30,7 +30,7 @@ export async function createOperator(_prevState: unknown, formData: FormData) {
     await prisma.operator.create({
       data: { name, title, email, phoneNumber, discord, github, notes },
     });
-    revalidatePath('/operators');
+    revalidatePath('/dashboard/operators');
     return { success: 'Operator created successfully.' };
   } catch {
     return { error: 'Failed to create operator.' };
@@ -67,7 +67,7 @@ export async function updateOperator(id: string, _prevState: unknown, formData: 
       where: { id: idParsed.data },
       data: { name, title, email, phoneNumber, discord, github, notes },
     });
-    revalidatePath('/operators');
+    revalidatePath('/dashboard/operators');
     return { success: 'Operator updated successfully.' };
   } catch (e) {
     console.error(e);
@@ -78,14 +78,14 @@ export async function updateOperator(id: string, _prevState: unknown, formData: 
 export async function updateOperatorFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateOperator(id, {}, formData);
-  finishDetailUpdate('/operators', formData, id, result, updateErrorCode(result.error));
+  finishDetailUpdate('/dashboard/operators', formData, id, result, updateErrorCode(result.error));
 }
 
 export async function deleteOperatorFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await deleteOperator(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
-  finishDetailDelete('/operators', formData, id, result, code);
+  finishDetailDelete('/dashboard/operators', formData, id, result, code);
 }
 
 export async function deleteOperator(id: string) {
@@ -99,7 +99,7 @@ export async function deleteOperator(id: string) {
 
   try {
     await prisma.operator.delete({ where: { id: idParsed.data } });
-    revalidatePath('/operators');
+    revalidatePath('/dashboard/operators');
     return { success: true };
   } catch {
     return { error: 'Failed to delete operator.' };

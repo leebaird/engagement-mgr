@@ -42,10 +42,11 @@ function EmptyScheduleDateInput({
   field: keyof EngagementScheduleValues;
 }) {
   return (
-    <div
-      dangerouslySetInnerHTML={{
-        __html: `<input type="date" name="${field}" class="form-input" style="color-scheme:dark;padding-top:0.25rem;padding-bottom:0.25rem" />`,
-      }}
+    <input
+      type="date"
+      name={field}
+      className="form-input"
+      style={DATE_INPUT_STYLE}
     />
   );
 }

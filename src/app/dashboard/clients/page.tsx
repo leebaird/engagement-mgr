@@ -17,10 +17,10 @@ export default async function ClientsPage({
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const addHref = isAdmin
-    ? buildPathQuery('/clients', listParams, { create: '1', detail: null })
+    ? buildPathQuery('/dashboard/clients', listParams, { create: '1', detail: null })
     : undefined;
-  const createCloseHref = buildPathQuery('/clients', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/clients', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
+  const createCloseHref = buildPathQuery('/dashboard/clients', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/dashboard/clients', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
 
   const validSortColumns = ['company', 'website', 'phoneNumber'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'company';
@@ -35,9 +35,9 @@ export default async function ClientsPage({
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
-      return `/clients?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
+      return `/dashboard/clients?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
     }
-    return `/clients?sort=${col}&dir=asc`;
+    return `/dashboard/clients?sort=${col}&dir=asc`;
   };
 
   const getSortIcon = (col: string) => {
@@ -46,7 +46,7 @@ export default async function ClientsPage({
   };
 
   const detailClient = detail ? clients.find((client) => client.id === detail) : undefined;
-  const detailHrefs = detailClient ? buildDetailHrefs('/clients', listParams, detailClient.id) : null;
+  const detailHrefs = detailClient ? buildDetailHrefs('/dashboard/clients', listParams, detailClient.id) : null;
 
   return (
     <>
@@ -98,7 +98,7 @@ export default async function ClientsPage({
                 <td style={{ padding: '0.75rem' }}>{client.website || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{formatPhone(client.phone)}</td>
                 <td className="table-action-cell">
-                  <DetailEyeLink href={buildPathQuery('/clients', listParams, { detail: client.id, create: null })} />
+                  <DetailEyeLink href={buildPathQuery('/dashboard/clients', listParams, { detail: client.id, create: null })} />
                 </td>
               </tr>
             ))}

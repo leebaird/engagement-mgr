@@ -65,7 +65,7 @@ export async function createUser(_prevState: unknown, formData: FormData) {
       },
     });
 
-    revalidatePath('/users');
+    revalidatePath('/dashboard/users');
     return { success: 'User created successfully.' };
   } catch {
     return { error: 'Failed to create user.', fields: { username, role } };
@@ -125,7 +125,7 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
       data,
     });
 
-    revalidatePath('/users');
+    revalidatePath('/dashboard/users');
     return { success: 'User updated successfully.' };
   } catch (err) {
     console.error(err);
@@ -136,7 +136,7 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
 export async function updateUserFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateUser(id, {}, formData);
-  finishDetailUpdate('/users', formData, id, result, updateErrorCode(result.error));
+  finishDetailUpdate('/dashboard/users', formData, id, result, updateErrorCode(result.error));
 }
 
 export async function deleteUserFromDetail(formData: FormData): Promise<void> {
@@ -146,7 +146,7 @@ export async function deleteUserFromDetail(formData: FormData): Promise<void> {
   if (result.error?.includes('last admin')) code = 'last-admin';
   else if (result.error?.includes('yourself')) code = 'self';
   else if (result.error?.includes('Unauthorized')) code = 'unauthorized';
-  finishDetailDelete('/users', formData, id, result, code);
+  finishDetailDelete('/dashboard/users', formData, id, result, code);
 }
 
 export async function deleteUser(id: string) {
@@ -173,7 +173,7 @@ export async function deleteUser(id: string) {
 
   try {
     await prisma.user.delete({ where: { id: userId } });
-    revalidatePath('/users');
+    revalidatePath('/dashboard/users');
     return { success: true };
   } catch (err) {
     console.error(err);

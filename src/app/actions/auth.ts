@@ -26,10 +26,15 @@ export async function login(_prevState: unknown, formData: FormData) {
   }
 
   const { username, password } = parsed.data;
-  const rateLimitKey = loginRateLimitKey(await getClientIp(), username);
-  const rateLimit = await isLoginRateLimited(rateLimitKey);
+  const clientIp = await getClientIp();
+  const rateLimitKeys = [
+    loginRateLimitKey(`ip:${clientIp}`, username),
+    loginRateLimitKey('account', username),
+  ];
+  const rateLimits = await Promise.all(rateLimitKeys.map((key) => isLoginRateLimited(key)));
+  const rateLimit = rateLimits.find((result) => result.limited);
 
-  if (rateLimit.limited) {
+  if (rateLimit?.limited) {
     return {
       error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
     };
@@ -40,7 +45,7 @@ export async function login(_prevState: unknown, formData: FormData) {
   });
 
   if (!user) {
-    await recordLoginFailure(rateLimitKey);
+    await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));
     return { error: 'Invalid credentials' };
   }
 
@@ -50,11 +55,11 @@ export async function login(_prevState: unknown, formData: FormData) {
     const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
 
     if (!isPasswordValid) {
-      await recordLoginFailure(rateLimitKey);
+      await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));
       return { error: 'Invalid credentials' };
     }
 
-    await clearLoginRateLimit(rateLimitKey);
+    await Promise.all(rateLimitKeys.map((key) => clearLoginRateLimit(key)));
 
     // Record the login timestamp
     await prisma.user.update({
@@ -83,7 +88,7 @@ export async function login(_prevState: unknown, formData: FormData) {
     redirect('/change-password');
   }
 
-  redirect('/');
+  redirect('/dashboard');
 }
 
 export async function logout() {
@@ -169,5 +174,5 @@ export async function changePassword(_prevState: unknown, formData: FormData) {
     };
   }
 
-  redirect('/');
+  redirect('/dashboard');
 }

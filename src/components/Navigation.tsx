@@ -6,13 +6,13 @@ import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Cont
 import { logout } from '@/app/actions/auth';
 
 const navItems: { name: string; href: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Engagements', href: '/engagements', icon: Crosshair },
-  { name: 'Clients', href: '/clients', icon: Building2 },
-  { name: 'Contacts', href: '/contacts', icon: Contact },
-  { name: 'Findings', href: '/findings', icon: ShieldAlert },
-  { name: 'Operators', href: '/operators', icon: Zap },
-  { name: 'Admin', href: '/users', icon: Users, adminOnly: true },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Engagements', href: '/dashboard/engagements', icon: Crosshair },
+  { name: 'Clients', href: '/dashboard/clients', icon: Building2 },
+  { name: 'Contacts', href: '/dashboard/contacts', icon: Contact },
+  { name: 'Findings', href: '/dashboard/findings', icon: ShieldAlert },
+  { name: 'Operators', href: '/dashboard/operators', icon: Zap },
+  { name: 'Admin', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
 
 export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {

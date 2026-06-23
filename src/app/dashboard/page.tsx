@@ -64,10 +64,10 @@ export default async function DashboardHome({
   }));
 
   const statCards = [
-    { label: 'Clients', count: clientCount, icon: Building2, href: '/clients' },
-    { label: 'Contacts', count: contactCount, icon: Contact, href: '/contacts' },
-    { label: 'Findings', count: findingCount, icon: ShieldAlert, href: '/findings' },
-    { label: 'Operators', count: operatorCount, icon: Zap, href: '/operators' },
+    { label: 'Clients', count: clientCount, icon: Building2, href: '/dashboard/clients' },
+    { label: 'Contacts', count: contactCount, icon: Contact, href: '/dashboard/contacts' },
+    { label: 'Findings', count: findingCount, icon: ShieldAlert, href: '/dashboard/findings' },
+    { label: 'Operators', count: operatorCount, icon: Zap, href: '/dashboard/operators' },
   ];
 
   const engagementStats = [
@@ -147,7 +147,7 @@ export default async function DashboardHome({
           }}
         >
           <Link
-            href="/engagements"
+            href="/dashboard/engagements"
             className="glass-panel dashboard-stat-link"
             aria-label="View engagements"
             style={{

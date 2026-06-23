@@ -75,10 +75,10 @@ export function EngagementFindingsPanel({
 
   const detailFinding = activeFindingId ? findings.find((finding) => finding.id === activeFindingId) : undefined;
   const findingHrefs = detailFinding && engagementIdForLinks
-    ? buildDetailHrefs('/engagements', listParams, engagementIdForLinks, { finding: detailFinding.id })
+    ? buildDetailHrefs('/dashboard/engagements', listParams, engagementIdForLinks, { finding: detailFinding.id })
     : null;
   const findingCloseHref = engagementIdForLinks
-    ? buildPathQuery('/engagements', listParams, {
+    ? buildPathQuery('/dashboard/engagements', listParams, {
         detail: engagementIdForLinks,
         finding: null,
         edit: null,
@@ -201,7 +201,7 @@ export function EngagementFindingsPanel({
                     <td className="table-action-cell">
                       {engagementIdForLinks ? (
                         <DetailEyeLink
-                          href={buildPathQuery('/engagements', listParams, { detail: engagementIdForLinks, finding: f.id, create: null })}
+                          href={buildPathQuery('/dashboard/engagements', listParams, { detail: engagementIdForLinks, finding: f.id, create: null })}
                         />
                       ) : null}
                     </td>

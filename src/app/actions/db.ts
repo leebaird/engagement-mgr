@@ -62,22 +62,22 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
   const listParams = usersListParams(formData);
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'unauthorized' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'unauthorized' }));
   }
 
   const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
   if (!passwordParsed.success) {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'password' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
   const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
   if (!passwordValid) {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'password' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
   const fileResult = validateBackupFile(formData.get('file'));
   if (!fileResult.ok) {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: 'file' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'file' }));
   }
 
   let restoreError = 'generic';
@@ -100,42 +100,42 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
 
     revalidatePath('/', 'layout');
   } catch {
-    redirect(buildPathQuery('/users', listParams, { db: 'restore', dbError: restoreError }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: restoreError }));
   }
 
-  redirect(buildPathQuery('/users', listParams, { dbMsg: 'restore' }));
+  redirect(buildPathQuery('/dashboard/users', listParams, { dbMsg: 'restore' }));
 }
 
 export async function resetDatabase(formData: FormData): Promise<void> {
   const listParams = usersListParams(formData);
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'unauthorized' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'unauthorized' }));
   }
 
   if (formData.get('confirm')?.toString() !== 'RESET') {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'confirm' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'confirm' }));
   }
 
   const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
   if (!passwordParsed.success) {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'password' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
   const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
   if (!passwordValid) {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'password' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
   if (!validatePasswordComplexity(passwordParsed.data).valid) {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'passwordPolicy' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'passwordPolicy' }));
   }
 
   try {
     await deleteAllDatabaseData(passwordParsed.data);
     revalidatePath('/', 'layout');
   } catch {
-    redirect(buildPathQuery('/users', listParams, { db: 'reset', dbError: 'generic' }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'generic' }));
   }
 
   redirect('/login');

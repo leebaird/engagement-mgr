@@ -82,9 +82,9 @@ export function FindingsClient({
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
-      return `/findings?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
+      return `/dashboard/findings?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
     }
-    return `/findings?sort=${col}&dir=asc`;
+    return `/dashboard/findings?sort=${col}&dir=asc`;
   };
 
   const getSortIcon = (col: string) => {
@@ -181,7 +181,7 @@ export function FindingsClient({
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.createdAt).toLocaleDateString()}</td>
                   <td style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>{new Date(f.updatedAt).toLocaleDateString()}</td>
                   <td className="table-action-cell">
-                    <DetailEyeLink href={buildPathQuery('/findings', listParams, { detail: f.id, create: null })} />
+                    <DetailEyeLink href={buildPathQuery('/dashboard/findings', listParams, { detail: f.id, create: null })} />
                   </td>
                 </tr>
               ))}

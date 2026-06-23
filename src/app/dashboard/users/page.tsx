@@ -28,15 +28,15 @@ export default async function UsersPage({
 }) {
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg } = await searchParams;
   const listParams = { sort, dir };
-  const addHref = buildPathQuery('/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
-  const createCloseHref = buildPathQuery('/users', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/users', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
-  const dbCloseHref = buildPathQuery('/users', listParams, { db: null, dbError: null });
-  const restoreHref = buildPathQuery('/users', listParams, { db: 'restore', dbError: null, dbMsg: null, detail: null, create: null });
-  const resetHref = buildPathQuery('/users', listParams, { db: 'reset', dbError: null, dbMsg: null, detail: null, create: null });
+  const addHref = buildPathQuery('/dashboard/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
+  const createCloseHref = buildPathQuery('/dashboard/users', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/dashboard/users', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
+  const dbCloseHref = buildPathQuery('/dashboard/users', listParams, { db: null, dbError: null });
+  const restoreHref = buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: null, dbMsg: null, detail: null, create: null });
+  const resetHref = buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: null, dbMsg: null, detail: null, create: null });
   const session = await getSession();
   if (session?.role !== 'Admin') {
-    redirect('/');
+    redirect('/dashboard');
   }
 
   const validSortColumns = ['username', 'role', 'lastLogin'];
@@ -52,9 +52,9 @@ export default async function UsersPage({
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
-      return `/users?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
+      return `/dashboard/users?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
     }
-    return `/users?sort=${col}&dir=asc`;
+    return `/dashboard/users?sort=${col}&dir=asc`;
   };
 
   const getSortIcon = (col: string) => {
@@ -63,7 +63,7 @@ export default async function UsersPage({
   };
 
   const detailUser = detail ? users.find((user) => user.id === detail) : undefined;
-  const detailHrefs = detailUser ? buildDetailHrefs('/users', listParams, detailUser.id) : null;
+  const detailHrefs = detailUser ? buildDetailHrefs('/dashboard/users', listParams, detailUser.id) : null;
 
   const dbMessage = dbMsg === 'restore' ? 'Database restored successfully.' : null;
 
@@ -108,7 +108,6 @@ export default async function UsersPage({
         addHref={addHref}
         showCreateModal={create === '1'}
         createCloseHref={createCloseHref}
-        backupHref="/api/db/backup"
         restoreHref={restoreHref}
         resetHref={resetHref}
         dbMessage={dbMessage}
@@ -161,7 +160,7 @@ export default async function UsersPage({
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
                 </td>
                 <td className="table-action-cell" style={{ width: '40px' }}>
-                  <DetailEyeLink href={buildPathQuery('/users', listParams, { detail: user.id, create: null })} />
+                  <DetailEyeLink href={buildPathQuery('/dashboard/users', listParams, { detail: user.id, create: null })} />
                 </td>
               </tr>
             ))}

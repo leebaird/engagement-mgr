@@ -29,10 +29,10 @@ export default async function EngagementsPage({
   const { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
   const listParams = { sort, dir };
   const addHref = isAdmin
-    ? buildPathQuery('/engagements', listParams, { create: '1', detail: null })
+    ? buildPathQuery('/dashboard/engagements', listParams, { create: '1', detail: null })
     : undefined;
-  const createCloseHref = buildPathQuery('/engagements', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, schedule: null, scheduleEdit: null, scheduleError: null });
+  const createCloseHref = buildPathQuery('/dashboard/engagements', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/dashboard/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, schedule: null, scheduleEdit: null, scheduleError: null });
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
@@ -91,9 +91,9 @@ export default async function EngagementsPage({
 
   const getSortHref = (col: string) => {
     if (sortCol === col) {
-      return `/engagements?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
+      return `/dashboard/engagements?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
     }
-    return `/engagements?sort=${col}&dir=asc`;
+    return `/dashboard/engagements?sort=${col}&dir=asc`;
   };
 
   const getSortIcon = (col: string) => {
@@ -106,7 +106,7 @@ export default async function EngagementsPage({
     ? serializeEngagementScheduleDates(rawDetailEngagement)
     : undefined;
   const detailHrefs = detailEngagement
-    ? buildDetailHrefs('/engagements', listParams, detailEngagement.id, finding ? { finding } : {})
+    ? buildDetailHrefs('/dashboard/engagements', listParams, detailEngagement.id, finding ? { finding } : {})
     : null;
   const scheduleFormValues = detailEngagement
     ? engagementToScheduleValues(detailEngagement)
@@ -201,7 +201,7 @@ export default async function EngagementsPage({
                 <td style={{ padding: '0.75rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
                 <td style={{ padding: '0.75rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td className="table-action-cell">
-                  <DetailEyeLink href={buildPathQuery('/engagements', listParams, { detail: eng.id, create: null, finding: null })} />
+                  <DetailEyeLink href={buildPathQuery('/dashboard/engagements', listParams, { detail: eng.id, create: null, finding: null })} />
                 </td>
               </tr>
             ))}

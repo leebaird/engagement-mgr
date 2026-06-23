@@ -129,9 +129,9 @@ export async function createFinding(_prevState: unknown, formData: FormData) {
     }
 
     await prisma.finding.create({ data: findingData });
-    revalidatePath('/findings');
+    revalidatePath('/dashboard/findings');
     if (engagementId) {
-      revalidatePath('/engagements');
+      revalidatePath('/dashboard/engagements');
     }
     return { success: 'Finding created successfully.' };
   } catch (e) {
@@ -225,9 +225,9 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
       });
     }
 
-    revalidatePath('/findings');
+    revalidatePath('/dashboard/findings');
     if (scopedEngagementId) {
-      revalidatePath('/engagements');
+      revalidatePath('/dashboard/engagements');
     }
     return { success: 'Finding updated successfully.' };
   } catch (e) {
@@ -239,7 +239,7 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
 export async function updateFindingFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateFinding(id, {}, formData);
-  finishDetailUpdate('/findings', formData, id, result, updateErrorCode(result.error));
+  finishDetailUpdate('/dashboard/findings', formData, id, result, updateErrorCode(result.error));
 }
 
 export async function deleteFindingFromDetail(formData: FormData): Promise<void> {
@@ -248,12 +248,12 @@ export async function deleteFindingFromDetail(formData: FormData): Promise<void>
   const result = await deleteFinding(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
   if (engagementId) {
-    finishDetailDelete('/engagements', formData, engagementId, result, code, ['finding'], {
+    finishDetailDelete('/dashboard/engagements', formData, engagementId, result, code, ['finding'], {
       successDetailId: engagementId,
     });
     return;
   }
-  finishDetailDelete('/findings', formData, id, result, code);
+  finishDetailDelete('/dashboard/findings', formData, id, result, code);
 }
 
 export async function deleteFinding(id: string) {
@@ -277,9 +277,9 @@ export async function deleteFinding(id: string) {
       select: { engagementId: true },
     });
     await prisma.finding.delete({ where: { id: idParsed.data } });
-    revalidatePath('/findings');
+    revalidatePath('/dashboard/findings');
     if (finding?.engagementId) {
-      revalidatePath('/engagements');
+      revalidatePath('/dashboard/engagements');
     }
     return { success: true };
   } catch {
@@ -338,7 +338,7 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
         filePath: fileName,
       },
     });
-    revalidatePath(`/findings/${findingId}`);
+    revalidatePath(`/dashboard/findings/${findingId}`);
     return { success: 'Screenshot uploaded.' };
   } catch {
     await unlink(absolutePath).catch(() => {});
@@ -364,7 +364,7 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
       }
       await prisma.screenshot.delete({ where: { id: parsed.data.screenshotId } });
     }
-    revalidatePath(`/findings/${parsed.data.findingId}`);
+    revalidatePath(`/dashboard/findings/${parsed.data.findingId}`);
   } catch (e) {
     console.error(e);
   }

@@ -40,7 +40,7 @@ export async function createClient(_prevState: unknown, formData: FormData) {
         notes,
       },
     });
-    revalidatePath('/clients');
+    revalidatePath('/dashboard/clients');
     return { success: 'Client created successfully.' };
   } catch {
     return { error: 'Failed to create client.' };
@@ -84,7 +84,7 @@ export async function updateClient(id: string, data: {
         notes: parsed.data.notes,
       },
     });
-    revalidatePath('/clients');
+    revalidatePath('/dashboard/clients');
     return { success: true };
   } catch {
     return { error: 'Failed to update client.' };
@@ -103,14 +103,14 @@ export async function updateClientFromDetail(formData: FormData): Promise<void> 
     phone: formData.get('phone')?.toString() || null,
     notes: formData.get('notes')?.toString() || null,
   });
-  finishDetailUpdate('/clients', formData, id, result, updateErrorCode(result.error));
+  finishDetailUpdate('/dashboard/clients', formData, id, result, updateErrorCode(result.error));
 }
 
 export async function deleteClientFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await deleteClient(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
-  finishDetailDelete('/clients', formData, id, result, code);
+  finishDetailDelete('/dashboard/clients', formData, id, result, code);
 }
 
 export async function deleteClient(id: string) {
@@ -124,7 +124,7 @@ export async function deleteClient(id: string) {
 
   try {
     await prisma.client.delete({ where: { id: idParsed.data } });
-    revalidatePath('/clients');
+    revalidatePath('/dashboard/clients');
     return { success: true };
   } catch {
     return { error: 'Failed to delete client.' };

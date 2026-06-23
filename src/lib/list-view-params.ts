@@ -69,7 +69,7 @@ export function parseCalendarView(
 }
 
 export function buildEngagementScheduleHref(engagementId: string) {
-  return buildPathQuery('/engagements', {}, { detail: engagementId, schedule: '1' });
+  return buildPathQuery('/dashboard/engagements', {}, { detail: engagementId, schedule: '1' });
 }
 
 export function buildCalendarNavHrefs(viewYear: number, viewMonth: number) {
@@ -77,14 +77,14 @@ export function buildCalendarNavHrefs(viewYear: number, viewMonth: number) {
   const next = new Date(viewYear, viewMonth + 1, 1);
 
   return {
-    prevHref: buildPathQuery('/', {}, {
+    prevHref: buildPathQuery('/dashboard', {}, {
       year: String(prev.getFullYear()),
       month: String(prev.getMonth() + 1),
     }),
-    nextHref: buildPathQuery('/', {}, {
+    nextHref: buildPathQuery('/dashboard', {}, {
       year: String(next.getFullYear()),
       month: String(next.getMonth() + 1),
     }),
-    todayHref: '/',
+    todayHref: '/dashboard',
   };
 }

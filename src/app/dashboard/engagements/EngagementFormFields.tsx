@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, RefObject } from 'react';
+import { ReactNode, RefObject, useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 export type EngagementFormValues = {
@@ -45,16 +45,6 @@ export function engagementToFormValues(engagement: {
   };
 }
 
-const selectPickerOnFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
-  try {
-    if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') {
-      (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker();
-    }
-  } catch {
-    /* ignore */
-  }
-};
-
 type EngagementFormFieldsProps = {
   clients: { id: string; company: string }[];
   contacts: { id: string; name: string; clientId: string }[];
@@ -86,6 +76,134 @@ type EngagementFormFieldsProps = {
   readOnly?: boolean;
   footer?: ReactNode;
 };
+
+type SelectOption = {
+  value: string;
+  label: string;
+};
+
+const statusOptions: SelectOption[] = [
+  { value: '', label: '' },
+  { value: 'Prep', label: 'Prep' },
+  { value: 'Recon', label: 'Recon' },
+  { value: 'Testing', label: 'Testing' },
+  { value: 'Reporting', label: 'Reporting' },
+  { value: 'Complete', label: 'Complete' },
+];
+
+const typeOptions: SelectOption[] = [
+  { value: '', label: '' },
+  { value: 'AI', label: 'AI' },
+  { value: 'Code_Review', label: 'Code Review' },
+  { value: 'Firewall', label: 'Firewall' },
+  { value: 'Multi', label: 'Multi' },
+  { value: 'Pentest', label: 'Pentest' },
+  { value: 'Phishing', label: 'Phishing' },
+  { value: 'Physical', label: 'Physical' },
+  { value: 'Purple_Team', label: 'Purple Team' },
+  { value: 'Red_Team', label: 'Red Team' },
+  { value: 'USB_Drop', label: 'USB Drop' },
+  { value: 'Vishing', label: 'Vishing' },
+  { value: 'Web_App', label: 'Web App' },
+  { value: 'Wireless', label: 'Wireless' },
+];
+
+const locationOptions: SelectOption[] = [
+  { value: '', label: '' },
+  { value: 'Internal', label: 'Internal' },
+  { value: 'External', label: 'External' },
+];
+
+function EngagementSelect({
+  field,
+  name,
+  options,
+  values,
+  defaultValues,
+  onFieldChange,
+  readOnly,
+}: {
+  field: keyof EngagementFormValues;
+  name: string;
+  options: SelectOption[];
+  values?: EngagementFormValues;
+  defaultValues?: EngagementFormValues;
+  onFieldChange?: (field: keyof EngagementFormValues, value: string) => void;
+  readOnly: boolean;
+}) {
+  const controlled = values !== undefined && onFieldChange !== undefined;
+  const [open, setOpen] = useState(false);
+  const [localValue, setLocalValue] = useState(defaultValues?.[field] ?? '');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const value = values ? values[field] : localValue;
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? '';
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
+
+  const chooseOption = (nextValue: string) => {
+    if (controlled) {
+      onFieldChange(field, nextValue);
+    } else {
+      setLocalValue(nextValue);
+    }
+    setOpen(false);
+  };
+
+  return (
+    <div className="engagement-select" ref={wrapperRef}>
+      {!readOnly ? <input type="hidden" name={name} value={value} /> : null}
+      <div
+        tabIndex={readOnly ? -1 : 0}
+        className="form-input engagement-select__trigger"
+        role="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={readOnly ? undefined : () => setOpen(!open)}
+        onKeyDown={readOnly ? undefined : (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen(!open);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
+      >
+        <span>{selectedLabel}</span>
+        <ChevronDown size={16} color="var(--text-muted)" />
+      </div>
+      {!readOnly && open ? (
+        <div className="engagement-select__menu" role="listbox">
+          {options.map((option) => (
+            <button
+              key={option.value || 'empty'}
+              type="button"
+              className={`engagement-select__option${option.value === value ? ' engagement-select__option--selected' : ''}`}
+              onClick={() => chooseOption(option.value)}
+              role="option"
+              aria-selected={option.value === value}
+            >
+              {option.label || <span>&nbsp;</span>}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function EngagementFormFields({
   clients,
@@ -137,22 +255,6 @@ export function EngagementFormFields({
     return { name, ...extra };
   };
 
-  const selectProps = (field: keyof EngagementFormValues, name: string) => {
-    if (readOnly && values) {
-      return { value: values[field], disabled: true as const };
-    }
-    if (controlled && values) {
-      return {
-        value: values[field],
-        onChange: (e: React.ChangeEvent<HTMLSelectElement>) => onFieldChange!(field, e.target.value),
-      };
-    }
-    if (defaultValues) {
-      return { name, defaultValue: defaultValues[field] };
-    }
-    return { name };
-  };
-
   return (
     <>
       <div className="engagement-form-grid">
@@ -200,19 +302,15 @@ export function EngagementFormFields({
         </div>
         <div className="form-group">
           <label className="form-label">Status</label>
-          <select
-            className="form-input"
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-            onFocus={readOnly ? undefined : selectPickerOnFocus}
-            {...selectProps('status', 'status')}
-          >
-            <option value=""></option>
-            <option value="Prep">Prep</option>
-            <option value="Recon">Recon</option>
-            <option value="Testing">Testing</option>
-            <option value="Reporting">Reporting</option>
-            <option value="Complete">Complete</option>
-          </select>
+          <EngagementSelect
+            field="status"
+            name="status"
+            options={statusOptions}
+            values={values}
+            defaultValues={defaultValues}
+            onFieldChange={onFieldChange}
+            readOnly={readOnly}
+          />
         </div>
         <div className="form-group">
           <label className="form-label">Focus</label>
@@ -220,46 +318,33 @@ export function EngagementFormFields({
         </div>
         <div className="form-group">
           <label className="form-label">Type</label>
-          <select
-            className="form-input"
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-            onFocus={readOnly ? undefined : selectPickerOnFocus}
-            {...selectProps('type', 'type')}
-          >
-            <option value=""></option>
-            <option value="AI">AI</option>
-            <option value="Code_Review">Code Review</option>
-            <option value="Firewall">Firewall</option>
-            <option value="Multi">Multi</option>
-            <option value="Pentest">Pentest</option>
-            <option value="Phishing">Phishing</option>
-            <option value="Physical">Physical</option>
-            <option value="Purple_Team">Purple Team</option>
-            <option value="Red_Team">Red Team</option>
-            <option value="USB_Drop">USB Drop</option>
-            <option value="Vishing">Vishing</option>
-            <option value="Web_App">Web App</option>
-            <option value="Wireless">Wireless</option>
-          </select>
+          <EngagementSelect
+            field="type"
+            name="type"
+            options={typeOptions}
+            values={values}
+            defaultValues={defaultValues}
+            onFieldChange={onFieldChange}
+            readOnly={readOnly}
+          />
         </div>
         <div className="form-group">
           <label className="form-label">Location</label>
-          <select
-            className="form-input"
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-            onFocus={readOnly ? undefined : selectPickerOnFocus}
-            {...selectProps('location', 'location')}
-          >
-            <option value=""></option>
-            <option value="Internal">Internal</option>
-            <option value="External">External</option>
-          </select>
+          <EngagementSelect
+            field="location"
+            name="location"
+            options={locationOptions}
+            values={values}
+            defaultValues={defaultValues}
+            onFieldChange={onFieldChange}
+            readOnly={readOnly}
+          />
         </div>
         {footer}
       </div>
 
-      <div className="engagement-form-grid__main">
-        <div className="form-group engagement-form-objectives">
+      <div className="engagement-form-col engagement-form-col--scope">
+        <div className="form-group">
           <label className="form-label">Objectives</label>
           <textarea
             className="form-input"
@@ -267,7 +352,6 @@ export function EngagementFormFields({
             {...textProps('objectives', 'objectives')}
           />
         </div>
-      <div className="engagement-form-col engagement-form-col--middle">
         <div className="form-group">
           <label className="form-label">Targets</label>
           <textarea
@@ -282,24 +366,6 @@ export function EngagementFormFields({
             className="form-input"
             rows={4}
             {...textProps('exclusions', 'exclusions')}
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <textarea
-            ref={notesRef}
-            className="form-input"
-            rows={4}
-            {...textProps('notes', 'notes')}
-            onKeyDown={readOnly ? undefined : (e) => {
-              if (e.key === 'Tab' && !e.shiftKey) {
-                e.preventDefault();
-                setOpsOpen(false);
-                setTasOpen(false);
-                setContactsOpen(false);
-                contactsTriggerRef.current?.focus();
-              }
-            }}
           />
         </div>
       </div>
@@ -364,7 +430,7 @@ export function EngagementFormFields({
                 top: '100%',
                 left: 0,
                 right: 0,
-                background: '#1a1a2e',
+                background: '#11141b',
                 border: '1px solid var(--surface-border)',
                 borderRadius: '8px',
                 marginTop: '0.25rem',
@@ -388,7 +454,7 @@ export function EngagementFormFields({
                     padding: '0.5rem 0.75rem',
                     cursor: 'pointer',
                     borderRadius: '4px',
-                    background: selectedContacts.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                    background: selectedContacts.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
                   }}
                 >
                   <input
@@ -459,7 +525,7 @@ export function EngagementFormFields({
                 top: '100%',
                 left: 0,
                 right: 0,
-                background: '#1a1a2e',
+                background: '#11141b',
                 border: '1px solid var(--surface-border)',
                 borderRadius: '8px',
                 marginTop: '0.25rem',
@@ -483,7 +549,7 @@ export function EngagementFormFields({
                     padding: '0.5rem 0.75rem',
                     cursor: 'pointer',
                     borderRadius: '4px',
-                    background: selectedTAs.includes(c.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                    background: selectedTAs.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
                   }}
                 >
                   <input
@@ -535,7 +601,7 @@ export function EngagementFormFields({
                 setOpsOpen(false);
                 setTasOpen(false);
                 setContactsOpen(false);
-                codeNameRef.current?.focus();
+                notesRef.current?.focus();
               } else if (e.key === 'Tab' && e.shiftKey) {
                 e.preventDefault();
                 setOpsOpen(false);
@@ -584,7 +650,7 @@ export function EngagementFormFields({
                 top: '100%',
                 left: 0,
                 right: 0,
-                background: '#1a1a2e',
+                background: '#11141b',
                 border: '1px solid var(--surface-border)',
                 borderRadius: '8px',
                 marginTop: '0.25rem',
@@ -607,7 +673,7 @@ export function EngagementFormFields({
                     padding: '0.5rem 0.75rem',
                     cursor: 'pointer',
                     borderRadius: '4px',
-                    background: selectedOps.includes(o.id) ? 'rgba(255,51,102,0.1)' : 'transparent',
+                    background: selectedOps.includes(o.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
                   }}
                 >
                   <input
@@ -630,11 +696,31 @@ export function EngagementFormFields({
               ))}
             </div>
           )}
+          </div>
         </div>
+      </div>
+
+      <div className="engagement-form-notes-section">
+        <div className="form-group">
+          <label className="form-label">Notes</label>
+          <textarea
+            ref={notesRef}
+            className="form-input"
+            rows={5}
+            {...textProps('notes', 'notes')}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                setTasOpen(false);
+                setContactsOpen(false);
+                codeNameRef.current?.focus();
+              }
+            }}
+          />
         </div>
       </div>
-      </div>
-      </div>
+    </div>
 
     </>
   );

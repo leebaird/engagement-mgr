@@ -9,6 +9,13 @@ import {
 import { exportDatabaseArchive } from '@/lib/db-backup';
 
 export async function GET() {
+  return new NextResponse('Method Not Allowed', {
+    status: 405,
+    headers: { Allow: 'POST' },
+  });
+}
+
+export async function POST() {
   const session = await getSession();
   if (!session || session.role !== 'Admin') {
     return new NextResponse('Unauthorized', { status: 401 });

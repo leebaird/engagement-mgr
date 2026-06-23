@@ -29,7 +29,7 @@ export async function createContact(_prevState: unknown, formData: FormData) {
     await prisma.contact.create({
       data: { clientId, name, title, email, phone: phoneNumber, notes },
     });
-    revalidatePath('/contacts');
+    revalidatePath('/dashboard/contacts');
     return { success: 'Contact created successfully.' };
   } catch {
     return { error: 'Failed to create contact.' };
@@ -65,7 +65,7 @@ export async function updateContact(id: string, _prevState: unknown, formData: F
       where: { id: idParsed.data },
       data: { clientId, name, title, email, phone: phoneNumber, notes },
     });
-    revalidatePath('/contacts');
+    revalidatePath('/dashboard/contacts');
     return { success: 'Contact updated successfully.' };
   } catch {
     return { error: 'Failed to update contact.' };
@@ -75,14 +75,14 @@ export async function updateContact(id: string, _prevState: unknown, formData: F
 export async function updateContactFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateContact(id, {}, formData);
-  finishDetailUpdate('/contacts', formData, id, result, updateErrorCode(result.error));
+  finishDetailUpdate('/dashboard/contacts', formData, id, result, updateErrorCode(result.error));
 }
 
 export async function deleteContactFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await deleteContact(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
-  finishDetailDelete('/contacts', formData, id, result, code);
+  finishDetailDelete('/dashboard/contacts', formData, id, result, code);
 }
 
 export async function deleteContact(id: string) {
@@ -96,7 +96,7 @@ export async function deleteContact(id: string) {
 
   try {
     await prisma.contact.delete({ where: { id: idParsed.data } });
-    revalidatePath('/contacts');
+    revalidatePath('/dashboard/contacts');
     return { success: true };
   } catch {
     return { error: 'Failed to delete contact.' };

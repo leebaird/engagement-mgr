@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import {
-  createEngagementSchema,
   engagementIdSchema,
   engagementScheduleSchema,
   updateEngagementSchema,
@@ -38,17 +37,19 @@ export async function createEngagement(_prevState: unknown, formData: FormData) 
   const auth = await requireAdminAuth();
   if (isAdminError(auth)) return { error: 'Unauthorized' };
 
-  const parsed = createEngagementSchema.safeParse({
+  const parsed = updateEngagementSchema.safeParse({
     codeName: formData.get('codeName'),
     clientId: formData.get('clientId'),
     clientName: formData.get('clientName'),
     type: formData.get('type'),
     location: formData.get('location'),
     focus: formData.get('focus'),
+    status: formData.get('status'),
     objectives: formData.get('objectives'),
     targets: formData.get('targets'),
     exclusions: formData.get('exclusions'),
     notes: formData.get('notes'),
+    chargeCode: formData.get('chargeCode'),
   });
 
   if (!parsed.success) {
@@ -71,10 +72,12 @@ export async function createEngagement(_prevState: unknown, formData: FormData) 
     type,
     location,
     focus,
+    status,
     objectives,
     targets,
     exclusions,
     notes,
+    chargeCode,
   } = parsed.data;
 
   try {
@@ -88,10 +91,12 @@ export async function createEngagement(_prevState: unknown, formData: FormData) 
         type,
         location,
         focus,
+        status,
         objectives,
         targets,
         exclusions,
         notes: notes || null,
+        chargeCode: chargeCode || null,
         operators: {
           connect: operatorIds.ids.map((id) => ({ id })),
         },
@@ -103,7 +108,7 @@ export async function createEngagement(_prevState: unknown, formData: FormData) 
         },
       },
     });
-    revalidatePath('/engagements');
+    revalidatePath('/dashboard/engagements');
     return { success: 'Engagement created successfully.' };
   } catch (e) {
     console.error(e);
@@ -199,7 +204,7 @@ export async function updateEngagement(id: string, _prevState: unknown, formData
         },
       },
     });
-    revalidatePath('/engagements');
+    revalidatePath('/dashboard/engagements');
     return { success: 'Engagement updated successfully.' };
   } catch (e) {
     console.error(e);
@@ -237,8 +242,8 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
       where: { id: idParsed.data },
       data: parsed.data,
     });
-    revalidatePath('/engagements');
-    revalidatePath('/');
+    revalidatePath('/dashboard/engagements');
+    revalidatePath('/dashboard');
     return { success: true };
   } catch (e) {
     console.error(e);
@@ -249,20 +254,20 @@ export async function updateEngagementSchedule(id: string, formData: FormData) {
 export async function updateEngagementScheduleFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateEngagementSchedule(id, formData);
-  finishScheduleUpdate('/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
+  finishScheduleUpdate('/dashboard/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
 }
 
 export async function updateEngagementFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await updateEngagement(id, {}, formData);
-  finishDetailUpdate('/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
+  finishDetailUpdate('/dashboard/engagements', formData, id, result, updateErrorCode(result.error), ['finding']);
 }
 
 export async function deleteEngagementFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
   const result = await deleteEngagement(id);
   const code = result.error?.includes('Unauthorized') ? 'unauthorized' : 'generic';
-  finishDetailDelete('/engagements', formData, id, result, code, ['finding']);
+  finishDetailDelete('/dashboard/engagements', formData, id, result, code, ['finding']);
 }
 
 export async function deleteEngagement(id: string) {
@@ -276,7 +281,7 @@ export async function deleteEngagement(id: string) {
 
   try {
     await prisma.engagement.delete({ where: { id: idParsed.data } });
-    revalidatePath('/engagements');
+    revalidatePath('/dashboard/engagements');
     return { success: true };
   } catch (e) {
     console.error(e);

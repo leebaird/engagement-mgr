@@ -9,10 +9,10 @@ export default async function FindingsPage({
 }) {
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
-  const addHref = buildPathQuery('/findings', listParams, { create: '1', detail: null });
-  const createCloseHref = buildPathQuery('/findings', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/findings', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
-  const detailHrefs = detail ? buildDetailHrefs('/findings', listParams, detail) : null;
+  const addHref = buildPathQuery('/dashboard/findings', listParams, { create: '1', detail: null });
+  const createCloseHref = buildPathQuery('/dashboard/findings', listParams, { create: null });
+  const listCloseHref = buildPathQuery('/dashboard/findings', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
+  const detailHrefs = detail ? buildDetailHrefs('/dashboard/findings', listParams, detail) : null;
 
   const validSortColumns = ['title', 'category', 'severity', 'createdAt', 'updatedAt'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'title';

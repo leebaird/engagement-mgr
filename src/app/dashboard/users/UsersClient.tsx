@@ -1,5 +1,5 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Database, Upload, Download, Trash2, Users } from 'lucide-react';
@@ -11,7 +11,6 @@ interface UsersClientProps {
   addHref: string;
   showCreateModal: boolean;
   createCloseHref: string;
-  backupHref: string;
   restoreHref: string;
   resetHref: string;
   dbMessage?: string | null;
@@ -22,15 +21,50 @@ export function UsersClient({
   addHref,
   showCreateModal,
   createCloseHref,
-  backupHref,
   restoreHref,
   resetHref,
   dbMessage,
 }: UsersClientProps) {
   const router = useRouter();
   const listRef = useRef<HTMLDivElement>(null);
+  const [isBackupPending, setIsBackupPending] = useState(false);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
 
   const sectionWidth = '600px';
+
+  const handleBackup = async () => {
+    if (isBackupPending) return;
+
+    setBackupError(null);
+    setBackupSuccess(null);
+    setIsBackupPending(true);
+
+    try {
+      const response = await fetch('/api/db/backup', { method: 'POST' });
+      if (!response.ok) {
+        setBackupError('Export failed. Ensure pg_dump and zip are installed and DATABASE_URL is valid.');
+        return;
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get('content-disposition') ?? '';
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? 'engagement-manager-backup.zip';
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setBackupSuccess('Backup created and download started.');
+    } catch {
+      setBackupError('Export failed. Ensure pg_dump and zip are installed and DATABASE_URL is valid.');
+    } finally {
+      setIsBackupPending(false);
+    }
+  };
 
   return (
     <>
@@ -97,31 +131,32 @@ export function UsersClient({
               <h2 className="db-panel-title">Database</h2>
             </div>
           </div>
-          {dbMessage ? (
+          {dbMessage || backupSuccess || backupError ? (
             <div
               style={{
-                color: '#4ade80',
+                color: backupError ? '#ff6b8a' : '#4ade80',
                 fontSize: '0.875rem',
                 marginBottom: '1rem',
                 padding: '0.75rem 1rem',
-                background: 'rgba(74, 222, 128, 0.1)',
-                border: '1px solid rgba(74, 222, 128, 0.25)',
+                background: backupError ? 'rgba(255, 51, 102, 0.1)' : 'rgba(74, 222, 128, 0.1)',
+                border: backupError ? '1px solid rgba(255, 51, 102, 0.25)' : '1px solid rgba(74, 222, 128, 0.25)',
                 borderRadius: '8px',
               }}
             >
-              {dbMessage}
+              {backupError || backupSuccess || dbMessage}
             </div>
           ) : null}
           <div className="db-action-grid">
-            <a
-              href={backupHref}
+            <button
+              type="button"
               className="db-action-btn"
-              style={{ textDecoration: 'none' }}
+              onClick={handleBackup}
+              disabled={isBackupPending}
             >
               <Upload size={22} color="#0066ff" />
-              <span className="db-action-btn-label">Backup</span>
+              <span className="db-action-btn-label">{isBackupPending ? 'Backing up...' : 'Backup'}</span>
               <span className="db-action-btn-desc">Save a full backup zip to your home directory.</span>
-            </a>
+            </button>
             <Link
               href={restoreHref}
               scroll={false}
