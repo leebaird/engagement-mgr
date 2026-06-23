@@ -246,16 +246,20 @@ urlencode() {
 
 postgres_role_exists() {
   local role="$1"
+  local escaped_role
+  escaped_role="$(sql_escape_literal "$role")"
+
   sudo -u postgres psql -v ON_ERROR_STOP=1 -tA \
-    -c "SELECT 1 FROM pg_roles WHERE rolname = :'role'" \
-    -v "role=${role}" | grep -q 1
+    -c "SELECT 1 FROM pg_roles WHERE rolname = '${escaped_role}'" | grep -q 1
 }
 
 postgres_database_exists() {
   local db="$1"
+  local escaped_db
+  escaped_db="$(sql_escape_literal "$db")"
+
   sudo -u postgres psql -v ON_ERROR_STOP=1 -tA \
-    -c "SELECT 1 FROM pg_database WHERE datname = :'db'" \
-    -v "db=${db}" | grep -q 1
+    -c "SELECT 1 FROM pg_database WHERE datname = '${escaped_db}'" | grep -q 1
 }
 
 create_database_objects() {
