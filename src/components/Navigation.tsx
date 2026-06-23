@@ -41,7 +41,7 @@ export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
       <nav style={{ flex: 1, padding: '0 1rem' }}>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {navItems.filter(item => !item.adminOnly || isAdmin).map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
             const Icon = item.icon;
             return (
               <li key={item.name}>
