@@ -1,7 +1,9 @@
 'use client';
 
-import { ReactNode, RefObject, useEffect, useRef, useState } from 'react';
+import { ReactNode, RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { sortContactIds, sortContactsByTitle } from '@/lib/contact-title-sort';
+import { sortOperatorIds, sortOperatorsByTitle } from '@/lib/operator-title-sort';
 
 export type EngagementFormValues = {
   codeName: string;
@@ -74,7 +76,7 @@ function renderSelectedRelationEntries(
 
 type EngagementFormFieldsProps = {
   clients: { id: string; company: string }[];
-  contacts: { id: string; name: string; clientId: string }[];
+  contacts: { id: string; name: string; title: string | null; clientId: string }[];
   operators: { id: string; name: string; title: string | null }[];
   selectedOps: string[];
   setSelectedOps: React.Dispatch<React.SetStateAction<string[]>>;
@@ -282,6 +284,31 @@ export function EngagementFormFields({
     return { name, ...extra };
   };
 
+  const sortedContacts = useMemo(
+    () => sortContactsByTitle(contacts),
+    [contacts]
+  );
+
+  const sortedOperators = useMemo(
+    () => sortOperatorsByTitle(operators),
+    [operators]
+  );
+
+  const sortedSelectedTAs = useMemo(
+    () => sortContactIds(selectedTAs, contacts),
+    [selectedTAs, contacts]
+  );
+
+  const sortedSelectedContacts = useMemo(
+    () => sortContactIds(selectedContacts, contacts),
+    [selectedContacts, contacts]
+  );
+
+  const sortedSelectedOps = useMemo(
+    () => sortOperatorIds(selectedOps, operators),
+    [selectedOps, operators]
+  );
+
   return (
     <>
       <div className="engagement-form-grid">
@@ -453,16 +480,15 @@ export function EngagementFormFields({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.125rem',
-                color: 'var(--text-muted)',
               }}
             >
-              {renderSelectedRelationEntries(selectedTAs, (id) => {
+              {renderSelectedRelationEntries(sortedSelectedTAs, (id) => {
                 const contact = contacts.find((c) => c.id === id);
                 if (!contact) return null;
                 return {
                   key: contact.id,
                   name: contact.name,
-                  subtitle: clients.find((client) => client.id === contact.clientId)?.company,
+                  subtitle: contact.title,
                 };
               })}
             </div>
@@ -489,7 +515,7 @@ export function EngagementFormFields({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
               }}
             >
-              {contacts.map((c) => (
+              {sortedContacts.map((c) => (
                 <label
                   key={c.id}
                   style={{
@@ -518,9 +544,9 @@ export function EngagementFormFields({
                   />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{c.name}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                      {clients.find((client) => client.id === c.clientId)?.company}
-                    </span>
+                    {c.title ? (
+                      <span className="engagement-relation-picker__entry-subtitle">{c.title}</span>
+                    ) : null}
                   </div>
                 </label>
               ))}
@@ -570,16 +596,15 @@ export function EngagementFormFields({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.125rem',
-                color: 'var(--text-muted)',
               }}
             >
-              {renderSelectedRelationEntries(selectedContacts, (id) => {
+              {renderSelectedRelationEntries(sortedSelectedContacts, (id) => {
                 const contact = contacts.find((c) => c.id === id);
                 if (!contact) return null;
                 return {
                   key: contact.id,
                   name: contact.name,
-                  subtitle: clients.find((client) => client.id === contact.clientId)?.company,
+                  subtitle: contact.title,
                 };
               })}
             </div>
@@ -606,7 +631,7 @@ export function EngagementFormFields({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
               }}
             >
-              {contacts.map((c) => (
+              {sortedContacts.map((c) => (
                 <label
                   key={c.id}
                   style={{
@@ -637,9 +662,9 @@ export function EngagementFormFields({
                   />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{c.name}</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                      {clients.find((client) => client.id === c.clientId)?.company}
-                    </span>
+                    {c.title ? (
+                      <span className="engagement-relation-picker__entry-subtitle">{c.title}</span>
+                    ) : null}
                   </div>
                 </label>
               ))}
@@ -689,10 +714,9 @@ export function EngagementFormFields({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.125rem',
-                color: 'var(--text-muted)',
               }}
             >
-              {renderSelectedRelationEntries(selectedOps, (id) => {
+              {renderSelectedRelationEntries(sortedSelectedOps, (id) => {
                 const operator = operators.find((o) => o.id === id);
                 if (!operator) return null;
                 return {
@@ -725,7 +749,7 @@ export function EngagementFormFields({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
               }}
             >
-              {operators.map((o) => (
+              {sortedOperators.map((o) => (
                 <label
                   key={o.id}
                   style={{
@@ -754,7 +778,7 @@ export function EngagementFormFields({
                   />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span>{o.name}</span>
-                    {o.title ? <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{o.title}</span> : null}
+                    {o.title ? <span className="engagement-relation-picker__entry-subtitle">{o.title}</span> : null}
                   </div>
                 </label>
               ))}

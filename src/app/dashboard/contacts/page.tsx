@@ -6,6 +6,7 @@ import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
 import { formatPhone } from '@/lib/format';
+import { sortContactsByTitle } from '@/lib/contact-title-sort';
 
 export default async function ContactsPage({
   searchParams,
@@ -26,25 +27,31 @@ export default async function ContactsPage({
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
-
-  let orderBy: ContactOrderBy;
-  if (sortCol === 'client') {
-    orderBy = { client: { company: sortDir } };
-  } else if (sortCol === 'phoneNumber') {
-    orderBy = { phone: sortDir };
-  } else if (sortCol === 'name') {
-    orderBy = { name: sortDir };
-  } else if (sortCol === 'title') {
-    orderBy = { title: sortDir };
-  } else {
-    orderBy = { email: sortDir };
-  }
-
-  const contacts = await prisma.contact.findMany({
+  const contactsRaw = await prisma.contact.findMany({
     include: { client: true },
-    orderBy,
   });
+
+  let contacts: typeof contactsRaw;
+  if (sortCol === 'title') {
+    contacts = sortContactsByTitle(contactsRaw, sortDir);
+  } else {
+    type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
+    let orderBy: ContactOrderBy;
+    if (sortCol === 'client') {
+      orderBy = { client: { company: sortDir } };
+    } else if (sortCol === 'phoneNumber') {
+      orderBy = { phone: sortDir };
+    } else if (sortCol === 'name') {
+      orderBy = { name: sortDir };
+    } else {
+      orderBy = { email: sortDir };
+    }
+
+    contacts = await prisma.contact.findMany({
+      include: { client: true },
+      orderBy,
+    });
+  }
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
 
   const getSortHref = (col: string) => {

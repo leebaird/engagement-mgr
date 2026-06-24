@@ -124,7 +124,7 @@ export function EngagementDetailButton({
 }: {
   engagement: EngagementForDetail,
   clients: { id: string, company: string }[],
-  contacts: { id: string, name: string, clientId: string }[],
+  contacts: { id: string, name: string, title: string | null, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
   isAdmin?: boolean,
   isDetailOpen: boolean;

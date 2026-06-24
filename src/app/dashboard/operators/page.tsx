@@ -6,6 +6,7 @@ import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { OperatorsClient } from './OperatorsClient';
 import { OperatorDetailButton } from './OperatorDetailButton';
 import { formatPhone } from '@/lib/format';
+import { sortOperatorsByTitle } from '@/lib/operator-title-sort';
 
 export default async function OperatorsPage({
   searchParams,
@@ -31,24 +32,7 @@ export default async function OperatorsPage({
   let operators: typeof operatorsRaw;
 
   if (sortCol === 'title') {
-    const titleOrder = [
-      'Director',
-      'Red Team Lead',
-      'Senior Red Team Operator',
-      'Red Team Operator',
-      'Junior Red Team Operator',
-      'Intern',
-    ];
-
-    const titleRank = new Map(
-      titleOrder.map((title, index) => [title.toLowerCase(), index])
-    );
-
-    operators = [...operatorsRaw].sort((a, b) => {
-      const rankA = titleRank.get((a.title || '').toLowerCase()) ?? 999;
-      const rankB = titleRank.get((b.title || '').toLowerCase()) ?? 999;
-      return sortDir === 'asc' ? rankA - rankB : rankB - rankA;
-    });
+    operators = sortOperatorsByTitle(operatorsRaw, sortDir);
   } else {
     operators = await prisma.operator.findMany({
       orderBy: { [sortCol]: sortDir },

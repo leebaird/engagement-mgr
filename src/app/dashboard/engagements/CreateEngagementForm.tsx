@@ -7,7 +7,7 @@ export function CreateEngagementForm({
   clients, contacts, operators, onSuccess
 }: {
   clients: { id: string, company: string }[],
-  contacts: { id: string, name: string, clientId: string }[],
+  contacts: { id: string, name: string, title: string | null, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
   onSuccess?: () => void
 }) {

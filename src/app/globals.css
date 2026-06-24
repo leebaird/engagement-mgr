@@ -762,6 +762,7 @@ a.db-action-btn {
 }
 
 .engagement-relation-picker__entry-name {
+  color: var(--text-main);
   line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -769,7 +770,9 @@ a.db-action-btn {
 }
 
 .engagement-relation-picker__entry-subtitle {
+  color: var(--text-muted);
   font-size: 0.7rem;
+  padding-left: 2.5em;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;

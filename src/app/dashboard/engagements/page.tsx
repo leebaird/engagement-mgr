@@ -3,6 +3,8 @@ import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { engagementToScheduleValues, serializeEngagementScheduleDates } from '@/lib/date-input-value';
 import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
+import { sortContactsByTitle } from '@/lib/contact-title-sort';
+import { sortOperatorsByTitle } from '@/lib/operator-title-sort';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
@@ -115,8 +117,8 @@ export default async function EngagementsPage({
     ? <EngagementScheduleEditFields values={scheduleFormValues} />
     : undefined;
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
-  const contacts = await prisma.contact.findMany({ orderBy: { name: 'asc' } });
-  const operators = await prisma.operator.findMany({ orderBy: { name: 'asc' } });
+  const contacts = sortContactsByTitle(await prisma.contact.findMany());
+  const operators = sortOperatorsByTitle(await prisma.operator.findMany());
 
   return (
     <EngagementsClient
