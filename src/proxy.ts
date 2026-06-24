@@ -8,7 +8,7 @@ function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
     isProduction
-      ? `script-src 'self' 'nonce-${nonce}'`
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
       : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
@@ -25,6 +25,38 @@ function withSecurityHeaders(response: NextResponse, csp: string): NextResponse 
   return response;
 }
 
+const LEGACY_DASHBOARD_PATHS = [
+  '/engagements',
+  '/clients',
+  '/contacts',
+  '/findings',
+  '/operators',
+  '/users',
+] as const;
+
+function legacyDashboardRedirect(
+  pathname: string,
+  request: NextRequest,
+  csp: string
+): NextResponse | null {
+  if (pathname === '/dash2' || pathname.startsWith('/dash2/')) {
+    return withSecurityHeaders(
+      NextResponse.redirect(new URL('/dashboard', request.url)),
+      csp
+    );
+  }
+
+  for (const legacyPath of LEGACY_DASHBOARD_PATHS) {
+    if (pathname === legacyPath || pathname.startsWith(`${legacyPath}/`)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/dashboard${pathname}`;
+      return withSecurityHeaders(NextResponse.redirect(url), csp);
+    }
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const nonce = crypto.randomUUID().replaceAll('-', '');
@@ -33,8 +65,9 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 
-  if (pathname === '/dash2' || pathname.startsWith('/dash2/')) {
-    return withSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)), csp);
+  const legacyRedirect = legacyDashboardRedirect(pathname, request, csp);
+  if (legacyRedirect) {
+    return legacyRedirect;
   }
 
   const session = await getSession();

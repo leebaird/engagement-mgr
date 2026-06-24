@@ -12,7 +12,7 @@ sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-client p
 
 `postgresql-client` provides `pg_dump` and `psql`; `zip` and `unzip` are used for backup archives.
 
-The app requires Node.js `^20.19.0`, `^22.12.0`, or `>=24.0.0` (see `engines` in `package.json`). If `node -v` is older after installing from apt, use [NodeSource](https://github.com/nodesource/distributions) or [nvm](https://github.com/nvm-sh/nvm) before continuing.
+The app requires Node.js `^22.12.0` or `>=24.0.0` (see `engines` in `package.json`). If `node -v` is older after installing from apt, use [NodeSource](https://github.com/nodesource/distributions) or [nvm](https://github.com/nvm-sh/nvm) before continuing.
 
 ## Environment Configuration
 
@@ -126,7 +126,7 @@ Then open `http://<this-machine-ip>:3000` from the other device. Use this only o
 
 ### Requirements
 
-- **Node.js** `^20.19.0`, `^22.12.0`, or `>=24.0.0` (see `engines` in `package.json`)
+- **Node.js** `^22.12.0` or `>=24.0.0` (see `engines` in `package.json`)
 - **PostgreSQL** with a least-privilege app user (see [Database Setup](#database-setup))
 - **HTTPS** in front of the app (reverse proxy such as nginx or Caddy). Session cookies are marked `Secure` in production.
 - **Persistent storage** for the `uploads/` directory (finding screenshots)

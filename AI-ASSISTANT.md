@@ -159,7 +159,7 @@ This application stores **strictly confidential** offensive-security engagement 
 | **A01 Broken Access Control** | Missing `requireAuth()` on a new action; IDOR on uploads/findings; assuming proxy protects `/api/*` |
 | **A02 Cryptographic Failures** | Weak/missing `JWT_SECRET`; serving sensitive files; logging credentials |
 | **A03 Injection** | Path traversal in uploads; unsafe raw SQL; unvalidated restore uploads |
-| **A04 Insecure Design** | Destructive admin APIs without re-auth; no upload size/type limits; default `admin`/`admin` |
+| **A04 Insecure Design** | Destructive admin APIs without re-auth; no upload size/type limits; weak or reused seed/reset passwords |
 | **A05 Security Misconfiguration** | Missing security headers; `NODE_ENV` mis-set in production; committed `.env` |
 | **A06 Vulnerable Components** | Run `npm audit` before deploy; keep overrides documented in `package.json` |
 | **A07 Auth Failures** | No login rate limiting; password change without current-password check; stale JWT roles |

@@ -99,8 +99,7 @@ node_version_ok() {
 const [major, minor] = process.versions.node.split(".").map(Number);
 const ok =
   major >= 24 ||
-  (major === 22 && minor >= 12) ||
-  (major === 20 && minor >= 19);
+  (major === 22 && minor >= 12);
 process.exit(ok ? 0 : 1);
 ' >/dev/null 2>&1
 }
