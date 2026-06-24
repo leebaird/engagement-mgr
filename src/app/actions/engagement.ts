@@ -26,11 +26,25 @@ async function resolveClientId(clientId: string, clientName: string): Promise<st
   return null;
 }
 
+const RELATION_LIMITS = {
+  trustedAgents: { max: 2, label: 'trusted agents' },
+  contacts: { max: 6, label: 'contacts' },
+  operators: { max: 6, label: 'operators' },
+} as const;
+
 function parseRelationIds(
   formData: FormData,
-  key: string
+  key: keyof typeof RELATION_LIMITS
 ): { ok: true; ids: string[] } | { ok: false; error: string } {
-  return parseFormUuidList(formData.getAll(key));
+  const parsed = parseFormUuidList(formData.getAll(key));
+  if (!parsed.ok) return parsed;
+
+  const { max, label } = RELATION_LIMITS[key];
+  if (parsed.ids.length > max) {
+    return { ok: false, error: `A maximum of ${max} ${label} is allowed.` };
+  }
+
+  return parsed;
 }
 
 export async function createEngagement(_prevState: unknown, formData: FormData) {

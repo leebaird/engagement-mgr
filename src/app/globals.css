@@ -446,12 +446,15 @@ a.db-action-btn {
 .engagement-create-form {
   width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .engagement-form-grid {
   display: grid;
   grid-template-columns: minmax(250px, 0.95fr) minmax(360px, 1.55fr) minmax(260px, 0.95fr);
-  gap: 1.25rem 1.5rem;
+  row-gap: 0.5rem;
+  column-gap: 1.5rem;
   align-items: start;
   width: 100%;
 }
@@ -474,12 +477,6 @@ a.db-action-btn {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.engagement-form-notes-section {
-  grid-column: 1 / -1;
-  border-top: 1px solid var(--surface-border);
-  padding-top: 1.25rem;
 }
 
 .engagement-form-grid .form-input {
@@ -557,6 +554,16 @@ a.db-action-btn {
   min-width: 0;
 }
 
+.engagement-col-left {
+  overflow: visible;
+}
+
+/* Span columns 1+2 while staying in left-column flow under Location */
+.engagement-form-notes-wide {
+  width: calc((100% * (0.95 + 1.55) / 0.95) + 1.5rem);
+  max-width: none;
+}
+
 .engagement-form-col--relations .form-group {
   margin-bottom: 0;
 }
@@ -618,7 +625,8 @@ a.db-action-btn {
   color: var(--text-muted);
   gap: 0 0.25rem;
   width: fit-content;
-  margin-top: auto;
+  margin-top: 0.75rem;
+  align-self: flex-start;
 }
 
 .engagement-finding-detail-form {
@@ -753,22 +761,54 @@ a.db-action-btn {
   box-sizing: border-box;
 }
 
-/* 2 rows — match Contacts field height */
-.engagement-operator-picker__trigger {
-  min-height: calc(0.75rem * 2 + 2 * 1rem * 1.5);
+.engagement-relation-picker__entry-name {
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.engagement-operator-picker__selected {
-  max-height: calc(2 * 1rem * 1.5);
+.engagement-relation-picker__entry-subtitle {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.engagement-operator-picker__list {
-  max-height: calc(1rem + 3 * (1rem + 1.5rem + 0.85rem) + 0.5rem);
+.engagement-relation-picker__trigger--2 {
+  min-height: calc(0.75rem * 2 + 2 * (1.5rem + 0.84rem) + 0.125rem);
+}
+
+.engagement-relation-picker__selected--2 {
+  max-height: calc(2 * (1.5rem + 0.84rem) + 0.125rem);
+  overflow-y: auto;
+}
+
+.engagement-relation-picker__trigger--6 {
+  min-height: calc(0.75rem * 2 + 6 * (1.5rem + 0.84rem) + 5 * 0.125rem);
+}
+
+.engagement-relation-picker__selected--6 {
+  max-height: calc(6 * (1.5rem + 0.84rem) + 5 * 0.125rem);
+  overflow-y: auto;
+}
+
+.engagement-relation-picker__list--2 {
+  max-height: calc(1rem + 2 * (1rem + 1.5rem + 0.85rem) + 0.5rem);
+}
+
+.engagement-relation-picker__list--6 {
+  max-height: calc(1rem + 6 * (1rem + 1.5rem + 0.85rem) + 0.5rem);
 }
 
 @media (max-width: 1200px) {
   .engagement-form-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .engagement-form-notes-wide {
+    width: calc(200% + 1.5rem);
   }
 
   .engagement-form-col--relations {
@@ -779,6 +819,10 @@ a.db-action-btn {
 @media (max-width: 760px) {
   .engagement-form-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .engagement-form-notes-wide {
+    width: 100%;
   }
 
   .engagement-form-col--relations {

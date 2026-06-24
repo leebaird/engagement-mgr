@@ -45,6 +45,33 @@ export function engagementToFormValues(engagement: {
   };
 }
 
+const MAX_TRUSTED_AGENTS = 2;
+const MAX_CONTACTS = 6;
+const MAX_OPERATORS = 6;
+
+function renderSelectedRelationEntries(
+  ids: string[],
+  resolve: (id: string) => { key: string; name: string; subtitle?: string | null } | null
+) {
+  if (ids.length === 0) {
+    return <span style={{ lineHeight: 1.5 }} />;
+  }
+
+  return ids.map((id) => {
+    const entry = resolve(id);
+    if (!entry) return null;
+
+    return (
+      <div key={entry.key} style={{ minHeight: 0, flexShrink: 0 }}>
+        <div className="engagement-relation-picker__entry-name">{entry.name}</div>
+        {entry.subtitle ? (
+          <div className="engagement-relation-picker__entry-subtitle">{entry.subtitle}</div>
+        ) : null}
+      </div>
+    );
+  });
+}
+
 type EngagementFormFieldsProps = {
   clients: { id: string; company: string }[];
   contacts: { id: string; name: string; clientId: string }[];
@@ -340,7 +367,24 @@ export function EngagementFormFields({
             readOnly={readOnly}
           />
         </div>
-        {footer}
+        <div className="form-group engagement-form-notes-wide">
+          <label className="form-label">Notes</label>
+          <textarea
+            ref={notesRef}
+            className="form-input"
+            rows={5}
+            {...textProps('notes', 'notes')}
+            onKeyDown={readOnly ? undefined : (e) => {
+              if (e.key === 'Tab' && !e.shiftKey) {
+                e.preventDefault();
+                setOpsOpen(false);
+                setTasOpen(false);
+                setContactsOpen(false);
+                codeNameRef.current?.focus();
+              }
+            }}
+          />
+        </div>
       </div>
 
       <div className="engagement-form-col engagement-form-col--scope">
@@ -348,7 +392,7 @@ export function EngagementFormFields({
           <label className="form-label">Objectives</label>
           <textarea
             className="form-input"
-            rows={8}
+            rows={10}
             {...textProps('objectives', 'objectives')}
           />
         </div>
@@ -372,12 +416,12 @@ export function EngagementFormFields({
 
       <div className="engagement-form-col-right engagement-form-col--relations">
         <div className="engagement-form-relations-fields">
-        <div className="form-group" style={{ position: 'relative' }} ref={contactDropdownRef}>
-          <label className="form-label">Contacts</label>
+        <div className="form-group" style={{ position: 'relative' }} ref={taDropdownRef}>
+          <label className="form-label">Trusted Agents</label>
           <div
-            ref={contactsTriggerRef}
+            ref={taTriggerRef}
             tabIndex={readOnly ? -1 : 0}
-            className="form-input"
+            className="form-input engagement-relation-picker__trigger engagement-relation-picker__trigger--2"
             style={{
               backgroundColor: 'rgba(0,0,0,0.4)',
               cursor: readOnly ? 'default' : 'pointer',
@@ -386,45 +430,47 @@ export function EngagementFormFields({
               justifyContent: 'space-between',
               gap: '0.5rem',
               userSelect: 'none',
-              minHeight: 'calc(0.75rem * 2 + 2 * 1rem * 1.5)',
               boxSizing: 'border-box',
               pointerEvents: readOnly ? 'none' : undefined,
             }}
-            onClick={readOnly ? undefined : () => setContactsOpen(!contactsOpen)}
+            onClick={readOnly ? undefined : () => setTasOpen(!tasOpen)}
             onKeyDown={readOnly ? undefined : (e) => {
               if (e.key === 'Tab' && !e.shiftKey) {
                 e.preventDefault();
-                setContactsOpen(false);
-                setOpsOpen(false);
                 setTasOpen(false);
-                taTriggerRef.current?.focus();
-              } else if (e.key === 'Tab' && e.shiftKey) {
-                e.preventDefault();
                 setContactsOpen(false);
-                notesRef.current?.focus();
+                contactsTriggerRef.current?.focus();
               } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                setContactsOpen(!contactsOpen);
+                setTasOpen(!tasOpen);
               }
             }}
           >
-            <span
+            <div
+              className="engagement-relation-picker__selected engagement-relation-picker__selected--2"
               style={{
-                color: 'var(--text-muted)',
-                lineHeight: 1.5,
                 flex: 1,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.125rem',
+                color: 'var(--text-muted)',
               }}
             >
-              {selectedContacts.map((id) => contacts.find((c) => c.id === id)?.name).join(', ')}
-            </span>
+              {renderSelectedRelationEntries(selectedTAs, (id) => {
+                const contact = contacts.find((c) => c.id === id);
+                if (!contact) return null;
+                return {
+                  key: contact.id,
+                  name: contact.name,
+                  subtitle: clients.find((client) => client.id === contact.clientId)?.company,
+                };
+              })}
+            </div>
             <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '0.125rem' }} />
           </div>
-          {!readOnly && contactsOpen && (
+          {!readOnly && tasOpen && (
             <div
+              className="engagement-relation-picker__list engagement-relation-picker__list--2"
               style={{
                 position: 'absolute',
                 top: '100%',
@@ -435,7 +481,6 @@ export function EngagementFormFields({
                 borderRadius: '8px',
                 marginTop: '0.25rem',
                 zIndex: 10,
-                maxHeight: '200px',
                 overflowY: 'auto',
                 padding: '0.5rem',
                 display: 'flex',
@@ -452,19 +497,21 @@ export function EngagementFormFields({
                     alignItems: 'center',
                     gap: '0.75rem',
                     padding: '0.5rem 0.75rem',
-                    cursor: 'pointer',
+                    cursor: selectedTAs.includes(c.id) || selectedTAs.length < MAX_TRUSTED_AGENTS ? 'pointer' : 'not-allowed',
                     borderRadius: '4px',
-                    background: selectedContacts.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
+                    background: selectedTAs.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
+                    opacity: !selectedTAs.includes(c.id) && selectedTAs.length >= MAX_TRUSTED_AGENTS ? 0.5 : 1,
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedContacts.includes(c.id)}
+                    checked={selectedTAs.includes(c.id)}
+                    disabled={!selectedTAs.includes(c.id) && selectedTAs.length >= MAX_TRUSTED_AGENTS}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedContacts([...selectedContacts, c.id]);
+                        if (selectedTAs.length < MAX_TRUSTED_AGENTS) setSelectedTAs([...selectedTAs, c.id]);
                       } else {
-                        setSelectedContacts(selectedContacts.filter((id) => id !== c.id));
+                        setSelectedTAs(selectedTAs.filter((id) => id !== c.id));
                       }
                     }}
                     style={{ accentColor: 'var(--primary-color)' }}
@@ -481,45 +528,66 @@ export function EngagementFormFields({
           )}
         </div>
 
-        <div className="form-group" style={{ position: 'relative' }} ref={taDropdownRef}>
-          <label className="form-label">Trusted Agents</label>
+        <div className="form-group" style={{ position: 'relative' }} ref={contactDropdownRef}>
+          <label className="form-label">Contacts</label>
           <div
-            ref={taTriggerRef}
+            ref={contactsTriggerRef}
             tabIndex={readOnly ? -1 : 0}
-            className="form-input"
+            className="form-input engagement-relation-picker__trigger engagement-relation-picker__trigger--6"
             style={{
               backgroundColor: 'rgba(0,0,0,0.4)',
               cursor: readOnly ? 'default' : 'pointer',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'space-between',
+              gap: '0.5rem',
               userSelect: 'none',
+              boxSizing: 'border-box',
               pointerEvents: readOnly ? 'none' : undefined,
             }}
-            onClick={readOnly ? undefined : () => setTasOpen(!tasOpen)}
+            onClick={readOnly ? undefined : () => setContactsOpen(!contactsOpen)}
             onKeyDown={readOnly ? undefined : (e) => {
               if (e.key === 'Tab' && !e.shiftKey) {
                 e.preventDefault();
-                setTasOpen(false);
                 setContactsOpen(false);
+                setOpsOpen(false);
+                setTasOpen(false);
                 operatorsTriggerRef.current?.focus();
               } else if (e.key === 'Tab' && e.shiftKey) {
                 e.preventDefault();
-                setTasOpen(false);
-                contactsTriggerRef.current?.focus();
+                setContactsOpen(false);
+                taTriggerRef.current?.focus();
               } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                setTasOpen(!tasOpen);
+                setContactsOpen(!contactsOpen);
               }
             }}
           >
-            <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {selectedTAs.map((id) => contacts.find((c) => c.id === id)?.name).join(', ')}
-            </span>
-            <ChevronDown size={16} color="var(--text-muted)" />
-          </div>
-          {!readOnly && tasOpen && (
             <div
+              className="engagement-relation-picker__selected engagement-relation-picker__selected--6"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.125rem',
+                color: 'var(--text-muted)',
+              }}
+            >
+              {renderSelectedRelationEntries(selectedContacts, (id) => {
+                const contact = contacts.find((c) => c.id === id);
+                if (!contact) return null;
+                return {
+                  key: contact.id,
+                  name: contact.name,
+                  subtitle: clients.find((client) => client.id === contact.clientId)?.company,
+                };
+              })}
+            </div>
+            <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '0.125rem' }} />
+          </div>
+          {!readOnly && contactsOpen && (
+            <div
+              className="engagement-relation-picker__list engagement-relation-picker__list--6"
               style={{
                 position: 'absolute',
                 top: '100%',
@@ -530,7 +598,6 @@ export function EngagementFormFields({
                 borderRadius: '8px',
                 marginTop: '0.25rem',
                 zIndex: 10,
-                maxHeight: '200px',
                 overflowY: 'auto',
                 padding: '0.5rem',
                 display: 'flex',
@@ -547,19 +614,23 @@ export function EngagementFormFields({
                     alignItems: 'center',
                     gap: '0.75rem',
                     padding: '0.5rem 0.75rem',
-                    cursor: 'pointer',
+                    cursor: selectedContacts.includes(c.id) || selectedContacts.length < MAX_CONTACTS ? 'pointer' : 'not-allowed',
                     borderRadius: '4px',
-                    background: selectedTAs.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
+                    background: selectedContacts.includes(c.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
+                    opacity: !selectedContacts.includes(c.id) && selectedContacts.length >= MAX_CONTACTS ? 0.5 : 1,
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={selectedTAs.includes(c.id)}
+                    checked={selectedContacts.includes(c.id)}
+                    disabled={!selectedContacts.includes(c.id) && selectedContacts.length >= MAX_CONTACTS}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        if (selectedTAs.length < 2) setSelectedTAs([...selectedTAs, c.id]);
+                        if (selectedContacts.length < MAX_CONTACTS) {
+                          setSelectedContacts([...selectedContacts, c.id]);
+                        }
                       } else {
-                        setSelectedTAs(selectedTAs.filter((id) => id !== c.id));
+                        setSelectedContacts(selectedContacts.filter((id) => id !== c.id));
                       }
                     }}
                     style={{ accentColor: 'var(--primary-color)' }}
@@ -581,7 +652,7 @@ export function EngagementFormFields({
           <div
             ref={operatorsTriggerRef}
             tabIndex={readOnly ? -1 : 0}
-            className="form-input engagement-operator-picker__trigger"
+            className="form-input engagement-relation-picker__trigger engagement-relation-picker__trigger--6"
             style={{
               backgroundColor: 'rgba(0,0,0,0.4)',
               cursor: readOnly ? 'default' : 'pointer',
@@ -590,7 +661,6 @@ export function EngagementFormFields({
               justifyContent: 'space-between',
               gap: '0.5rem',
               userSelect: 'none',
-              minHeight: 'calc(0.75rem * 2 + 2 * 1rem * 1.5)',
               boxSizing: 'border-box',
               pointerEvents: readOnly ? 'none' : undefined,
             }}
@@ -605,7 +675,7 @@ export function EngagementFormFields({
               } else if (e.key === 'Tab' && e.shiftKey) {
                 e.preventDefault();
                 setOpsOpen(false);
-                taTriggerRef.current?.focus();
+                contactsTriggerRef.current?.focus();
               } else if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 setOpsOpen(!opsOpen);
@@ -613,38 +683,30 @@ export function EngagementFormFields({
             }}
           >
             <div
-              className="engagement-operator-picker__selected"
+              className="engagement-relation-picker__selected engagement-relation-picker__selected--6"
               style={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.125rem',
                 color: 'var(--text-muted)',
-                overflowY: 'auto',
               }}
             >
-              {selectedOps.length === 0 ? (
-                <span style={{ lineHeight: 1.5 }} />
-              ) : (
-                selectedOps.map((id) => {
-                  const op = operators.find((o) => o.id === id);
-                  if (!op) return null;
-                  return (
-                    <div key={id} style={{ minHeight: 0, flexShrink: 0 }}>
-                      <div style={{ lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.name}</div>
-                      {op.title ? (
-                        <div style={{ fontSize: '0.7rem', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{op.title}</div>
-                      ) : null}
-                    </div>
-                  );
-                })
-              )}
+              {renderSelectedRelationEntries(selectedOps, (id) => {
+                const operator = operators.find((o) => o.id === id);
+                if (!operator) return null;
+                return {
+                  key: operator.id,
+                  name: operator.name,
+                  subtitle: operator.title,
+                };
+              })}
             </div>
             <ChevronDown size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: '0.125rem' }} />
           </div>
           {!readOnly && opsOpen && (
             <div
-              className="engagement-operator-picker__list"
+              className="engagement-relation-picker__list engagement-relation-picker__list--6"
               style={{
                 position: 'absolute',
                 top: '100%',
@@ -671,17 +733,19 @@ export function EngagementFormFields({
                     alignItems: 'center',
                     gap: '0.75rem',
                     padding: '0.5rem 0.75rem',
-                    cursor: 'pointer',
+                    cursor: selectedOps.includes(o.id) || selectedOps.length < MAX_OPERATORS ? 'pointer' : 'not-allowed',
                     borderRadius: '4px',
                     background: selectedOps.includes(o.id) ? 'rgba(0,102,255,0.16)' : 'transparent',
+                    opacity: !selectedOps.includes(o.id) && selectedOps.length >= MAX_OPERATORS ? 0.5 : 1,
                   }}
                 >
                   <input
                     type="checkbox"
                     checked={selectedOps.includes(o.id)}
+                    disabled={!selectedOps.includes(o.id) && selectedOps.length >= MAX_OPERATORS}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedOps([...selectedOps, o.id]);
+                        if (selectedOps.length < MAX_OPERATORS) setSelectedOps([...selectedOps, o.id]);
                       } else {
                         setSelectedOps(selectedOps.filter((id) => id !== o.id));
                       }
@@ -696,32 +760,11 @@ export function EngagementFormFields({
               ))}
             </div>
           )}
-          </div>
         </div>
-      </div>
-
-      <div className="engagement-form-notes-section">
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <textarea
-            ref={notesRef}
-            className="form-input"
-            rows={5}
-            {...textProps('notes', 'notes')}
-            onKeyDown={readOnly ? undefined : (e) => {
-              if (e.key === 'Tab' && !e.shiftKey) {
-                e.preventDefault();
-                setOpsOpen(false);
-                setTasOpen(false);
-                setContactsOpen(false);
-                codeNameRef.current?.focus();
-              }
-            }}
-          />
         </div>
       </div>
     </div>
-
+    {footer}
     </>
   );
 }
