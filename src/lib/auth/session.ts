@@ -63,6 +63,12 @@ export async function getSession(): Promise<SessionPayload | null> {
 
   if (!user) return null;
 
+  // Reject tokens issued before the user's last password change (revocation)
+  const tokenPasswordChange = Date.parse(payload.lastPasswordChange);
+  if (Number.isNaN(tokenPasswordChange) || tokenPasswordChange < user.lastPasswordChange.getTime()) {
+    return null;
+  }
+
   return {
     userId: payload.userId,
     role: user.role,

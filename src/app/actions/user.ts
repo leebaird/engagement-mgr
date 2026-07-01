@@ -10,12 +10,18 @@ import { createUserSchema, updateUserSchema } from '@/lib/validation/user';
 import { revalidatePath } from 'next/cache';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 
-async function wouldRemoveLastAdmin(userId: string, newRole: 'Admin' | 'User'): Promise<boolean> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+class LastAdminError extends Error {}
+
+async function wouldRemoveLastAdmin(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  newRole: 'Admin' | 'User'
+): Promise<boolean> {
+  const user = await tx.user.findUnique({ where: { id: userId }, select: { role: true } });
   if (!user || user.role !== 'Admin' || newRole === 'Admin') {
     return false;
   }
-  const adminCount = await prisma.user.count({ where: { role: 'Admin' } });
+  const adminCount = await tx.user.count({ where: { role: 'Admin' } });
   return adminCount <= 1;
 }
 
@@ -45,7 +51,7 @@ export async function createUser(_prevState: unknown, formData: FormData) {
 
   const complexity = validatePasswordComplexity(password);
   if (!complexity.valid) {
-    return { error: 'The password must be at last 16 character long, contain at least one uppercase letter, one number, and one symbol.', fields: { username, role } };
+    return { error: 'The password must be at least 16 characters long, contain at least one uppercase letter, one number, and one symbol.', fields: { username, role } };
   }
 
   try {
@@ -95,10 +101,6 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
 
   const { username, password, role } = parsed.data;
 
-  if (await wouldRemoveLastAdmin(idParsed.data, role)) {
-    return { error: 'Cannot remove the last admin account.' };
-  }
-
   try {
     const existing = await prisma.user.findFirst({ where: { username, NOT: { id: idParsed.data } } });
     if (existing) {
@@ -113,21 +115,29 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
     if (password) {
       const complexity = validatePasswordComplexity(password);
       if (!complexity.valid) {
-        return { error: 'The password must be at last 16 character long, contain at least one uppercase letter, one number, and one symbol.' };
+        return { error: 'The password must be at least 16 characters long, contain at least one uppercase letter, one number, and one symbol.' };
       }
       const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
       data.passwordHash = passwordHash;
       data.lastPasswordChange = new Date(0); // Force password change on next login
     }
 
-    await prisma.user.update({
-      where: { id: idParsed.data },
-      data,
-    });
+    await prisma.$transaction(async (tx) => {
+      if (await wouldRemoveLastAdmin(tx, idParsed.data, role)) {
+        throw new LastAdminError();
+      }
+      await tx.user.update({
+        where: { id: idParsed.data },
+        data,
+      });
+    }, { isolationLevel: 'Serializable' });
 
     revalidatePath('/dashboard/users');
     return { success: 'User updated successfully.' };
   } catch (err) {
+    if (err instanceof LastAdminError) {
+      return { error: 'Cannot remove the last admin account.' };
+    }
     console.error(err);
     return { error: 'Failed to update user.' };
   }
@@ -167,15 +177,20 @@ export async function deleteUser(id: string) {
     return { error: 'You cannot delete yourself.' };
   }
 
-  if (await wouldRemoveLastAdmin(userId, 'User')) {
-    return { error: 'Cannot delete the last admin account.' };
-  }
-
   try {
-    await prisma.user.delete({ where: { id: userId } });
+    await prisma.$transaction(async (tx) => {
+      if (await wouldRemoveLastAdmin(tx, userId, 'User')) {
+        throw new LastAdminError();
+      }
+      await tx.user.delete({ where: { id: userId } });
+    }, { isolationLevel: 'Serializable' });
+
     revalidatePath('/dashboard/users');
     return { success: true };
   } catch (err) {
+    if (err instanceof LastAdminError) {
+      return { error: 'Cannot delete the last admin account.' };
+    }
     console.error(err);
     return { error: 'Failed to delete user.' };
   }

@@ -17,7 +17,8 @@ import {
   importDatabaseSql,
 } from '@/lib/db-backup';
 import { validatePasswordComplexity } from '@/lib/auth/password';
-import { verifyUserPassword } from '@/lib/auth/verify-password';
+import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
+import { logAuditEvent } from '@/lib/audit-log';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
 
@@ -44,7 +45,9 @@ export async function exportDatabaseBackup():
       return { error: 'Failed to prepare backup file path.' };
     }
 
-    await writeFile(absolutePath, zip);
+    await writeFile(absolutePath, zip, { mode: 0o600 });
+
+    await logAuditEvent('db.export', session.userId, 'success');
 
     return {
       filename,
@@ -70,8 +73,8 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
-  const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
-  if (!passwordValid) {
+  const passwordResult = await verifyUserPasswordRateLimited(session.userId, passwordParsed.data);
+  if (!passwordResult.ok) {
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'password' }));
   }
 
@@ -100,9 +103,11 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
 
     revalidatePath('/', 'layout');
   } catch {
+    await logAuditEvent('db.restore', session.userId, 'failure');
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: restoreError }));
   }
 
+  await logAuditEvent('db.restore', session.userId, 'success');
   redirect(buildPathQuery('/dashboard/users', listParams, { dbMsg: 'restore' }));
 }
 
@@ -122,8 +127,8 @@ export async function resetDatabase(formData: FormData): Promise<void> {
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
-  const passwordValid = await verifyUserPassword(session.userId, passwordParsed.data);
-  if (!passwordValid) {
+  const passwordResult = await verifyUserPasswordRateLimited(session.userId, passwordParsed.data);
+  if (!passwordResult.ok) {
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'password' }));
   }
 
@@ -135,8 +140,10 @@ export async function resetDatabase(formData: FormData): Promise<void> {
     await deleteAllDatabaseData(passwordParsed.data);
     revalidatePath('/', 'layout');
   } catch {
+    await logAuditEvent('db.reset', session.userId, 'failure');
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: 'generic' }));
   }
 
+  await logAuditEvent('db.reset', session.userId, 'success');
   redirect('/login');
 }

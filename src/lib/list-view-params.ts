@@ -60,7 +60,9 @@ export function parseCalendarView(
   const parsedYear = Number(searchParams.year);
   const parsedMonth = Number(searchParams.month);
 
-  const viewYear = Number.isInteger(parsedYear) ? parsedYear : today.getFullYear();
+  const viewYear = Number.isInteger(parsedYear) && parsedYear >= 1970 && parsedYear <= 2100
+    ? parsedYear
+    : today.getFullYear();
   const viewMonth = Number.isInteger(parsedMonth) && parsedMonth >= 1 && parsedMonth <= 12
     ? parsedMonth - 1
     : today.getMonth();

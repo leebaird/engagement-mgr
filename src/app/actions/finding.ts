@@ -219,6 +219,7 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
           affectedHosts: affectedHosts || null,
         },
         update: {
+          engagementId: scopedEngagementId,
           observation: observation || null,
           affectedHosts: affectedHosts || null,
         },
@@ -267,16 +268,18 @@ export async function deleteFinding(id: string) {
 
   try {
     const screenshots = await prisma.screenshot.findMany({ where: { findingId: idParsed.data } });
-    for (const snap of screenshots) {
-      const filePath = resolveUploadFilePath(snap.filePath);
-      if (!filePath) continue;
-      await unlink(filePath).catch(() => {});
-    }
     const finding = await prisma.finding.findUnique({
       where: { id: idParsed.data },
       select: { engagementId: true },
     });
     await prisma.finding.delete({ where: { id: idParsed.data } });
+    // Remove files only after the DB delete succeeds (a failed delete must not
+    // leave screenshot records pointing at missing files)
+    for (const snap of screenshots) {
+      const filePath = resolveUploadFilePath(snap.filePath);
+      if (!filePath) continue;
+      await unlink(filePath).catch(() => {});
+    }
     revalidatePath('/dashboard/findings');
     if (finding?.engagementId) {
       revalidatePath('/dashboard/engagements');

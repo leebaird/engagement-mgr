@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { writeFile, readFile, unlink, rm, mkdir, cp, readdir } from 'fs/promises';
+import { writeFile, readFile, rm, mkdir, cp, readdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { tmpdir } from 'os';
@@ -26,6 +26,21 @@ function isPathInsideDirectory(targetPath: string, rootDir: string): boolean {
   const root = resolve(rootDir);
   const target = resolve(targetPath);
   return target === root || target.startsWith(`${root}/`);
+}
+
+/** Reject archives with absolute paths or `..` segments before extraction (zip-slip). */
+export async function assertZipEntriesSafe(zipPath: string): Promise<void> {
+  const { stdout } = await execFileAsync('unzip', ['-Z1', zipPath], {
+    maxBuffer: 64 * 1024 * 1024,
+  });
+
+  for (const entry of stdout.split('\n')) {
+    if (!entry) continue;
+    const normalized = entry.replaceAll('\\', '/');
+    if (normalized.startsWith('/') || normalized.split('/').includes('..')) {
+      throw new Error('Invalid backup: archive contains unsafe paths');
+    }
+  }
 }
 
 export async function assertExtractedPathsContained(rootDir: string): Promise<void> {
@@ -119,14 +134,11 @@ export async function importDatabaseSql(sql: string): Promise<void> {
     throw new Error('Backup file is too large');
   }
 
-  const tmpPath = join(tmpdir(), `engagement-mgr-import-${Date.now()}.sql`);
-  await writeFile(tmpPath, sql, 'utf8');
-
-  try {
+  await withTempDir(async (dir) => {
+    const tmpPath = join(dir, 'import.sql');
+    await writeFile(tmpPath, sql, 'utf8');
     await runPsqlFile(tmpPath);
-  } finally {
-    await unlink(tmpPath).catch(() => {});
-  }
+  });
 }
 
 export async function importDatabaseArchive(buffer: Buffer): Promise<void> {
@@ -137,6 +149,7 @@ export async function importDatabaseArchive(buffer: Buffer): Promise<void> {
   await withTempDir(async (workDir) => {
     const zipPath = join(workDir, 'upload.zip');
     await writeFile(zipPath, buffer);
+    await assertZipEntriesSafe(zipPath);
     await execFileAsync('unzip', ['-q', zipPath, '-d', workDir]);
     await assertExtractedPathsContained(workDir);
 

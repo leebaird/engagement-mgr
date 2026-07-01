@@ -25,6 +25,18 @@ export function validatePasswordComplexity(password: string): { valid: boolean; 
   };
 }
 
+let dummyHashPromise: Promise<string> | undefined;
+
+/**
+ * Verify the supplied password against a throwaway hash. Used to equalize
+ * login timing when the username does not exist (prevents user enumeration).
+ */
+export async function verifyAgainstDummyHash(password: string): Promise<void> {
+  dummyHashPromise ??= argon2.hash('dummy-password-for-timing-equalization', ARGON2_OPTIONS);
+  const dummyHash = await dummyHashPromise;
+  await argon2.verify(dummyHash, password, ARGON2_OPTIONS).catch(() => {});
+}
+
 const isProduction = process.env.NODE_ENV === 'production';
 
 export const ARGON2_OPTIONS: argon2.Options = isProduction

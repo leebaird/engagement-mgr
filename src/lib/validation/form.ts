@@ -24,6 +24,13 @@ export function optionalFormString(max: number) {
     .pipe(z.string().max(max).nullable());
 }
 
+export function optionalFormEmail() {
+  return optionalFormString(320).refine(
+    (value) => value === null || z.email().safeParse(value).success,
+    'Invalid email address.'
+  );
+}
+
 export function optionalFormDate() {
   return z
     .union([z.string(), z.null(), z.undefined()])

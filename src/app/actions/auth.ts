@@ -10,7 +10,8 @@ import {
   loginRateLimitKey,
   recordLoginFailure,
 } from '@/lib/auth/login-rate-limit';
-import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
+import { validatePasswordComplexity, verifyAgainstDummyHash, ARGON2_OPTIONS } from '@/lib/auth/password';
+import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
 import { getClientIp } from '@/lib/request-client-ip';
 import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
 import { firstZodError } from '@/lib/validation/common';
@@ -45,6 +46,8 @@ export async function login(_prevState: unknown, formData: FormData) {
   });
 
   if (!user) {
+    // Equalize response timing with the known-user path (prevents user enumeration)
+    await verifyAgainstDummyHash(password);
     await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));
     return { error: 'Invalid credentials' };
   }
@@ -126,32 +129,37 @@ export async function changePassword(_prevState: unknown, formData: FormData) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { passwordHash: true, role: true },
+      select: { role: true },
     });
 
     if (!user) {
       return { error: 'You must be logged in to change your password.' };
     }
 
-    const currentPasswordValid = await argon2.verify(
-      user.passwordHash,
-      currentPassword,
-      ARGON2_OPTIONS
+    const currentPasswordResult = await verifyUserPasswordRateLimited(
+      session.userId,
+      currentPassword
     );
 
-    if (!currentPasswordValid) {
+    if (!currentPasswordResult.ok) {
+      if (currentPasswordResult.limited) {
+        return {
+          error: `Too many attempts. Try again in ${currentPasswordResult.retryAfterMinutes} minute(s).`,
+        };
+      }
       return {
         error: 'Current password is incorrect.',
       };
     }
 
     const passwordHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
+    const passwordChangedAt = new Date();
 
     await prisma.user.update({
       where: { id: session.userId },
       data: {
         passwordHash,
-        lastPasswordChange: new Date(),
+        lastPasswordChange: passwordChangedAt,
       },
     });
 
@@ -159,7 +167,7 @@ export async function changePassword(_prevState: unknown, formData: FormData) {
     await createSession({
       userId: session.userId,
       role: user.role,
-      lastPasswordChange: new Date().toISOString(),
+      lastPasswordChange: passwordChangedAt.toISOString(),
     });
 
   } catch (error) {

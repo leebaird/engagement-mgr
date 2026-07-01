@@ -7,6 +7,7 @@ import {
   resolveBackupFilePath,
 } from '@/lib/backup-path';
 import { exportDatabaseArchive } from '@/lib/db-backup';
+import { logAuditEvent } from '@/lib/audit-log';
 
 export async function GET() {
   return new NextResponse('Method Not Allowed', {
@@ -31,7 +32,9 @@ export async function POST() {
       return new NextResponse('Failed to prepare backup file path.', { status: 500 });
     }
 
-    await writeFile(absolutePath, zip);
+    await writeFile(absolutePath, zip, { mode: 0o600 });
+
+    await logAuditEvent('db.export', session.userId, 'success');
 
     return new NextResponse(new Uint8Array(zip), {
       headers: {

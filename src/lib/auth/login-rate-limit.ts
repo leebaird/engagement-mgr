@@ -45,7 +45,7 @@ export async function recordLoginFailure(key: string): Promise<void> {
 
   await prisma.loginRateLimit.update({
     where: { key },
-    data: { count: entry.count + 1 },
+    data: { count: { increment: 1 } },
   });
 }
 
