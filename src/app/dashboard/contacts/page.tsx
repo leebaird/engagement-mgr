@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
-import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
@@ -17,6 +17,7 @@ export default async function ContactsPage({
   const isAdmin = session?.role === 'Admin';
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
+  const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
   const addHref = isAdmin
     ? buildPathQuery('/dashboard/contacts', listParams, { create: '1', detail: null })
     : undefined;
@@ -54,17 +55,7 @@ export default async function ContactsPage({
   }
   const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
 
-  const getSortHref = (col: string) => {
-    if (sortCol === col) {
-      return `/dashboard/contacts?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
-    }
-    return `/dashboard/contacts?sort=${col}&dir=asc`;
-  };
-
-  const getSortIcon = (col: string) => {
-    if (sortCol !== col) return null;
-    return sortDir === 'asc' ? ' ↑' : ' ↓';
-  };
+  const sortHrefs = buildSortHrefs('/dashboard/contacts', currentParams, sortCol, sortDir);
 
   const detailContact = detail ? contacts.find((contact) => contact.id === detail) : undefined;
   const detailHrefs = detailContact ? buildDetailHrefs('/dashboard/contacts', listParams, detailContact.id) : null;
@@ -99,35 +90,52 @@ export default async function ContactsPage({
         createCloseHref={createCloseHref}
       >
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+        {contacts.length === 0 ? (
+          <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+            {isAdmin ? (
+              <>No contacts yet. Click <strong style={{ color: 'var(--text-main)' }}>New Contact</strong> to add one.</>
+            ) : (
+              'No contacts yet.'
+            )}
+          </p>
+        ) : (
+        <table className="data-table">
+          <colgroup>
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '160px' }} />
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '160px' }} />
+            <col style={{ width: '40px' }} />
+          </colgroup>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
-                <Link href={getSortHref('name')} style={{ color: 'inherit', textDecoration: 'none' }}>Name{getSortIcon('name')}</Link>
+            <tr>
+              <th>
+                <Link href={sortHrefs.href('name')} className="sort-link">Name{sortHrefs.icon('name')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
-                <Link href={getSortHref('title')} style={{ color: 'inherit', textDecoration: 'none' }}>Title{getSortIcon('title')}</Link>
+              <th>
+                <Link href={sortHrefs.href('title')} className="sort-link">Title{sortHrefs.icon('title')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px' }}>
-                <Link href={getSortHref('client')} style={{ color: 'inherit', textDecoration: 'none' }}>Company{getSortIcon('client')}</Link>
+              <th>
+                <Link href={sortHrefs.href('client')} className="sort-link">Company{sortHrefs.icon('client')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '180px' }}>
-                <Link href={getSortHref('email')} style={{ color: 'inherit', textDecoration: 'none' }}>Email{getSortIcon('email')}</Link>
+              <th>
+                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
               </th>
-              <th style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', color: 'var(--text-muted)', width: '160px' }}>
-                <Link href={getSortHref('phoneNumber')} style={{ color: 'inherit', textDecoration: 'none' }}>Phone{getSortIcon('phoneNumber')}</Link>
+              <th>
+                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {contacts.map(c => (
-              <tr key={c.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500, width: '170px' }}>{c.name}</td>
-                <td style={{ padding: '0.75rem', width: '170px' }}>{c.title || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{c.client.company}</td>
-                <td style={{ padding: '0.75rem' }}>{c.email || ''}</td>
-                <td style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', fontVariantNumeric: 'tabular-nums' }}>{formatPhone(c.phone)}</td>
+              <tr key={c.id}>
+                <td style={{ fontWeight: 500 }}>{c.name}</td>
+                <td>{c.title || ''}</td>
+                <td>{c.client.company}</td>
+                <td>{c.email || ''}</td>
+                <td className="cell-numeric">{formatPhone(c.phone)}</td>
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/contacts', listParams, { detail: c.id, create: null })} />
                 </td>
@@ -135,6 +143,7 @@ export default async function ContactsPage({
             ))}
           </tbody>
         </table>
+        )}
       </div>
       </ContactsClient>
     </>

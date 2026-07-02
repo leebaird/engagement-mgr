@@ -53,6 +53,21 @@ export function buildPathQuery(
   return query ? `${pathname}?${query}` : pathname;
 }
 
+export function buildSortHrefs(
+  pathname: string,
+  current: SearchParamRecord,
+  activeCol: string,
+  activeDir: 'asc' | 'desc',
+) {
+  return {
+    href: (col: string) => buildPathQuery(pathname, current, {
+      sort: col,
+      dir: activeCol === col && activeDir === 'asc' ? 'desc' : 'asc',
+    }),
+    icon: (col: string) => (activeCol !== col ? null : activeDir === 'asc' ? ' ↑' : ' ↓'),
+  };
+}
+
 export function parseCalendarView(
   searchParams: SearchParamRecord,
   today = new Date(),

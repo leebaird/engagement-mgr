@@ -2,7 +2,7 @@ import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
@@ -28,6 +28,7 @@ export default async function UsersPage({
 }) {
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg } = await searchParams;
   const listParams = { sort, dir };
+  const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg };
   const addHref = buildPathQuery('/dashboard/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
   const createCloseHref = buildPathQuery('/dashboard/users', listParams, { create: null });
   const listCloseHref = buildPathQuery('/dashboard/users', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
@@ -50,17 +51,7 @@ export default async function UsersPage({
 
   const adminCount = users.filter(u => u.role === 'Admin').length;
 
-  const getSortHref = (col: string) => {
-    if (sortCol === col) {
-      return `/dashboard/users?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
-    }
-    return `/dashboard/users?sort=${col}&dir=asc`;
-  };
-
-  const getSortIcon = (col: string) => {
-    if (sortCol !== col) return null;
-    return sortDir === 'asc' ? ' ↑' : ' ↓';
-  };
+  const sortHrefs = buildSortHrefs('/dashboard/users', currentParams, sortCol, sortDir);
 
   const detailUser = detail ? users.find((user) => user.id === detail) : undefined;
   const detailHrefs = detailUser ? buildDetailHrefs('/dashboard/users', listParams, detailUser.id) : null;
@@ -117,32 +108,38 @@ export default async function UsersPage({
           No users yet. Click <strong style={{ color: 'var(--text-main)' }}>New User</strong> to add one.
         </p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+        <table className="data-table">
+          <colgroup>
+            <col style={{ width: '188px' }} />
+            <col style={{ width: '160px' }} />
+            <col style={{ width: '148px' }} />
+            <col style={{ width: '40px' }} />
+          </colgroup>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '188px' }}>
-                <Link href={getSortHref('username')} style={{ color: 'inherit', textDecoration: 'none' }}>
-                  Username{getSortIcon('username')}
+            <tr>
+              <th>
+                <Link href={sortHrefs.href('username')} className="sort-link">
+                  Username{sortHrefs.icon('username')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '160px', textAlign: 'center' }}>
-                <Link href={getSortHref('role')} style={{ color: 'inherit', textDecoration: 'none' }}>
-                  Role{getSortIcon('role')}
+              <th style={{ textAlign: 'center' }}>
+                <Link href={sortHrefs.href('role')} className="sort-link">
+                  Role{sortHrefs.icon('role')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right' }}>
-                <Link href={getSortHref('lastLogin')} style={{ color: 'inherit', textDecoration: 'none', display: 'block', textAlign: 'right' }}>
-                  Last Login{getSortIcon('lastLogin')}
+              <th style={{ textAlign: 'right' }}>
+                <Link href={sortHrefs.href('lastLogin')} className="sort-link" style={{ display: 'block', textAlign: 'right' }}>
+                  Last Login{sortHrefs.icon('lastLogin')}
                 </Link>
               </th>
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {users.map(user => (
-              <tr key={user.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '188px' }} title={user.username}>{user.username}</td>
-                <td style={{ padding: '0.75rem', width: '160px', textAlign: 'center' }}>
+              <tr key={user.id}>
+                <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={user.username}>{user.username}</td>
+                <td style={{ textAlign: 'center' }}>
                   {user.role === 'Admin' ? (
                     <span style={{
                       padding: '0.25rem 0.5rem',
@@ -156,10 +153,10 @@ export default async function UsersPage({
                     'User'
                   )}
                 </td>
-                <td style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '148px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                <td className="cell-numeric" style={{ color: 'var(--text-muted)', textAlign: 'right' }}>
                   {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
                 </td>
-                <td className="table-action-cell" style={{ width: '40px' }}>
+                <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/users', listParams, { detail: user.id, create: null })} />
                 </td>
               </tr>

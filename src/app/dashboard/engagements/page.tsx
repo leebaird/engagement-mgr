@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { engagementToScheduleValues, serializeEngagementScheduleDates } from '@/lib/date-input-value';
-import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { sortContactsByTitle } from '@/lib/contact-title-sort';
 import { sortOperatorsByTitle } from '@/lib/operator-title-sort';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
@@ -30,6 +30,7 @@ export default async function EngagementsPage({
   const isAdmin = session?.role === 'Admin';
   const { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
   const listParams = { sort, dir };
+  const currentParams = { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError };
   const addHref = isAdmin
     ? buildPathQuery('/dashboard/engagements', listParams, { create: '1', detail: null })
     : undefined;
@@ -91,17 +92,7 @@ export default async function EngagementsPage({
     });
   }
 
-  const getSortHref = (col: string) => {
-    if (sortCol === col) {
-      return `/dashboard/engagements?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
-    }
-    return `/dashboard/engagements?sort=${col}&dir=asc`;
-  };
-
-  const getSortIcon = (col: string) => {
-    if (sortCol !== col) return null;
-    return sortDir === 'asc' ? ' ↑' : ' ↓';
-  };
+  const sortHrefs = buildSortHrefs('/dashboard/engagements', currentParams, sortCol, sortDir);
 
   const rawDetailEngagement = detail ? engagements.find((engagement) => engagement.id === detail) : undefined;
   const detailEngagement = rawDetailEngagement
@@ -165,43 +156,62 @@ export default async function EngagementsPage({
       ) : null}
     >
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        {engagements.length === 0 ? (
+          <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+            {isAdmin ? (
+              <>No engagements yet. Click <strong style={{ color: 'var(--text-main)' }}>New Engagement</strong> to add one.</>
+            ) : (
+              'No engagements yet.'
+            )}
+          </p>
+        ) : (
+        <table className="data-table">
+          <colgroup>
+            <col />
+            <col />
+            <col style={{ width: '120px' }} />
+            <col />
+            <col />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '120px' }} />
+            <col style={{ width: '40px' }} />
+          </colgroup>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('codeName')} style={{ color: 'inherit', textDecoration: 'none' }}>Code Name{getSortIcon('codeName')}</Link>
+            <tr>
+              <th>
+                <Link href={sortHrefs.href('codeName')} className="sort-link">Code Name{sortHrefs.icon('codeName')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('client')} style={{ color: 'inherit', textDecoration: 'none' }}>Client{getSortIcon('client')}</Link>
+              <th>
+                <Link href={sortHrefs.href('client')} className="sort-link">Client{sortHrefs.icon('client')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('status')} style={{ color: 'inherit', textDecoration: 'none' }}>Status{getSortIcon('status')}</Link>
+              <th>
+                <Link href={sortHrefs.href('status')} className="sort-link">Status{sortHrefs.icon('status')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('focus')} style={{ color: 'inherit', textDecoration: 'none' }}>Focus{getSortIcon('focus')}</Link>
+              <th>
+                <Link href={sortHrefs.href('focus')} className="sort-link">Focus{sortHrefs.icon('focus')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('type')} style={{ color: 'inherit', textDecoration: 'none' }}>Type{getSortIcon('type')}</Link>
+              <th>
+                <Link href={sortHrefs.href('type')} className="sort-link">Type{sortHrefs.icon('type')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('startTesting')} style={{ color: 'inherit', textDecoration: 'none' }}>Start{getSortIcon('startTesting')}</Link>
+              <th>
+                <Link href={sortHrefs.href('startTesting')} className="sort-link">Start{sortHrefs.icon('startTesting')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)' }}>
-                <Link href={getSortHref('endTesting')} style={{ color: 'inherit', textDecoration: 'none' }}>End{getSortIcon('endTesting')}</Link>
+              <th>
+                <Link href={sortHrefs.href('endTesting')} className="sort-link">End{sortHrefs.icon('endTesting')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {engagements.map(eng => (
-              <tr key={eng.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500 }}>{eng.codeName}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.client.company}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.status ?? ''}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.focus || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.type ? formatEngagementType(eng.type) : ''}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.startTesting?.toLocaleDateString() || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{eng.endTesting?.toLocaleDateString() || ''}</td>
+              <tr key={eng.id}>
+                <td style={{ fontWeight: 500 }}>{eng.codeName}</td>
+                <td>{eng.client.company}</td>
+                <td>{eng.status ?? ''}</td>
+                <td>{eng.focus || ''}</td>
+                <td>{eng.type ? formatEngagementType(eng.type) : ''}</td>
+                <td className="cell-numeric">{eng.startTesting?.toLocaleDateString() || ''}</td>
+                <td className="cell-numeric">{eng.endTesting?.toLocaleDateString() || ''}</td>
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/engagements', listParams, { detail: eng.id, create: null, finding: null })} />
                 </td>
@@ -209,6 +219,7 @@ export default async function EngagementsPage({
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </EngagementsClient>
   );

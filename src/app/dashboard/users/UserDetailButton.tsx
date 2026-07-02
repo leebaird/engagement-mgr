@@ -167,7 +167,6 @@ export function UserDetailButton({
                 className="form-input"
                 required
                 tabIndex={2}
-                style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
                 onFocus={(e) => {
                   try {
                     e.currentTarget.showPicker?.();

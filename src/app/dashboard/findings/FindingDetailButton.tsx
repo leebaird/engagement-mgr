@@ -53,7 +53,6 @@ export function FindingDetailButton({
   showDelete = true,
 }: { 
   finding: FindingDetail;
-  onOptimisticDelete?: (id: string) => void;
   engagementScoped?: boolean;
   engagementId?: string;
   zIndex?: number;
@@ -241,6 +240,17 @@ export function FindingDetailButton({
             viewHref={viewHref}
             sort={sort}
             dir={dir}
+            childrenBeforeEdit={
+              !engagementScoped ? (
+                <a
+                  href={`/dashboard/findings/${finding.id}`}
+                  className="modal-action-btn"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Screenshots
+                </a>
+              ) : undefined
+            }
             extraFields={
               engagementScoped && engagementId
                 ? { finding: finding.id, engagementId }
@@ -269,7 +279,7 @@ export function FindingDetailButton({
                     <div className="engagement-finding-detail-form__meta">
                       <div>
                         <div className="engagement-finding-detail-field__label">Category</div>
-                        <select disabled value={finding.category || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                        <select disabled value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                           <option value=""></option>
                           <option value="AI">AI</option>
                           <option value="Firewall">Firewall</option>
@@ -283,7 +293,7 @@ export function FindingDetailButton({
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                        <select disabled value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                           <option value=""></option>
                           <option value="Critical">Critical</option>
                           <option value="High">High</option>
@@ -329,7 +339,7 @@ export function FindingDetailButton({
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <select disabled value={finding.category || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                    <select disabled value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                       <option value=""></option>
                       <option value="AI">AI</option>
                       <option value="Firewall">Firewall</option>
@@ -343,7 +353,7 @@ export function FindingDetailButton({
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                    <select disabled value={finding.severity || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                    <select disabled value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                       <option value=""></option>
                       <option value="Critical">Critical</option>
                       <option value="High">High</option>
@@ -408,7 +418,7 @@ export function FindingDetailButton({
                     <div className="engagement-finding-detail-form__meta">
                       <div>
                         <div className="engagement-finding-detail-field__label">Category</div>
-                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
                           <option value=""></option>
                           <option value="AI">AI</option>
                           <option value="Firewall">Firewall</option>
@@ -422,7 +432,7 @@ export function FindingDetailButton({
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                           <option value=""></option>
                           <option value="Critical">Critical</option>
                           <option value="High">High</option>
@@ -503,7 +513,7 @@ export function FindingDetailButton({
                     <div className="engagement-finding-detail-form__meta">
                       <div>
                         <div className="engagement-finding-detail-field__label">Category</div>
-                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                        <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
                           <option value=""></option>
                           <option value="AI">AI</option>
                           <option value="Firewall">Firewall</option>
@@ -517,7 +527,7 @@ export function FindingDetailButton({
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
+                        <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                           <option value=""></option>
                           <option value="Critical">Critical</option>
                           <option value="High">High</option>
@@ -594,7 +604,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
                     <option value=""></option>
                     <option value="AI">AI</option>
                     <option value="Firewall">Firewall</option>
@@ -608,7 +618,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                     <option value=""></option>
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>
@@ -670,7 +680,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}>
+                  <select value={formData.category || ''} onChange={e => setFormData({...formData, category: e.target.value})} className="form-input">
                     <option value=""></option>
                     <option value="AI">AI</option>
                     <option value="Firewall">Firewall</option>
@@ -684,7 +694,7 @@ export function FindingDetailButton({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
+                  <select value={formData.severity} onChange={e => setFormData({...formData, severity: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                     <option value=""></option>
                     <option value="Critical">Critical</option>
                     <option value="High">High</option>

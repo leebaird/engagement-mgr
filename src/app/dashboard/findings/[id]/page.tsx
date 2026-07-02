@@ -14,6 +14,9 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <a href="/dashboard/findings" className="btn-secondary" style={{ display: 'inline-flex', width: 'fit-content', marginBottom: '1rem', textDecoration: 'none' }}>
+        ← Back to Findings
+      </a>
       <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{finding.title}</h1>
       <div style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
         Engagement: {finding.engagement?.codeName || 'Unassigned'} &nbsp;|&nbsp; 

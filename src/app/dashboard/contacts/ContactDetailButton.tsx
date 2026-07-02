@@ -153,7 +153,7 @@ export function ContactDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
-                <select disabled value={contact.clientId} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                <select disabled value={contact.clientId} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                   <option value=""></option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
@@ -225,7 +225,6 @@ export function ContactDetailButton({
                   required
                   onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                   className="form-input"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
                   onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}
                 >
                   <option value=""></option>

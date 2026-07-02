@@ -142,7 +142,7 @@ export function OperatorDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <select disabled value={operator.title || ''} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)', pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
+                <select disabled value={operator.title || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
                   <option value=""></option>
                   <option value="Director">Director</option>
                   <option value="Red Team Lead">Red Team Lead</option>
@@ -207,7 +207,7 @@ export function OperatorDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
+                <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                   <option value=""></option>
                   <option value="Director">Director</option>
                   <option value="Red Team Lead">Red Team Lead</option>

@@ -46,7 +46,6 @@ export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
             name="role" 
             className="form-input" 
             required 
-            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} 
             defaultValue={state?.fields?.role || ''}
             tabIndex={2}
             onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}

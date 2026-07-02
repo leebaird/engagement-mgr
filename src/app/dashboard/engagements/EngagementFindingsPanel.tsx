@@ -28,7 +28,6 @@ const SEVERITY_LABELS = ['Critical', 'High', 'Medium', 'Low', 'Info'] as const;
 export function EngagementFindingsPanel({
   engagementId,
   findings,
-  onFindingsChange,
   activeFindingId,
   findingIsEditing = false,
   findingShowDeleteConfirm = false,
@@ -64,10 +63,6 @@ export function EngagementFindingsPanel({
     router.refresh();
   };
 
-  const handleOptimisticDelete = (id: string) => {
-    onFindingsChange(findings.filter((f) => f.id !== id));
-  };
-
   const handleAddSuccess = () => {
     setAddOpen(false);
     handleRefresh();
@@ -101,10 +96,6 @@ export function EngagementFindingsPanel({
             supportingLinks: detailFinding.supportingData ?? '',
             observation: detailFinding.observation ?? '',
             affectedHosts: detailFinding.affectedHosts ?? '',
-          }}
-          onOptimisticDelete={(id) => {
-            handleOptimisticDelete(id);
-            handleRefresh();
           }}
           isDetailOpen
           isEditing={findingIsEditing}

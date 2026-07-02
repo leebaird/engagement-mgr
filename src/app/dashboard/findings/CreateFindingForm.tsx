@@ -201,7 +201,6 @@ export function CreateFindingForm({
                     <select
                       name="category"
                       className="form-input"
-                      style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
                       value={form.category}
                       onChange={(e) => setField('category', e.target.value)}
                     >
@@ -223,7 +222,6 @@ export function CreateFindingForm({
                       className="form-input"
                       value={form.severity}
                       onChange={(e) => setField('severity', e.target.value)}
-                      style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
                       onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
                     >
                       <option value=""></option>
@@ -333,7 +331,6 @@ export function CreateFindingForm({
             <select
               name="category"
               className="form-input"
-              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
               defaultValue=""
               onChange={(e) => setField('category', e.target.value)}
             >
@@ -355,7 +352,6 @@ export function CreateFindingForm({
               className="form-input"
               defaultValue=""
               onChange={(e) => setField('severity', e.target.value)}
-              style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: 'var(--text-main)' }}
               onFocus={(e) => { try { if (typeof (e.target as HTMLSelectElement & { showPicker?: () => void }).showPicker === 'function') { (e.target as HTMLSelectElement & { showPicker: () => void }).showPicker(); } } catch { /* ignore */ } }}
             >
               <option value=""></option>

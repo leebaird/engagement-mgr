@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
-import { buildDetailHrefs, buildPathQuery } from '@/lib/list-view-params';
+import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { OperatorsClient } from './OperatorsClient';
 import { OperatorDetailButton } from './OperatorDetailButton';
@@ -17,6 +17,7 @@ export default async function OperatorsPage({
   const isAdmin = session?.role === 'Admin';
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
+  const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
   const addHref = isAdmin
     ? buildPathQuery('/dashboard/operators', listParams, { create: '1', detail: null })
     : undefined;
@@ -39,17 +40,7 @@ export default async function OperatorsPage({
     });
   }
 
-  const getSortHref = (col: string) => {
-    if (sortCol === col) {
-      return `/dashboard/operators?sort=${col}&dir=${sortDir === 'asc' ? 'desc' : 'asc'}`;
-    }
-    return `/dashboard/operators?sort=${col}&dir=asc`;
-  };
-
-  const getSortIcon = (col: string) => {
-    if (sortCol !== col) return null;
-    return sortDir === 'asc' ? ' ↑' : ' ↓';
-  };
+  const sortHrefs = buildSortHrefs('/dashboard/operators', currentParams, sortCol, sortDir);
 
   const detailOperator = detail ? operators.find((operator) => operator.id === detail) : undefined;
   const detailHrefs = detailOperator ? buildDetailHrefs('/dashboard/operators', listParams, detailOperator.id) : null;
@@ -82,32 +73,48 @@ export default async function OperatorsPage({
         createCloseHref={createCloseHref}
       >
       <div className="glass-panel" style={{ padding: '2rem' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
+        {operators.length === 0 ? (
+          <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
+            {isAdmin ? (
+              <>No operators yet. Click <strong style={{ color: 'var(--text-main)' }}>New Operator</strong> to add one.</>
+            ) : (
+              'No operators yet.'
+            )}
+          </p>
+        ) : (
+        <table className="data-table">
+          <colgroup>
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '170px' }} />
+            <col style={{ width: '180px' }} />
+            <col style={{ width: '160px' }} />
+            <col style={{ width: '40px' }} />
+          </colgroup>
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--surface-border)' }}>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
-                <Link href={getSortHref('name')} style={{ color: 'inherit', textDecoration: 'none' }}>Name{getSortIcon('name')}</Link>
+            <tr>
+              <th>
+                <Link href={sortHrefs.href('name')} className="sort-link">Name{sortHrefs.icon('name')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '170px' }}>
-                <Link href={getSortHref('title')} style={{ color: 'inherit', textDecoration: 'none' }}>Title{getSortIcon('title')}</Link>
+              <th>
+                <Link href={sortHrefs.href('title')} className="sort-link">Title{sortHrefs.icon('title')}</Link>
               </th>
-              <th style={{ padding: '0.75rem', color: 'var(--text-muted)', width: '180px' }}>
-                <Link href={getSortHref('email')} style={{ color: 'inherit', textDecoration: 'none' }}>Email{getSortIcon('email')}</Link>
+              <th>
+                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
               </th>
-              <th style={{ padding: '0.75rem 0.75rem 0.75rem 3rem', color: 'var(--text-muted)', width: '160px' }}>
-                <Link href={getSortHref('phoneNumber')} style={{ color: 'inherit', textDecoration: 'none' }}>Phone{getSortIcon('phoneNumber')}</Link>
+              <th>
+                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
               </th>
 
-              <th style={{ padding: '0.75rem', width: '40px' }}></th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {operators.map(op => (
-              <tr key={op.id} style={{ borderBottom: '1px solid var(--surface-border)' }}>
-                <td style={{ padding: '0.75rem', fontWeight: 500, width: '170px' }}>{op.name}</td>
-                <td style={{ padding: '0.75rem', width: '170px' }}>{op.title || ''}</td>
-                <td style={{ padding: '0.75rem' }}>{op.email || ''}</td>
-                <td style={{ padding: '0.75rem 0.75rem 0.75rem 3rem' }}>{formatPhone(op.phoneNumber)}</td>
+              <tr key={op.id}>
+                <td style={{ fontWeight: 500 }}>{op.name}</td>
+                <td>{op.title || ''}</td>
+                <td>{op.email || ''}</td>
+                <td className="cell-numeric">{formatPhone(op.phoneNumber)}</td>
 
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/operators', listParams, { detail: op.id, create: null })} />
@@ -116,6 +123,7 @@ export default async function OperatorsPage({
             ))}
           </tbody>
         </table>
+        )}
       </div>
       </OperatorsClient>
     </>
