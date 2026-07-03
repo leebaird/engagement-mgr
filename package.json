@@ -22,7 +22,7 @@
     "@prisma/client": "7.8.0",
     "argon2": "0.44.0",
     "jose": "6.2.3",
-    "lucide-react": "1.21.0",
+    "lucide-react": "1.22.0",
     "next": "16.2.9",
     "pg": "8.22.0",
     "react": "19.2.7",
