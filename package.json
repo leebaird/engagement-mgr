@@ -22,7 +22,7 @@
     "@prisma/client": "7.8.0",
     "argon2": "0.44.0",
     "jose": "6.2.3",
-    "lucide-react": "1.23.0",
+    "lucide-react": "1.24.0",
     "next": "16.2.10",
     "pg": "8.22.0",
     "react": "19.2.7",
@@ -30,13 +30,13 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@types/node": "26.1.0",
+    "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "oxlint": "1.72.0",
+    "oxlint": "1.73.0",
     "prisma": "7.8.0",
     "tsx": "4.23.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "overrides": {
     "postcss": "8.5.15",
