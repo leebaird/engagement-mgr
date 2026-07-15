@@ -21,6 +21,17 @@ function formatEngagementType(type: string): string {
     .join(' ');
 }
 
+const listSelect = {
+  id: true,
+  codeName: true,
+  status: true,
+  focus: true,
+  type: true,
+  startTesting: true,
+  endTesting: true,
+  client: { select: { id: true, company: true } },
+} as const;
+
 export default async function EngagementsPage({
   searchParams,
 }: {
@@ -68,19 +79,9 @@ export default async function EngagementsPage({
     orderBy = { endTesting: sortDir };
   }
 
+  // Lean list query — table only needs a few columns + client name
   const engagements = await prisma.engagement.findMany({
-    include: {
-      client: true,
-      trustedAgents: true,
-      operators: true,
-      contacts: true,
-      findings: {
-        include: {
-          engagementContext: true,
-        },
-        orderBy: { title: 'asc' },
-      },
-    },
+    select: listSelect,
     orderBy,
   });
 
@@ -94,7 +95,48 @@ export default async function EngagementsPage({
 
   const sortHrefs = buildSortHrefs('/dashboard/engagements', currentParams, sortCol, sortDir);
 
-  const rawDetailEngagement = detail ? engagements.find((engagement) => engagement.id === detail) : undefined;
+  const needsFormOptions = isAdmin && (create === '1' || Boolean(detail));
+
+  const [rawDetailEngagement, clients, contacts, operators] = await Promise.all([
+    detail
+      ? prisma.engagement.findUnique({
+          where: { id: detail },
+          include: {
+            client: true,
+            trustedAgents: true,
+            operators: true,
+            contacts: true,
+            findings: {
+              include: {
+                engagementContext: true,
+              },
+              orderBy: { title: 'asc' },
+            },
+          },
+        })
+      : Promise.resolve(null),
+    needsFormOptions
+      ? prisma.client.findMany({
+          select: { id: true, company: true },
+          orderBy: { company: 'asc' },
+        })
+      : Promise.resolve([] as { id: string; company: string }[]),
+    needsFormOptions
+      ? prisma.contact.findMany({
+          select: { id: true, name: true, title: true, clientId: true },
+        })
+      : Promise.resolve([] as { id: string; name: string; title: string | null; clientId: string }[]),
+    needsFormOptions
+      ? prisma.operator.findMany({
+          select: { id: true, name: true, title: true },
+        })
+      : Promise.resolve([] as { id: string; name: string; title: string | null }[]),
+  ]);
+
+  const formClients = clients;
+  const formContacts = needsFormOptions ? sortContactsByTitle(contacts) : contacts;
+  const formOperators = needsFormOptions ? sortOperatorsByTitle(operators) : operators;
+
   const detailEngagement = rawDetailEngagement
     ? serializeEngagementScheduleDates(rawDetailEngagement)
     : undefined;
@@ -107,15 +149,12 @@ export default async function EngagementsPage({
   const scheduleEditFields = scheduleEdit === '1' && scheduleFormValues
     ? <EngagementScheduleEditFields values={scheduleFormValues} />
     : undefined;
-  const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
-  const contacts = sortContactsByTitle(await prisma.contact.findMany());
-  const operators = sortOperatorsByTitle(await prisma.operator.findMany());
 
   return (
     <EngagementsClient
-      clients={clients}
-      contacts={contacts}
-      operators={operators}
+      clients={formClients}
+      contacts={formContacts}
+      operators={formOperators}
       isAdmin={isAdmin}
       addHref={addHref}
       showCreateModal={isAdmin && create === '1'}
@@ -123,9 +162,9 @@ export default async function EngagementsPage({
       overlay={detailEngagement ? (
         <EngagementDetailButton
           engagement={detailEngagement}
-          clients={clients}
-          contacts={contacts}
-          operators={operators}
+          clients={formClients}
+          contacts={formContacts}
+          operators={formOperators}
           isAdmin={isAdmin}
           isDetailOpen
           isEditing={edit === '1' && !finding}

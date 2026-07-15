@@ -1,5 +1,7 @@
+import { cache } from 'react';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 import { getJwtSecretKey } from '@/lib/jwt-secret';
 import { prisma } from '@/lib/db';
 
@@ -48,7 +50,18 @@ export async function createSession(payload: SessionPayload) {
   });
 }
 
-export async function getSession(): Promise<SessionPayload | null> {
+/**
+ * JWT claims from the session cookie only — no database round-trip.
+ * Used by the edge proxy for fast auth redirects. Role/revocation must
+ * still be enforced via getSession() in layouts, pages, and mutations.
+ */
+export async function getSessionJwtFromRequest(
+  request: NextRequest
+): Promise<SessionPayload | null> {
+  return decrypt(request.cookies.get('session')?.value);
+}
+
+async function loadSessionFromDb(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get('session')?.value;
   if (!session) return null;
@@ -76,7 +89,18 @@ export async function getSession(): Promise<SessionPayload | null> {
   };
 }
 
+/** Request-deduped session with DB role + password-change revocation. */
+export const getSession = cache(loadSessionFromDb);
+
 export async function deleteSession() {
   const cookieStore = await cookies();
   cookieStore.delete('session');
+}
+
+export function isPasswordRotationRequired(lastPasswordChange: string): boolean {
+  const lastChange = new Date(lastPasswordChange);
+  if (Number.isNaN(lastChange.getTime())) return true;
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  return lastChange < ninetyDaysAgo;
 }

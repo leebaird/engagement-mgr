@@ -58,6 +58,9 @@ model Engagement {
   findingContexts      EngagementFindingContext[]
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+
+  @@index([clientId])
+  @@index([status])
 }
 
 enum EngagementStatus {
@@ -118,6 +121,8 @@ model Contact {
   trustedEngagements   Engagement[]  @relation("TrustedAgents")
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+
+  @@index([clientId])
 }
 
 model Finding {
@@ -134,6 +139,8 @@ model Finding {
   engagementContext    EngagementFindingContext?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+
+  @@index([engagementId])
 }
 
 model EngagementFindingContext {
@@ -148,6 +155,7 @@ model EngagementFindingContext {
   updatedAt      DateTime   @updatedAt
 
   @@unique([engagementId, findingId])
+  @@index([engagementId])
 }
 
 model Screenshot {
@@ -157,6 +165,9 @@ model Screenshot {
   filePath             String
   description          String?
   createdAt            DateTime      @default(now())
+
+  @@index([findingId])
+  @@index([filePath])
 }
 
 model Operator {

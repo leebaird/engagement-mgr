@@ -1,10 +1,13 @@
 import { z } from 'zod';
 
+import { MAX_PASSWORD_LENGTH } from '@/lib/auth/password';
+
 export const MAX_BACKUP_BYTES = 500 * 1024 * 1024;
 
 export const adminConfirmPasswordSchema = z
   .string()
-  .min(1, 'Password confirmation is required.');
+  .min(1, 'Password confirmation is required.')
+  .max(MAX_PASSWORD_LENGTH, `Password must be at most ${MAX_PASSWORD_LENGTH} characters.`);
 
 export function validateBackupFile(
   file: unknown

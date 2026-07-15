@@ -28,17 +28,12 @@ export default async function OperatorsPage({
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  const operatorsRaw = await prisma.operator.findMany();
-
-  let operators: typeof operatorsRaw;
-
-  if (sortCol === 'title') {
-    operators = sortOperatorsByTitle(operatorsRaw, sortDir);
-  } else {
-    operators = await prisma.operator.findMany({
-      orderBy: { [sortCol]: sortDir },
-    });
-  }
+  // Single query (title sort finishes in memory)
+  const operatorsRaw = await prisma.operator.findMany(
+    sortCol === 'title' ? undefined : { orderBy: { [sortCol]: sortDir } }
+  );
+  const operators =
+    sortCol === 'title' ? sortOperatorsByTitle(operatorsRaw, sortDir) : operatorsRaw;
 
   const sortHrefs = buildSortHrefs('/dashboard/operators', currentParams, sortCol, sortDir);
 

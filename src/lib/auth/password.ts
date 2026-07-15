@@ -1,10 +1,17 @@
 import * as argon2 from 'argon2';
 
+/** Reject oversized secrets before Argon2 (CPU DoS protection). */
+export const MAX_PASSWORD_LENGTH = 128;
+export const MIN_PASSWORD_LENGTH = 16;
+
 export function validatePasswordComplexity(password: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (password.length < 16) {
-    errors.push('Password must be at least 16 characters long.');
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    errors.push(`Password must be at most ${MAX_PASSWORD_LENGTH} characters long.`);
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    errors.push(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
   }
   if (!/[a-z]/.test(password)) {
     errors.push('Password must contain at least one lowercase letter.');

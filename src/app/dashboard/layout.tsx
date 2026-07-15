@@ -1,10 +1,20 @@
+import { redirect } from 'next/navigation';
 import { Navigation } from '@/components/Navigation';
 import { ModalCleanup } from '@/components/ModalCleanup';
-import { getSession } from '@/lib/auth/session';
+import { getSession, isPasswordRotationRequired } from '@/lib/auth/session';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  const isAdmin = session?.role === 'Admin';
+  if (!session) {
+    redirect('/login');
+  }
+
+  // DB-backed password rotation (proxy only uses JWT claim for a fast redirect)
+  if (isPasswordRotationRequired(session.lastPasswordChange)) {
+    redirect('/change-password');
+  }
+
+  const isAdmin = session.role === 'Admin';
 
   return (
     <>

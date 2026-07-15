@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createReadStream } from 'fs';
+import { lstat } from 'fs/promises';
+import { Readable } from 'stream';
 import { getSession } from '@/lib/auth/session';
 import { resolveUploadFilePath } from '@/lib/uploads-path';
-import { lstat, readFile } from 'fs/promises';
+import { prisma } from '@/lib/db';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ filename: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ filename: string }> }
+) {
   const session = await getSession();
 
   if (!session) {
@@ -17,22 +23,33 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return new NextResponse('File not found', { status: 404 });
   }
 
+  // Only serve files that are registered screenshot records (not orphan/path-only hits)
+  const screenshot = await prisma.screenshot.findFirst({
+    where: { filePath: resolvedParams.filename },
+    select: { id: true },
+  });
+
+  if (!screenshot) {
+    return new NextResponse('File not found', { status: 404 });
+  }
+
   try {
     const stats = await lstat(filePath);
-    if (!stats.isFile()) {
+    if (stats.isSymbolicLink() || !stats.isFile()) {
       return new NextResponse('File not found', { status: 404 });
     }
-
-    const file = await readFile(filePath);
 
     const ext = filePath.split('.').pop()?.toLowerCase();
     let mimeType = 'application/octet-stream';
     if (ext === 'png') mimeType = 'image/png';
     else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
 
-    return new NextResponse(file, {
+    const stream = Readable.toWeb(createReadStream(filePath));
+
+    return new NextResponse(stream as unknown as BodyInit, {
       headers: {
         'Content-Type': mimeType,
+        'Content-Length': String(stats.size),
         'Cache-Control': 'private, max-age=86400',
         'X-Content-Type-Options': 'nosniff',
       },

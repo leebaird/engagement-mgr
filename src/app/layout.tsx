@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { connection } from "next/server";
+import { headers } from "next/headers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,11 +24,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Dynamic rendering required for per-request CSP nonces (proxy sets x-nonce)
   await connection();
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+      <body data-nonce={nonce}>
         {children}
         <div id="modal-root" />
       </body>

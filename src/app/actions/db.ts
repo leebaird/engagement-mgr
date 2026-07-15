@@ -7,7 +7,6 @@ import { buildPathQuery } from '@/lib/list-view-params';
 import {
   backupFilename,
   ensureBackupDirectory,
-  formatBackupPathForDisplay,
   resolveBackupFilePath,
 } from '@/lib/backup-path';
 import {
@@ -18,6 +17,7 @@ import {
 } from '@/lib/db-backup';
 import { validatePasswordComplexity } from '@/lib/auth/password';
 import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
+import { createBackupDownloadToken } from '@/lib/backup-download-token';
 import { logAuditEvent } from '@/lib/audit-log';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
@@ -28,12 +28,29 @@ function usersListParams(formData: FormData) {
   return { sort, dir };
 }
 
-export async function exportDatabaseBackup():
-  Promise<{ error: string } | { filename: string; savedPath: string; data: number[] }> {
+/**
+ * Create a full backup after admin password re-confirmation.
+ * Writes to ~/engagement-mgr-backups/ and redirects with a download link param.
+ */
+export async function exportDatabaseBackup(formData: FormData): Promise<void> {
+  const listParams = usersListParams(formData);
   const session = await requireAdminAuth();
   if (isAdminError(session)) {
-    return { error: 'Unauthorized' };
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'backup', dbError: 'unauthorized' }));
   }
+
+  const passwordParsed = adminConfirmPasswordSchema.safeParse(formData.get('password'));
+  if (!passwordParsed.success) {
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'backup', dbError: 'password' }));
+  }
+
+  const passwordResult = await verifyUserPasswordRateLimited(session.userId, passwordParsed.data);
+  if (!passwordResult.ok) {
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'backup', dbError: 'password' }));
+  }
+
+  let exportedFilename: string | null = null;
+  let downloadToken: string | null = null;
 
   try {
     const zip = await exportDatabaseArchive();
@@ -42,23 +59,31 @@ export async function exportDatabaseBackup():
     const absolutePath = resolveBackupFilePath(filename);
 
     if (!absolutePath) {
-      return { error: 'Failed to prepare backup file path.' };
+      throw new Error('Failed to prepare backup file path.');
     }
 
     await writeFile(absolutePath, zip, { mode: 0o600 });
-
-    await logAuditEvent('db.export', session.userId, 'success');
-
-    return {
-      filename,
-      savedPath: formatBackupPathForDisplay(absolutePath),
-      data: Array.from(zip),
-    };
+    const token = await createBackupDownloadToken(session.userId, filename);
+    if (!token) {
+      throw new Error('Failed to prepare backup download token.');
+    }
+    exportedFilename = filename;
+    downloadToken = token;
   } catch {
-    return {
-      error: 'Export failed. Ensure pg_dump and zip are installed and DATABASE_URL is valid.',
-    };
+    await logAuditEvent('db.export', session.userId, 'failure');
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'backup', dbError: 'generic' }));
   }
+
+  await logAuditEvent('db.export', session.userId, 'success');
+  redirect(
+    buildPathQuery('/dashboard/users', listParams, {
+      dbMsg: 'backup',
+      backupFile: exportedFilename,
+      backupToken: downloadToken,
+      db: null,
+      dbError: null,
+    })
+  );
 }
 
 export async function importDatabaseBackup(formData: FormData): Promise<void> {

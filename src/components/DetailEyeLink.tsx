@@ -1,5 +1,3 @@
-'use client';
-
 export function DetailEyeLink({ href }: { href: string }) {
   return (
     <a href={href} className="detail-icon-btn" title="View details">

@@ -359,14 +359,18 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
   try {
     const screenshot = await prisma.screenshot.findUnique({
       where: { id: parsed.data.screenshotId },
+      select: { id: true, findingId: true, filePath: true },
     });
-    if (screenshot) {
-      const filePath = resolveUploadFilePath(screenshot.filePath);
-      if (filePath) {
-        await unlink(filePath).catch(() => {});
-      }
-      await prisma.screenshot.delete({ where: { id: parsed.data.screenshotId } });
+    // Require the screenshot to belong to the stated finding (prevents cross-finding deletes)
+    if (!screenshot || screenshot.findingId !== parsed.data.findingId) {
+      return;
     }
+
+    const filePath = resolveUploadFilePath(screenshot.filePath);
+    if (filePath) {
+      await unlink(filePath).catch(() => {});
+    }
+    await prisma.screenshot.delete({ where: { id: screenshot.id } });
     revalidatePath(`/dashboard/findings/${parsed.data.findingId}`);
   } catch (e) {
     console.error(e);

@@ -144,10 +144,12 @@ This application stores **strictly confidential** offensive-security engagement 
 **Defense in depth (required patterns in this codebase)**
 
 - **Proxy is not enough**: `src/proxy.ts` redirects unauthenticated users, but **every Server Action and API route must enforce auth itself**. Use `requireAuth()` from `src/lib/require-auth.ts` for authenticated mutations; use `requireAdmin()` from `src/lib/require-admin.ts` for admin-only operations.
-- **Prefer Server Actions for mutations**: Do not add new cookie-authenticated `fetch()` POST/DELETE API routes — they are CSRF-prone. Admin backup/restore/reset live in `src/app/actions/db.ts` for this reason.
+- **Prefer Server Actions for mutations**: Do not add new cookie-authenticated `fetch()` POST/DELETE API routes — they are CSRF-prone. Admin backup/restore/reset live in `src/app/actions/db.ts` for this reason. Creating a backup requires password re-confirmation; `GET /api/db/backup` only downloads an already-exported file with admin session **and** a short-lived download token from `createBackupDownloadToken` (never creates a dump).
+- **Client IP / rate limits**: Do not trust `X-Forwarded-For` unless `TRUST_PROXY` is explicitly enabled behind a proxy that overwrites those headers (`src/lib/request-client-ip.ts`).
 - **Sessions & secrets**: `JWT_SECRET` must be ≥ 32 characters in production (`src/lib/jwt-secret.ts`). No hardcoded fallback outside development. Sessions use `HttpOnly`, `SameSite=Lax` cookies with `jose` JWTs.
-- **Password policy**: Minimum 16 characters with uppercase, lowercase, number, and symbol — never weaken (`src/lib/auth/password.ts`).
-- **File paths**: Never pass user-controlled paths to `fs` directly. Screenshot downloads must go through `resolveUploadFilePath()` in `src/lib/uploads-path.ts`.
+- **Password policy**: 16–128 characters with uppercase, lowercase, number, and symbol — never weaken (`src/lib/auth/password.ts`). Cap length before Argon2 to prevent CPU DoS.
+- **File paths**: Never pass user-controlled paths to `fs` directly. Screenshot downloads must go through `resolveUploadFilePath()` and only serve filenames that exist as `Screenshot` rows.
+- **CSP nonces**: `src/proxy.ts` sets per-request nonces on the request `Content-Security-Policy` header so Next can apply them to framework scripts. Keep root layout dynamic (`connection()`).
 - **Database access**: Use Prisma parameterised queries. Do not build raw SQL from user input. Backup/restore (`src/lib/db-backup.ts`) runs arbitrary SQL only from trusted admin uploads — treat as highly privileged.
 - **Shell commands**: Use `execFile` with argument arrays for `pg_dump`/`psql`/`zip`/`unzip` — never `exec` with string interpolation.
 - **Client boundaries**: Never import `prisma`, `fs`, secrets, or password hashes into Client Components. Do not return passwords or tokens in Server Action state.

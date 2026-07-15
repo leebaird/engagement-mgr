@@ -6,8 +6,11 @@ import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-vie
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
+import { DatabaseBackupModal } from './DatabaseBackupModal';
 import { DatabaseResetModal } from './DatabaseResetModal';
 import { DatabaseRestoreModal } from './DatabaseRestoreModal';
+import { formatBackupPathForDisplay, resolveBackupFilePath } from '@/lib/backup-path';
+import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
 
 export default async function UsersPage({
   searchParams,
@@ -24,17 +27,83 @@ export default async function UsersPage({
     db?: string;
     dbError?: string;
     dbMsg?: string;
+    backupFile?: string;
+    backupToken?: string;
   }>;
 }) {
-  const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg } = await searchParams;
+  const {
+    sort,
+    dir,
+    create,
+    detail,
+    edit,
+    delete: deleteConfirm,
+    deleteError,
+    saveError,
+    db,
+    dbError,
+    dbMsg,
+    backupFile,
+    backupToken,
+  } = await searchParams;
   const listParams = { sort, dir };
-  const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError, db, dbError, dbMsg };
-  const addHref = buildPathQuery('/dashboard/users', listParams, { create: '1', detail: null, db: null, dbError: null, dbMsg: null });
+  const currentParams = {
+    sort,
+    dir,
+    create,
+    detail,
+    edit,
+    delete: deleteConfirm,
+    deleteError,
+    saveError,
+    db,
+    dbError,
+    dbMsg,
+    backupFile,
+    backupToken,
+  };
+  const clearBackupParams = { backupFile: null, backupToken: null } as const;
+  const addHref = buildPathQuery('/dashboard/users', listParams, {
+    create: '1',
+    detail: null,
+    db: null,
+    dbError: null,
+    dbMsg: null,
+    ...clearBackupParams,
+  });
   const createCloseHref = buildPathQuery('/dashboard/users', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/dashboard/users', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
+  const listCloseHref = buildPathQuery('/dashboard/users', listParams, {
+    detail: null,
+    edit: null,
+    delete: null,
+    deleteError: null,
+    saveError: null,
+  });
   const dbCloseHref = buildPathQuery('/dashboard/users', listParams, { db: null, dbError: null });
-  const restoreHref = buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: null, dbMsg: null, detail: null, create: null });
-  const resetHref = buildPathQuery('/dashboard/users', listParams, { db: 'reset', dbError: null, dbMsg: null, detail: null, create: null });
+  const backupHref = buildPathQuery('/dashboard/users', listParams, {
+    db: 'backup',
+    dbError: null,
+    dbMsg: null,
+    detail: null,
+    create: null,
+    ...clearBackupParams,
+  });
+  const restoreHref = buildPathQuery('/dashboard/users', listParams, {
+    db: 'restore',
+    dbError: null,
+    dbMsg: null,
+    detail: null,
+    create: null,
+    ...clearBackupParams,
+  });
+  const resetHref = buildPathQuery('/dashboard/users', listParams, {
+    db: 'reset',
+    dbError: null,
+    dbMsg: null,
+    detail: null,
+    create: null,
+    ...clearBackupParams,
+  });
   const session = await getSession();
   if (session?.role !== 'Admin') {
     redirect('/dashboard');
@@ -56,10 +125,41 @@ export default async function UsersPage({
   const detailUser = detail ? users.find((user) => user.id === detail) : undefined;
   const detailHrefs = detailUser ? buildDetailHrefs('/dashboard/users', listParams, detailUser.id) : null;
 
-  const dbMessage = dbMsg === 'restore' ? 'Database restored successfully.' : null;
+  const safeBackupFile =
+    backupFile && resolveBackupFilePath(backupFile) ? backupFile : null;
+  const downloadTokenOk =
+    !!safeBackupFile &&
+    !!backupToken &&
+    (await verifyBackupDownloadToken(backupToken, session.userId, safeBackupFile));
+  const backupDownloadHref =
+    downloadTokenOk && safeBackupFile && backupToken
+      ? `/api/db/backup?file=${encodeURIComponent(safeBackupFile)}&token=${encodeURIComponent(backupToken)}`
+      : null;
+  const backupSavedPath = safeBackupFile
+    ? formatBackupPathForDisplay(resolveBackupFilePath(safeBackupFile)!)
+    : null;
+
+  let dbMessage: string | null = null;
+  if (dbMsg === 'restore') {
+    dbMessage = 'Database restored successfully.';
+  } else if (dbMsg === 'backup' && backupSavedPath) {
+    dbMessage = downloadTokenOk
+      ? `Backup created at ${backupSavedPath}. Download link expires in 5 minutes.`
+      : `Backup created at ${backupSavedPath}.`;
+  } else if (dbMsg === 'backup') {
+    dbMessage = 'Backup created successfully.';
+  }
 
   return (
     <>
+      {db === 'backup' ? (
+        <DatabaseBackupModal
+          closeHref={dbCloseHref}
+          sort={sort}
+          dir={dir}
+          dbError={dbError}
+        />
+      ) : null}
       {db === 'reset' ? (
         <DatabaseResetModal
           closeHref={dbCloseHref}
@@ -99,9 +199,11 @@ export default async function UsersPage({
         addHref={addHref}
         showCreateModal={create === '1'}
         createCloseHref={createCloseHref}
+        backupHref={backupHref}
         restoreHref={restoreHref}
         resetHref={resetHref}
         dbMessage={dbMessage}
+        backupDownloadHref={backupDownloadHref}
       >
       {users.length === 0 ? (
         <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>

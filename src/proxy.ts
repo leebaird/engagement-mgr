@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSession } from '@/lib/auth/session';
+import { getSessionJwtFromRequest } from '@/lib/auth/session';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+/**
+ * CSP with per-request nonces. Next.js reads the nonce from the request
+ * Content-Security-Policy header and applies it to framework scripts automatically
+ * (see Next.js CSP guide). Layout also exposes x-nonce for any explicit Script tags.
+ */
 function buildCsp(nonce: string): string {
+  const scriptSrc = isProduction
+    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
+
+  // Inline style attributes are used throughout the UI; keep style-src permissive.
   return [
     "default-src 'self'",
-    isProduction
-      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
-      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
+    "object-src 'none'",
     "connect-src 'self'",
     "frame-ancestors 'self'",
     "base-uri 'self'",
@@ -59,10 +68,12 @@ function legacyDashboardRedirect(
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const nonce = crypto.randomUUID().replaceAll('-', '');
+  // Prefer base64 nonces (Next.js CSP guide); still unique per request
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const csp = buildCsp(nonce);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
+  // Next extracts the nonce from this request header during SSR
   requestHeaders.set('Content-Security-Policy', csp);
 
   const legacyRedirect = legacyDashboardRedirect(pathname, request, csp);
@@ -70,8 +81,11 @@ export async function proxy(request: NextRequest) {
     return legacyRedirect;
   }
 
-  const session = await getSession();
+  // JWT-only gate — no DB. Revocation, role freshness, and 90-day rotation
+  // are enforced in dashboard layout / getSession() / server actions.
+  const session = await getSessionJwtFromRequest(request);
   const isLoginPage = pathname === '/login';
+  const isChangePasswordPage = pathname === '/change-password';
 
   if (!session && !isLoginPage) {
     return withSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), csp);
@@ -81,26 +95,40 @@ export async function proxy(request: NextRequest) {
     return withSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)), csp);
   }
 
-  // Check 90-day password rotation
-  if (session && !isLoginPage) {
+  // Fast path for password rotation using JWT claim (DB confirms in layout)
+  if (session && !isLoginPage && !isChangePasswordPage) {
     const lastPasswordChange = new Date(session.lastPasswordChange);
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-    const isChangePasswordPage = pathname === '/change-password';
-
-    if (lastPasswordChange < ninetyDaysAgo && !isChangePasswordPage) {
-      return withSecurityHeaders(NextResponse.redirect(new URL('/change-password', request.url)), csp);
+    if (
+      !Number.isNaN(lastPasswordChange.getTime()) &&
+      lastPasswordChange < ninetyDaysAgo
+    ) {
+      return withSecurityHeaders(
+        NextResponse.redirect(new URL('/change-password', request.url)),
+        csp
+      );
     }
   }
 
-  return withSecurityHeaders(NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  }), csp);
+  return withSecurityHeaders(
+    NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    }),
+    csp
+  );
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
 };

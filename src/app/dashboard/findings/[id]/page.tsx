@@ -7,7 +7,10 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
   const resolvedParams = await params;
   const finding = await prisma.finding.findUnique({
     where: { id: resolvedParams.id },
-    include: { engagement: true, screenshots: true }
+    include: {
+      engagement: { select: { codeName: true } },
+      screenshots: true,
+    },
   });
 
   if (!finding) return notFound();

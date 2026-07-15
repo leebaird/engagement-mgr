@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth/session';
 import Link from 'next/link';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
@@ -12,7 +11,6 @@ export default async function FindingsPage({
 }: {
   searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
 }) {
-  await getSession();
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
@@ -32,8 +30,17 @@ export default async function FindingsPage({
     'Info': 5
   };
 
+  // Lean list columns — omit large text blobs (background, remediation, etc.)
   const findings = await prisma.finding.findMany({
-    orderBy: sortCol === 'severity' ? undefined : { [sortCol]: sortDir }
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      severity: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: sortCol === 'severity' ? undefined : { [sortCol]: sortDir },
   });
 
   if (sortCol === 'severity') {
@@ -45,8 +52,35 @@ export default async function FindingsPage({
   }
 
   const sortHrefs = buildSortHrefs('/dashboard/findings', currentParams, sortCol, sortDir);
-  const detailFinding = detail ? findings.find((finding) => finding.id === detail) : undefined;
-  const detailHrefs = detailFinding ? buildDetailHrefs('/dashboard/findings', listParams, detailFinding.id) : null;
+
+  const rawDetail = detail
+    ? await prisma.finding.findUnique({
+        where: { id: detail },
+        include: {
+          engagementContext: true,
+        },
+      })
+    : null;
+
+  const detailFinding = rawDetail
+    ? {
+        id: rawDetail.id,
+        title: rawDetail.title,
+        category: rawDetail.category,
+        severity: rawDetail.severity,
+        background: rawDetail.background,
+        remediation: rawDetail.remediation,
+        supportingLinks: rawDetail.supportingData,
+        observation: rawDetail.engagementContext?.observation ?? null,
+        affectedHosts: rawDetail.engagementContext?.affectedHosts ?? null,
+        createdAt: rawDetail.createdAt,
+        updatedAt: rawDetail.updatedAt,
+      }
+    : undefined;
+
+  const detailHrefs = detailFinding
+    ? buildDetailHrefs('/dashboard/findings', listParams, detailFinding.id)
+    : null;
 
   return (
     <>

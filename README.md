@@ -29,6 +29,7 @@ EOF
 |----------|----------|-------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string. Prisma uses the `schema=public` query parameter. Backup and restore strip Prisma-only parameters before calling `pg_dump` or `psql`. |
 | `JWT_SECRET` | Yes in production | Must be at least **32 characters**. The app refuses to start in production without it. Rotating this invalidates all existing sessions. |
+| `TRUST_PROXY` | No | Set to `1` (or `true`) only when the app is behind a reverse proxy that **overwrites** `X-Forwarded-For` / `X-Real-IP`. When unset, those headers are ignored for rate limiting and audit IPs so clients cannot spoof them. |
 
 Generate a strong secret:
 
@@ -191,7 +192,7 @@ After seeding the database, you can log in using the generated temporary admin a
 
 On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
 
-**Backup** saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app) and also downloads a copy to your browser.
+**Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app). After a successful export, use **Download copy** on the Admin page — that link includes a short-lived signed token (5 minutes) and only works for the admin who created the backup.
 - The timestamp uses the **local time** of the server running the app (year, month, day, hour, and minute). Example: `em-backup-2026-06-02-14-30.zip`.
 
 | Path | Contents |
@@ -232,7 +233,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 
 **Notes**
 
-- **Destructive actions:** Restore and Reset replace all existing database rows and overwrite the `uploads/` directory. Both require admin password re-confirmation in addition to the UI prompt.
+- **Sensitive actions:** Backup, Restore, and Reset all require admin password re-confirmation. Restore and Reset also replace existing database rows and overwrite the `uploads/` directory.
 - **JWT_SECRET:** May differ on the new server; existing browser sessions from the old server are not migrated. Users sign in again with accounts from the imported database.
 - **Application code:** Use `git clone` (or deploy the same revision) on the new server so the app matches the schema expected by the backup. If the old server ran a newer schema than the cloned code, align versions before importing.
 - **Tools:** Backup and restore require the CLI tools installed in [Prerequisites](#prerequisites).
@@ -288,7 +289,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Only admins can access the Admin page (`/dashboard/users`), manage accounts, and back up, restore, or reset the database. Destructive database operations require password re-confirmation.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Only admins can access the Admin page (`/dashboard/users`), manage accounts, and back up, restore, or reset the database. Backup, restore, and reset require password re-confirmation. Creating a backup is a Server Action; browser download uses `GET /api/db/backup?file=…&token=…` (admin session + 5-minute signed token issued at export time).
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

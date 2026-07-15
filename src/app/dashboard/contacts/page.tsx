@@ -28,32 +28,32 @@ export default async function ContactsPage({
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'name';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
+  type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
+  let orderBy: ContactOrderBy | undefined;
+  if (sortCol === 'title') {
+    orderBy = undefined;
+  } else if (sortCol === 'client') {
+    orderBy = { client: { company: sortDir } };
+  } else if (sortCol === 'phoneNumber') {
+    orderBy = { phone: sortDir };
+  } else if (sortCol === 'name') {
+    orderBy = { name: sortDir };
+  } else {
+    orderBy = { email: sortDir };
+  }
+
+  // Single query (title sort finishes in memory)
   const contactsRaw = await prisma.contact.findMany({
     include: { client: true },
+    orderBy,
   });
+  const contacts =
+    sortCol === 'title' ? sortContactsByTitle(contactsRaw, sortDir) : contactsRaw;
 
-  let contacts: typeof contactsRaw;
-  if (sortCol === 'title') {
-    contacts = sortContactsByTitle(contactsRaw, sortDir);
-  } else {
-    type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
-    let orderBy: ContactOrderBy;
-    if (sortCol === 'client') {
-      orderBy = { client: { company: sortDir } };
-    } else if (sortCol === 'phoneNumber') {
-      orderBy = { phone: sortDir };
-    } else if (sortCol === 'name') {
-      orderBy = { name: sortDir };
-    } else {
-      orderBy = { email: sortDir };
-    }
-
-    contacts = await prisma.contact.findMany({
-      include: { client: true },
-      orderBy,
-    });
-  }
-  const clients = await prisma.client.findMany({ orderBy: { company: 'asc' } });
+  const needsClients = isAdmin && (create === '1' || Boolean(detail));
+  const clients = needsClients
+    ? await prisma.client.findMany({ orderBy: { company: 'asc' } })
+    : [];
 
   const sortHrefs = buildSortHrefs('/dashboard/contacts', currentParams, sortCol, sortDir);
 

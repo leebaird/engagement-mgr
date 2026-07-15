@@ -1,52 +1,60 @@
-import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { NextRequest, NextResponse } from 'next/server';
+import { createReadStream } from 'fs';
+import { stat } from 'fs/promises';
+import { Readable } from 'stream';
 import { getSession } from '@/lib/auth/session';
-import {
-  backupFilename,
-  ensureBackupDirectory,
-  resolveBackupFilePath,
-} from '@/lib/backup-path';
-import { exportDatabaseArchive } from '@/lib/db-backup';
-import { logAuditEvent } from '@/lib/audit-log';
+import { resolveBackupFilePath } from '@/lib/backup-path';
+import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
 
-export async function GET() {
-  return new NextResponse('Method Not Allowed', {
-    status: 405,
-    headers: { Allow: 'POST' },
-  });
-}
-
-export async function POST() {
+/**
+ * Download an existing backup file written by the password-gated export action.
+ * Requires admin session + a short-lived download token issued at export time.
+ * Streams from disk — does not buffer the full archive in memory.
+ */
+export async function GET(request: NextRequest) {
   const session = await getSession();
   if (!session || session.role !== 'Admin') {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 
-  try {
-    const zip = await exportDatabaseArchive();
-    const filename = backupFilename();
-    await ensureBackupDirectory();
-    const absolutePath = resolveBackupFilePath(filename);
+  const filename = request.nextUrl.searchParams.get('file')?.trim() ?? '';
+  const token = request.nextUrl.searchParams.get('token')?.trim() ?? '';
+  const absolutePath = resolveBackupFilePath(filename);
 
-    if (!absolutePath) {
-      return new NextResponse('Failed to prepare backup file path.', { status: 500 });
+  if (!absolutePath) {
+    return new NextResponse('File not found', { status: 404 });
+  }
+
+  const tokenOk = await verifyBackupDownloadToken(token, session.userId, filename);
+  if (!tokenOk) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+
+  try {
+    const fileStat = await stat(absolutePath);
+    if (!fileStat.isFile()) {
+      return new NextResponse('File not found', { status: 404 });
     }
 
-    await writeFile(absolutePath, zip, { mode: 0o600 });
+    const stream = Readable.toWeb(createReadStream(absolutePath));
 
-    await logAuditEvent('db.export', session.userId, 'success');
-
-    return new NextResponse(new Uint8Array(zip), {
+    return new NextResponse(stream as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/zip',
+        'Content-Length': String(fileStat.size),
         'Content-Disposition': `attachment; filename="${filename}"`,
         'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'no-store',
       },
     });
   } catch {
-    return new NextResponse(
-      'Export failed. Ensure pg_dump and zip are installed and DATABASE_URL is valid.',
-      { status: 500 },
-    );
+    return new NextResponse('File not found', { status: 404 });
   }
+}
+
+export async function POST() {
+  return new NextResponse('Method Not Allowed', {
+    status: 405,
+    headers: { Allow: 'GET' },
+  });
 }
