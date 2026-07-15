@@ -50,7 +50,7 @@ export default async function ContactsPage({
   const contacts =
     sortCol === 'title' ? sortContactsByTitle(contactsRaw, sortDir) : contactsRaw;
 
-  const needsClients = isAdmin && (create === '1' || Boolean(detail));
+  const needsClients = (isAdmin && create === '1') || Boolean(detail);
   const clients = needsClients
     ? await prisma.client.findMany({ orderBy: { company: 'asc' } })
     : [];

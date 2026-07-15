@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSessionJwtFromRequest } from '@/lib/auth/session';
+import { getSessionFromRequest, getSessionJwtFromRequest } from '@/lib/auth/session';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -81,8 +81,8 @@ export async function proxy(request: NextRequest) {
     return legacyRedirect;
   }
 
-  // JWT-only gate — no DB. Revocation, role freshness, and 90-day rotation
-  // are enforced in dashboard layout / getSession() / server actions.
+  // JWT-first gate. Protected pages enforce revocation and role freshness in
+  // their layouts/actions; login redirects are DB-validated below.
   const session = await getSessionJwtFromRequest(request);
   const isLoginPage = pathname === '/login';
   const isChangePasswordPage = pathname === '/change-password';
@@ -92,7 +92,10 @@ export async function proxy(request: NextRequest) {
   }
 
   if (session && isLoginPage) {
-    return withSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)), csp);
+    const dbSession = await getSessionFromRequest(request);
+    if (dbSession) {
+      return withSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)), csp);
+    }
   }
 
   // Fast path for password rotation using JWT claim (DB confirms in layout)

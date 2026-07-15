@@ -95,7 +95,7 @@ export default async function EngagementsPage({
 
   const sortHrefs = buildSortHrefs('/dashboard/engagements', currentParams, sortCol, sortDir);
 
-  const needsFormOptions = isAdmin && (create === '1' || Boolean(detail));
+  const needsFormOptions = (isAdmin && create === '1') || Boolean(detail);
 
   const [rawDetailEngagement, clients, contacts, operators] = await Promise.all([
     detail

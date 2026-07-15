@@ -61,9 +61,7 @@ export async function getSessionJwtFromRequest(
   return decrypt(request.cookies.get('session')?.value);
 }
 
-async function loadSessionFromDb(): Promise<SessionPayload | null> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get('session')?.value;
+async function loadSessionTokenFromDb(session: string | undefined): Promise<SessionPayload | null> {
   if (!session) return null;
 
   const payload = await decrypt(session);
@@ -87,6 +85,18 @@ async function loadSessionFromDb(): Promise<SessionPayload | null> {
     role: user.role,
     lastPasswordChange: user.lastPasswordChange.toISOString(),
   };
+}
+
+/** DB-validated session for request contexts such as Proxy. */
+export async function getSessionFromRequest(
+  request: NextRequest
+): Promise<SessionPayload | null> {
+  return loadSessionTokenFromDb(request.cookies.get('session')?.value);
+}
+
+async function loadSessionFromDb(): Promise<SessionPayload | null> {
+  const cookieStore = await cookies();
+  return loadSessionTokenFromDb(cookieStore.get('session')?.value);
 }
 
 /** Request-deduped session with DB role + password-change revocation. */
