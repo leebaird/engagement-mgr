@@ -18,23 +18,23 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "7.8.0",
-    "@prisma/client": "7.8.0",
-    "argon2": "0.45.0",
-    "jose": "6.2.3",
-    "lucide-react": "1.25.0",
+    "@prisma/adapter-pg": "7.9.0",
+    "@prisma/client": "7.9.0",
+    "argon2": "0.45.1",
+    "jose": "6.2.4",
+    "lucide-react": "1.26.0",
     "next": "16.2.11",
     "pg": "8.22.0",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "26.1.1",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
-    "oxlint": "1.74.0",
-    "prisma": "7.8.0",
+    "oxlint": "1.75.0",
+    "prisma": "7.9.0",
     "tsx": "4.23.1",
     "typescript": "7.0.2"
   },
