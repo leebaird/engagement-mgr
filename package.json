@@ -17,8 +17,8 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "7.9.0",
-    "@prisma/client": "7.9.0",
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
     "argon2": "0.45.1",
     "jose": "6.2.4",
     "lucide-react": "1.27.0",
@@ -33,12 +33,12 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "oxlint": "1.75.0",
-    "prisma": "7.9.0",
+    "prisma": "7.9.1",
     "tsx": "4.23.1",
     "typescript": "7.0.2"
   },
   "overrides": {
-    "postcss": "8.5.15",
-    "@hono/node-server": "2.0.4"
+    "postcss": "8.5.25",
+    "@hono/node-server": "2.0.12"
   }
 }
