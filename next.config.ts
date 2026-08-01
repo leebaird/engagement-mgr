@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    useTypeScriptCli: true,
   },
   async headers() {
     return [
