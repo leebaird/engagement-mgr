@@ -55,7 +55,7 @@ export async function login(_prevState: unknown, formData: FormData) {
   let needsPasswordChange = false;
 
   try {
-    const isPasswordValid = await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
+    const isPasswordValid = await argon2.verify(user.passwordHash, password);
 
     if (!isPasswordValid) {
       await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));

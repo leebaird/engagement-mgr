@@ -1,6 +1,5 @@
 import * as argon2 from 'argon2';
 import { prisma } from '@/lib/db';
-import { ARGON2_OPTIONS } from '@/lib/auth/password';
 import {
   clearLoginRateLimit,
   isLoginRateLimited,
@@ -19,7 +18,7 @@ export async function verifyUserPassword(userId: string, password: string): Prom
   }
 
   try {
-    return await argon2.verify(user.passwordHash, password, ARGON2_OPTIONS);
+    return await argon2.verify(user.passwordHash, password);
   } catch {
     return false;
   }

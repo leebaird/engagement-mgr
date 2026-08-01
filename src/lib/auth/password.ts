@@ -39,14 +39,16 @@ let dummyHashPromise: Promise<string> | undefined;
  * login timing when the username does not exist (prevents user enumeration).
  */
 export async function verifyAgainstDummyHash(password: string): Promise<void> {
-  dummyHashPromise ??= argon2.hash('dummy-password-for-timing-equalization', ARGON2_OPTIONS);
-  const dummyHash = await dummyHashPromise;
-  await argon2.verify(dummyHash, password, ARGON2_OPTIONS).catch(() => {});
+  const dummyHash = await (dummyHashPromise ??= argon2.hash(
+    'dummy-password-for-timing-equalization',
+    ARGON2_OPTIONS
+  ));
+  await argon2.verify(dummyHash, password).catch(() => {});
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-export const ARGON2_OPTIONS: argon2.Options = isProduction
+export const ARGON2_OPTIONS: argon2.HashOptions = isProduction
   ? {
       type: argon2.argon2id,
       memoryCost: 2 ** 16, // 64 MB – strong for production

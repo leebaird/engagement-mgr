@@ -8,7 +8,6 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "postinstall": "prisma generate",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
