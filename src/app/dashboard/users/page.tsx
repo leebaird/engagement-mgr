@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
+import { DisplayDate } from '@/components/DateFormatProvider';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
 import { DatabaseBackupModal } from './DatabaseBackupModal';
@@ -256,7 +257,7 @@ export default async function UsersPage({
                   )}
                 </td>
                 <td className="cell-numeric" style={{ color: 'var(--text-muted)', textAlign: 'right' }}>
-                  {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : ''}
+                  <DisplayDate value={user.lastLogin} includeTime />
                 </td>
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/users', listParams, { detail: user.id, create: null })} />

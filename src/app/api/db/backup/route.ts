@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createReadStream } from 'fs';
 import { stat } from 'fs/promises';
 import { Readable } from 'stream';
-import { getSession } from '@/lib/auth/session';
+import { getSession, isPasswordRotationRequired } from '@/lib/auth/session';
 import { resolveBackupFilePath } from '@/lib/backup-path';
 import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
 
@@ -13,7 +13,7 @@ import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
  */
 export async function GET(request: NextRequest) {
   const session = await getSession();
-  if (!session || session.role !== 'Admin') {
+  if (!session || session.role !== 'Admin' || isPasswordRotationRequired(session.lastPasswordChange)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

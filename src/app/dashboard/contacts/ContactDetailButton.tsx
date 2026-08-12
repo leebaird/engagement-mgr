@@ -14,6 +14,7 @@ import {
 } from '@/components/DetailModalActions';
 
 const EDIT_FORM_ID = 'edit-contact-form';
+import { DisplayDate } from '@/components/DateFormatProvider';
 import { formatPhone } from '@/lib/format';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
@@ -181,9 +182,9 @@ export function ContactDetailButton({
             <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{new Date(contact.createdAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={contact.createdAt} /></div>
                 <div>Updated</div>
-                <div>{new Date(contact.updatedAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={contact.updatedAt} /></div>
               </div>
             </div>
           </div>

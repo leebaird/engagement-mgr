@@ -2,16 +2,19 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { Crosshair, ShieldAlert, Building2, Zap, Contact } from 'lucide-react';
 import { EngagementCalendar } from './EngagementCalendar';
-import { buildCalendarNavHrefs, parseCalendarView } from '@/lib/list-view-params';
+import { extractScheduleEvents, getEngagementsOnDate } from '@/lib/engagement-schedule-events';
+import { buildCalendarDayCloseHref, buildCalendarNavHrefs, parseCalendarDayKey, parseCalendarView } from '@/lib/list-view-params';
 
 export default async function DashboardHome({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; day?: string }>;
 }) {
   const calendarParams = await searchParams;
   const { viewYear, viewMonth } = parseCalendarView(calendarParams);
   const { prevHref, nextHref, todayHref } = buildCalendarNavHrefs(viewYear, viewMonth);
+  const pickerDateKey = parseCalendarDayKey(calendarParams);
+  const pickerCloseHref = buildCalendarDayCloseHref(viewYear, viewMonth);
   const [
     activeEngagementCount,
     reconEngagementCount,
@@ -62,6 +65,18 @@ export default async function DashboardHome({
     endReporting: engagement.endReporting?.toISOString() ?? null,
     outbrief: engagement.outbrief?.toISOString() ?? null,
   }));
+
+  const pickerEventsByDate = new Map<string, ReturnType<typeof extractScheduleEvents>>();
+  if (pickerDateKey) {
+    for (const event of extractScheduleEvents(calendarEngagements)) {
+      const existing = pickerEventsByDate.get(event.date) ?? [];
+      existing.push(event);
+      pickerEventsByDate.set(event.date, existing);
+    }
+  }
+  const pickerEngagements = pickerDateKey
+    ? getEngagementsOnDate(pickerDateKey, calendarEngagements, pickerEventsByDate)
+    : [];
 
   const statCards = [
     { label: 'Clients', count: clientCount, icon: Building2, href: '/dashboard/clients' },
@@ -232,6 +247,9 @@ export default async function DashboardHome({
             prevHref={prevHref}
             nextHref={nextHref}
             todayHref={todayHref}
+            pickerDateKey={pickerDateKey}
+            pickerEngagements={pickerEngagements}
+            pickerCloseHref={pickerCloseHref}
           />
         </div>
       </div>

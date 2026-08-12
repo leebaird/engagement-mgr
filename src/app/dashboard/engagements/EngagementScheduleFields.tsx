@@ -4,6 +4,8 @@ import {
   engagementToScheduleValues,
   type EngagementScheduleValues,
 } from '@/lib/date-input-value';
+import { formatDate } from '@/lib/date-format';
+import { useDateFormat } from '@/components/DateFormatProvider';
 
 export type { EngagementScheduleValues };
 export { engagementToScheduleValues };
@@ -20,18 +22,17 @@ const SCHEDULE_ROWS: {
   { label: 'Outbrief', start: 'outbrief' },
 ];
 
-function formatScheduleDate(iso: string) {
-  if (!iso) return '';
-  const [year, month, day] = iso.split('-').map(Number);
-  if (!year || !month || !day) return '';
-  return new Date(year, month - 1, day).toLocaleDateString();
-}
-
 type EngagementScheduleFieldsProps = {
   values: EngagementScheduleValues;
 };
 
 export function EngagementScheduleFields({ values }: EngagementScheduleFieldsProps) {
+  const { format, ready } = useDateFormat();
+  const formatValue = (iso: string) => {
+    if (!iso) return '';
+    return formatDate(iso, ready ? format : 'ymd');
+  };
+
   return (
     <div className="engagement-schedule-grid">
       <div />
@@ -45,7 +46,7 @@ export function EngagementScheduleFields({ values }: EngagementScheduleFieldsPro
             className="form-input"
             type="text"
             readOnly
-            value={formatScheduleDate(values[row.start] ?? '')}
+            value={formatValue(values[row.start] ?? '')}
             style={{ pointerEvents: 'none' }}
           />
           {row.end ? (
@@ -53,7 +54,7 @@ export function EngagementScheduleFields({ values }: EngagementScheduleFieldsPro
               className="form-input"
               type="text"
               readOnly
-              value={formatScheduleDate(values[row.end] ?? '')}
+              value={formatValue(values[row.end] ?? '')}
               style={{ pointerEvents: 'none' }}
             />
           ) : (

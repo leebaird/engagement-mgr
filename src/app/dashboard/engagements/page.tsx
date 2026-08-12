@@ -6,6 +6,7 @@ import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-vie
 import { sortContactsByTitle } from '@/lib/contact-title-sort';
 import { sortOperatorsByTitle } from '@/lib/operator-title-sort';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
+import { DisplayDate } from '@/components/DateFormatProvider';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
 import { EngagementScheduleEditFields } from './EngagementScheduleEditFields';
@@ -35,18 +36,18 @@ const listSelect = {
 export default async function EngagementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string }>;
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; findings?: string; createFinding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string }>;
 }) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
+  const { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
   const listParams = { sort, dir };
-  const currentParams = { sort, dir, create, detail, finding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError };
+  const currentParams = { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError };
   const addHref = isAdmin
     ? buildPathQuery('/dashboard/engagements', listParams, { create: '1', detail: null })
     : undefined;
   const createCloseHref = buildPathQuery('/dashboard/engagements', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/dashboard/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, schedule: null, scheduleEdit: null, scheduleError: null });
+  const listCloseHref = buildPathQuery('/dashboard/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, findings: null, createFinding: null, schedule: null, scheduleEdit: null, scheduleError: null });
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
@@ -182,7 +183,9 @@ export default async function EngagementsPage({
           sort={sort}
           dir={dir}
           activeFindingId={finding}
-          showSchedule={schedule === '1' && !finding && !edit && deleteConfirm !== '1'}
+          showFindingsList={findings === '1'}
+          showCreateFinding={createFinding === '1' && !finding}
+          showSchedule={schedule === '1' && !finding && !edit && deleteConfirm !== '1' && findings !== '1' && createFinding !== '1'}
           scheduleIsEditing={scheduleEdit === '1'}
           scheduleHref={detailHrefs!.schedule}
           scheduleViewHref={detailHrefs!.schedule}
@@ -249,8 +252,8 @@ export default async function EngagementsPage({
                 <td>{eng.status ?? ''}</td>
                 <td>{eng.focus || ''}</td>
                 <td>{eng.type ? formatEngagementType(eng.type) : ''}</td>
-                <td className="cell-numeric">{eng.startTesting?.toLocaleDateString() || ''}</td>
-                <td className="cell-numeric">{eng.endTesting?.toLocaleDateString() || ''}</td>
+                <td className="cell-numeric"><DisplayDate value={eng.startTesting} dateOnly /></td>
+                <td className="cell-numeric"><DisplayDate value={eng.endTesting} dateOnly /></td>
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/engagements', listParams, { detail: eng.id, create: null, finding: null })} />
                 </td>

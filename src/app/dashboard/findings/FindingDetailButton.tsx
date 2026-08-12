@@ -16,6 +16,7 @@ import {
 
 const EDIT_FORM_ID = 'edit-finding-form';
 import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
+import { DisplayDate } from '@/components/DateFormatProvider';
 
 export type FindingDetail = {
   id: string;
@@ -161,7 +162,16 @@ export function FindingDetailButton({
 
   const editFormFields = (
     <>
-      <DetailEditFormFields recordId={finding.id} sort={sort} dir={dir} />
+      <DetailEditFormFields
+        recordId={finding.id}
+        sort={sort}
+        dir={dir}
+        extraFields={
+          engagementScoped && engagementId
+            ? { finding: finding.id, engagementId }
+            : undefined
+        }
+      />
       {engagementScoped ? <input type="hidden" name="engagementScoped" value="true" /> : null}
       <input type="hidden" name="title" value={formData.title} />
       <input type="hidden" name="category" value={formData.category} />
@@ -241,15 +251,13 @@ export function FindingDetailButton({
             sort={sort}
             dir={dir}
             childrenBeforeEdit={
-              !engagementScoped ? (
-                <a
-                  href={`/dashboard/findings/${finding.id}`}
-                  className="modal-action-btn"
-                  style={{ textDecoration: 'none' }}
-                >
-                  Screenshots
-                </a>
-              ) : undefined
+              <a
+                href={`/dashboard/findings/${finding.id}`}
+                className="modal-action-btn"
+                style={{ textDecoration: 'none' }}
+              >
+                Screenshots
+              </a>
             }
             extraFields={
               engagementScoped && engagementId
@@ -398,9 +406,9 @@ export function FindingDetailButton({
             <div style={{ marginTop: engagementScoped ? '1rem' : '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{finding.createdAt ? new Date(finding.createdAt).toLocaleDateString() : ''}</div>
+                <div><DisplayDate value={finding.createdAt} /></div>
                 <div>Updated</div>
-                <div>{finding.updatedAt ? new Date(finding.updatedAt).toLocaleDateString() : ''}</div>
+                <div><DisplayDate value={finding.updatedAt} /></div>
               </div>
             </div>
           </>

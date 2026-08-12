@@ -1,25 +1,25 @@
-'use client';
-
-import { useState } from 'react';
-import { deleteScreenshot } from '@/app/actions/finding';
+import { deleteScreenshotFromPage } from '@/app/actions/finding';
 import { DetailDeleteConfirmBody } from '@/components/DetailModalActions';
 
 export function DeleteScreenshotButton({
   screenshotId,
   findingId,
+  confirmHref,
+  cancelHref,
+  showConfirm,
+  deleteError,
 }: {
   screenshotId: string;
   findingId: string;
+  confirmHref: string;
+  cancelHref: string;
+  showConfirm: boolean;
+  deleteError?: string;
 }) {
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   if (!showConfirm) {
     return (
-      <button
-        type="button"
-        onClick={() => setShowConfirm(true)}
+      <a
+        href={confirmHref}
         style={{
           background: 'transparent',
           border: '1px solid var(--error-color)',
@@ -29,17 +29,14 @@ export function DeleteScreenshotButton({
           cursor: 'pointer',
           fontSize: '0.9rem',
           width: '100%',
-          transition: 'all 0.2s',
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'rgba(255,77,77,0.1)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'transparent';
+          textDecoration: 'none',
+          display: 'block',
+          textAlign: 'center',
+          boxSizing: 'border-box',
         }}
       >
         Delete Screenshot
-      </button>
+      </a>
     );
   }
 
@@ -52,42 +49,22 @@ export function DeleteScreenshotButton({
         background: 'rgba(255, 68, 68, 0.06)',
       }}
     >
-      <DetailDeleteConfirmBody deleteError={error ?? undefined}>
+      <DetailDeleteConfirmBody deleteError={deleteError}>
         <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
           This screenshot file will be permanently removed.
         </p>
       </DetailDeleteConfirmBody>
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-        <button
-          type="button"
-          className="modal-action-btn modal-action-btn--danger"
-          disabled={isPending}
-          onClick={async () => {
-            setIsPending(true);
-            setError(null);
-            try {
-              await deleteScreenshot(screenshotId, findingId);
-              window.location.reload();
-            } catch {
-              setError('generic');
-              setIsPending(false);
-            }
-          }}
-        >
-          {isPending ? 'Deleting...' : 'Confirm Delete'}
-        </button>
-        <button
-          type="button"
-          className="btn-cancel"
-          style={{ boxShadow: 'none' }}
-          disabled={isPending}
-          onClick={() => {
-            setShowConfirm(false);
-            setError(null);
-          }}
-        >
+        <form action={deleteScreenshotFromPage}>
+          <input type="hidden" name="screenshotId" value={screenshotId} />
+          <input type="hidden" name="findingId" value={findingId} />
+          <button type="submit" className="modal-action-btn modal-action-btn--danger">
+            Confirm Delete
+          </button>
+        </form>
+        <a href={cancelHref} className="btn-cancel" style={{ boxShadow: 'none', textDecoration: 'none' }}>
           Cancel
-        </button>
+        </a>
       </div>
     </div>
   );

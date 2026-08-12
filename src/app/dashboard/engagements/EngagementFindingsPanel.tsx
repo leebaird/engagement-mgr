@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { buildDetailHrefs, buildPathQuery, type SearchParamRecord } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { Modal } from '@/components/Modal';
@@ -31,6 +29,8 @@ export function EngagementFindingsPanel({
   activeFindingId,
   findingIsEditing = false,
   findingShowDeleteConfirm = false,
+  showFindingsList = false,
+  showCreateFinding = false,
   deleteError,
   saveError,
   sort,
@@ -41,10 +41,11 @@ export function EngagementFindingsPanel({
 }: {
   engagementId: string;
   findings: EngagementFindingSummary[];
-  onFindingsChange: (findings: EngagementFindingSummary[]) => void;
   activeFindingId?: string;
   findingIsEditing?: boolean;
   findingShowDeleteConfirm?: boolean;
+  showFindingsList?: boolean;
+  showCreateFinding?: boolean;
   deleteError?: string;
   saveError?: string;
   sort?: string;
@@ -53,24 +54,59 @@ export function EngagementFindingsPanel({
   listParams?: SearchParamRecord;
   engagementIdForLinks?: string;
 }) {
-  const router = useRouter();
-  const [viewOpen, setViewOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
   const counts = countFindingsBySeverity(findings);
   const addFormId = `engagement-findings-add-${engagementId}`;
+  const overlayId = engagementIdForLinks ?? engagementId;
 
-  const handleRefresh = () => {
-    router.refresh();
-  };
+  const findingsListHref = buildPathQuery('/dashboard/engagements', listParams, {
+    detail: overlayId,
+    findings: '1',
+    createFinding: null,
+    finding: null,
+    edit: null,
+    delete: null,
+    deleteError: null,
+    saveError: null,
+    create: null,
+    schedule: null,
+    scheduleEdit: null,
+    scheduleError: null,
+  });
+  const createFindingHref = buildPathQuery('/dashboard/engagements', listParams, {
+    detail: overlayId,
+    findings: '1',
+    createFinding: '1',
+    finding: null,
+    edit: null,
+    delete: null,
+    deleteError: null,
+    saveError: null,
+    create: null,
+    schedule: null,
+    scheduleEdit: null,
+    scheduleError: null,
+  });
+  const findingsListCloseHref = buildPathQuery('/dashboard/engagements', listParams, {
+    detail: overlayId,
+    findings: null,
+    createFinding: null,
+    finding: null,
+    edit: null,
+    delete: null,
+    deleteError: null,
+    saveError: null,
+    create: null,
+  });
+  const createFindingCloseHref = findingsListHref;
 
-  const handleAddSuccess = () => {
-    setAddOpen(false);
-    handleRefresh();
+  const findingExtra = {
+    finding: activeFindingId,
+    ...(showFindingsList || showCreateFinding ? { findings: '1' } : {}),
   };
 
   const detailFinding = activeFindingId ? findings.find((finding) => finding.id === activeFindingId) : undefined;
   const findingHrefs = detailFinding && engagementIdForLinks
-    ? buildDetailHrefs('/dashboard/engagements', listParams, engagementIdForLinks, { finding: detailFinding.id })
+    ? buildDetailHrefs('/dashboard/engagements', listParams, engagementIdForLinks, findingExtra)
     : null;
   const findingCloseHref = engagementIdForLinks
     ? buildPathQuery('/dashboard/engagements', listParams, {
@@ -81,6 +117,8 @@ export function EngagementFindingsPanel({
         deleteError: null,
         saveError: null,
         create: null,
+        createFinding: null,
+        findings: showFindingsList ? '1' : null,
       })
     : undefined;
 
@@ -113,10 +151,9 @@ export function EngagementFindingsPanel({
           showDelete={isAdmin}
         />
       ) : null}
-      <button
-        type="button"
+      <a
+        href={findingsListHref}
         className="engagement-findings-panel"
-        onClick={() => setViewOpen(true)}
         aria-label="View engagement findings"
       >
         <span className="engagement-findings-panel__total">
@@ -138,19 +175,19 @@ export function EngagementFindingsPanel({
             </span>
           ))}
         </span>
-      </button>
+      </a>
 
-      {viewOpen && (
+      {showFindingsList && (
         <Modal
-          isOpen={viewOpen}
-          onClose={() => setViewOpen(false)}
+          isOpen
+          closeHref={findingsListCloseHref}
           title="Engagement Findings"
           maxWidth="600px"
           zIndex={1100}
           headerActions={
-            <button type="button" className="modal-action-btn" onClick={() => setAddOpen(true)}>
+            <a href={createFindingHref} className="modal-action-btn" style={{ textDecoration: 'none' }}>
               Add
-            </button>
+            </a>
           }
         >
           {findings.length === 0 ? (
@@ -192,7 +229,13 @@ export function EngagementFindingsPanel({
                     <td className="table-action-cell">
                       {engagementIdForLinks ? (
                         <DetailEyeLink
-                          href={buildPathQuery('/dashboard/engagements', listParams, { detail: engagementIdForLinks, finding: f.id, create: null })}
+                          href={buildPathQuery('/dashboard/engagements', listParams, {
+                            detail: engagementIdForLinks,
+                            finding: f.id,
+                            findings: '1',
+                            create: null,
+                            createFinding: null,
+                          })}
                         />
                       ) : null}
                     </td>
@@ -204,13 +247,13 @@ export function EngagementFindingsPanel({
         </Modal>
       )}
 
-      {addOpen && (
+      {showCreateFinding && (
         <Modal
-          isOpen={addOpen}
-          onClose={() => setAddOpen(false)}
+          isOpen
+          closeHref={createFindingCloseHref}
           title="Add Engagement Finding"
           maxWidth="1500px"
-          zIndex={1100}
+          zIndex={1200}
           headerActions={
             <button type="submit" form={addFormId} className="btn-save" style={{ boxShadow: 'none' }}>
               Add
@@ -220,7 +263,8 @@ export function EngagementFindingsPanel({
           <CreateFindingForm
             formId={addFormId}
             engagementId={engagementId}
-            onSuccess={handleAddSuccess}
+            sort={sort}
+            dir={dir}
           />
         </Modal>
       )}

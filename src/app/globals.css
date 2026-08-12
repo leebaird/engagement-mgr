@@ -46,6 +46,26 @@ body {
   min-height: 100vh;
 }
 
+.date-format-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.date-format-select__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.date-format-select__control.form-input {
+  padding: 0.4rem 2rem 0.4rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.display-date {
+  font-variant-numeric: tabular-nums;
+}
+
 #modal-root {
   position: relative;
   z-index: 10000;
@@ -721,6 +741,7 @@ a.db-action-btn {
   color: inherit;
   cursor: pointer;
   text-align: inherit;
+  text-decoration: none;
 }
 
 .engagement-findings-panel:focus {
@@ -1023,6 +1044,7 @@ a.db-action-btn {
   font-family: inherit;
   text-align: left;
   appearance: none;
+  text-decoration: none;
 }
 
 .engagement-calendar__day--interactive:not(:disabled) {

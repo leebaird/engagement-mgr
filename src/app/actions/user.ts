@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/db';
 import * as argon2 from 'argon2';
 import type { Prisma } from '@prisma/client';
-import { getSession } from '@/lib/auth/session';
+import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password';
 import { firstZodError, userIdSchema } from '@/lib/validation/common';
 import { createUserSchema, updateUserSchema } from '@/lib/validation/user';
@@ -26,8 +26,8 @@ async function wouldRemoveLastAdmin(
 }
 
 export async function createUser(_prevState: unknown, formData: FormData) {
-  const session = await getSession();
-  if (!session || session.role !== 'Admin') {
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) {
     return { error: 'Unauthorized: Only admins can create users.' };
   }
 
@@ -79,8 +79,8 @@ export async function createUser(_prevState: unknown, formData: FormData) {
 }
 
 export async function updateUser(id: string, _prevState: unknown, formData: FormData) {
-  const session = await getSession();
-  if (!session || session.role !== 'Admin') {
+  const auth = await requireAdminAuth();
+  if (isAdminError(auth)) {
     return { error: 'Unauthorized: Only admins can update users.' };
   }
 
@@ -160,8 +160,8 @@ export async function deleteUserFromDetail(formData: FormData): Promise<void> {
 }
 
 export async function deleteUser(id: string) {
-  const session = await getSession();
-  if (!session || session.role !== 'Admin') {
+  const session = await requireAdminAuth();
+  if (isAdminError(session)) {
     return { error: 'Unauthorized' };
   }
 

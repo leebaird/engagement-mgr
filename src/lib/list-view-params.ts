@@ -7,18 +7,23 @@ export function buildDetailHrefs(
   extra: SearchParamRecord = {},
 ) {
   const shared = { ...extra, detail: id, create: null };
+  const extraKeys = new Set(Object.keys(extra));
   const clearExtra = Object.fromEntries(
     Object.keys(extra).map((key) => [key, null]),
   ) as Record<string, null>;
-  const clearModal = {
-    edit: null,
-    delete: null,
-    deleteError: null,
-    saveError: null,
-    schedule: null,
-    scheduleEdit: null,
-    scheduleError: null,
-  };
+  const clearModal = Object.fromEntries(
+    Object.entries({
+      edit: null,
+      delete: null,
+      deleteError: null,
+      saveError: null,
+      schedule: null,
+      scheduleEdit: null,
+      scheduleError: null,
+      findings: null,
+      createFinding: null,
+    }).filter(([key]) => !extraKeys.has(key)),
+  ) as Record<string, null>;
 
   return {
     view: buildPathQuery(pathname, listParams, { ...shared, ...clearModal }),
@@ -104,4 +109,40 @@ export function buildCalendarNavHrefs(viewYear: number, viewMonth: number) {
     }),
     todayHref: '/dashboard',
   };
+}
+
+const CALENDAR_DAY_KEY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export function parseCalendarDayKey(searchParams: SearchParamRecord): string | null {
+  const raw = typeof searchParams.day === 'string' ? searchParams.day : '';
+  const match = CALENDAR_DAY_KEY.exec(raw);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year
+    || parsed.getMonth() !== month - 1
+    || parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return raw;
+}
+
+export function buildCalendarDayHref(viewYear: number, viewMonth: number, dateKey: string) {
+  return buildPathQuery('/dashboard', {
+    year: String(viewYear),
+    month: String(viewMonth + 1),
+  }, { day: dateKey });
+}
+
+export function buildCalendarDayCloseHref(viewYear: number, viewMonth: number) {
+  return buildPathQuery('/dashboard', {}, {
+    year: String(viewYear),
+    month: String(viewMonth + 1),
+  });
 }

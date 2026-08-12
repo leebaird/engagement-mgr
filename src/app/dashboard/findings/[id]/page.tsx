@@ -3,8 +3,15 @@ import { notFound } from 'next/navigation';
 import { UploadScreenshotForm } from './UploadScreenshotForm';
 import { DeleteScreenshotButton } from './DeleteScreenshotButton';
 
-export default async function FindingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FindingDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ delete?: string; deleteError?: string }>;
+}) {
   const resolvedParams = await params;
+  const { delete: deleteScreenshotId, deleteError } = await searchParams;
   const finding = await prisma.finding.findUnique({
     where: { id: resolvedParams.id },
     include: {
@@ -17,8 +24,8 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <a href="/dashboard/findings" className="btn-secondary" style={{ display: 'inline-flex', width: 'fit-content', marginBottom: '1rem', textDecoration: 'none' }}>
-        ← Back to Findings
+      <a href={`/dashboard/findings?detail=${finding.id}`} className="btn-secondary" style={{ display: 'inline-flex', width: 'fit-content', marginBottom: '1rem', textDecoration: 'none' }}>
+        ← Back to Finding
       </a>
       <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{finding.title}</h1>
       <div style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
@@ -64,7 +71,14 @@ export default async function FindingDetailPage({ params }: { params: Promise<{ 
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/api/uploads/${s.filePath}`} alt="Screenshot" style={{ width: '100%', borderRadius: '8px', marginBottom: '1rem' }} />
                 {s.description && <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{s.description}</p>}
-                <DeleteScreenshotButton screenshotId={s.id} findingId={finding.id} />
+                <DeleteScreenshotButton
+                  screenshotId={s.id}
+                  findingId={finding.id}
+                  confirmHref={`/dashboard/findings/${finding.id}?delete=${s.id}`}
+                  cancelHref={`/dashboard/findings/${finding.id}`}
+                  showConfirm={deleteScreenshotId === s.id}
+                  deleteError={deleteScreenshotId === s.id ? deleteError : undefined}
+                />
               </div>
             ))}
             {finding.screenshots.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No screenshots uploaded.</p>}

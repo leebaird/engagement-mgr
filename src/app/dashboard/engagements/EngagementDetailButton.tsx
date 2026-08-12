@@ -22,6 +22,7 @@ import {
   type EngagementFindingSummary,
 } from './EngagementFindingsPanel';
 import type { SearchParamRecord } from '@/lib/list-view-params';
+import { DisplayDate } from '@/components/DateFormatProvider';
 
 const noop = () => {};
 
@@ -110,6 +111,8 @@ export function EngagementDetailButton({
   activeFindingId,
   findingIsEditing = false,
   findingShowDeleteConfirm = false,
+  showFindingsList = false,
+  showCreateFinding = false,
   showSchedule = false,
   scheduleIsEditing = false,
   scheduleHref,
@@ -142,6 +145,8 @@ export function EngagementDetailButton({
   activeFindingId?: string;
   findingIsEditing?: boolean;
   findingShowDeleteConfirm?: boolean;
+  showFindingsList?: boolean;
+  showCreateFinding?: boolean;
   showSchedule?: boolean;
   scheduleIsEditing?: boolean;
   scheduleHref?: string;
@@ -235,9 +240,9 @@ export function EngagementDetailButton({
   const timestampsFooter = (
     <div className="engagement-form-timestamps">
       <div>Created</div>
-      <div>{new Date(engagement.createdAt).toLocaleDateString()}</div>
+      <div><DisplayDate value={engagement.createdAt} /></div>
       <div>Updated</div>
-      <div>{new Date(engagement.updatedAt).toLocaleDateString()}</div>
+      <div><DisplayDate value={engagement.updatedAt} /></div>
     </div>
   );
 
@@ -246,10 +251,11 @@ export function EngagementDetailButton({
       <EngagementFindingsPanel
         engagementId={engagement.id}
         findings={findings}
-        onFindingsChange={setFindings}
         activeFindingId={activeFindingId}
         findingIsEditing={findingIsEditing}
         findingShowDeleteConfirm={findingShowDeleteConfirm}
+        showFindingsList={showFindingsList}
+        showCreateFinding={showCreateFinding}
         deleteError={deleteError}
         saveError={saveError}
         sort={sort}

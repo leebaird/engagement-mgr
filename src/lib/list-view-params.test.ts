@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { buildSortHrefs } from './list-view-params';
+import {
+  buildCalendarDayCloseHref,
+  buildCalendarDayHref,
+  buildDetailHrefs,
+  buildSortHrefs,
+  parseCalendarDayKey,
+} from './list-view-params';
 
 describe('buildSortHrefs', () => {
   it('toggles direction for the active column', () => {
@@ -27,5 +33,49 @@ describe('buildSortHrefs', () => {
     assert.equal(ascSortHrefs.icon('company'), ' ↑');
     assert.equal(descSortHrefs.icon('company'), ' ↓');
     assert.equal(ascSortHrefs.icon('website'), null);
+  });
+});
+
+describe('buildDetailHrefs', () => {
+  it('keeps extra overlay params when switching finding modes', () => {
+    const hrefs = buildDetailHrefs(
+      '/dashboard/engagements',
+      { sort: 'codeName' },
+      'eng-1',
+      { finding: 'f-1', findings: '1' },
+    );
+
+    assert.equal(
+      hrefs.view,
+      '/dashboard/engagements?sort=codeName&finding=f-1&findings=1&detail=eng-1',
+    );
+    assert.equal(
+      hrefs.edit,
+      '/dashboard/engagements?sort=codeName&finding=f-1&findings=1&detail=eng-1&edit=1',
+    );
+    assert.equal(hrefs.close, '/dashboard/engagements?sort=codeName');
+  });
+});
+
+describe('calendar day params', () => {
+  it('parses a valid calendar day key', () => {
+    assert.equal(parseCalendarDayKey({ day: '2026-08-12' }), '2026-08-12');
+  });
+
+  it('rejects invalid calendar day keys', () => {
+    assert.equal(parseCalendarDayKey({ day: '2026-13-01' }), null);
+    assert.equal(parseCalendarDayKey({ day: '2026-02-30' }), null);
+    assert.equal(parseCalendarDayKey({ day: '08-12-2026' }), null);
+  });
+
+  it('builds day picker hrefs that preserve the viewed month', () => {
+    assert.equal(
+      buildCalendarDayHref(2026, 7, '2026-08-12'),
+      '/dashboard?year=2026&month=8&day=2026-08-12',
+    );
+    assert.equal(
+      buildCalendarDayCloseHref(2026, 7),
+      '/dashboard?year=2026&month=8',
+    );
   });
 });

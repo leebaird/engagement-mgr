@@ -15,6 +15,7 @@ import {
 
 const EDIT_FORM_ID = 'edit-operator-form';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
+import { DisplayDate } from '@/components/DateFormatProvider';
 
 interface Operator {
   id: string;
@@ -190,9 +191,9 @@ export function OperatorDetailButton({
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{new Date(operator.createdAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={operator.createdAt} /></div>
                 <div>Updated</div>
-                <div>{new Date(operator.updatedAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={operator.updatedAt} /></div>
               </div>
             </div>
           </div>

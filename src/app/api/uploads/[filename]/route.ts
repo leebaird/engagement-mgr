@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createReadStream } from 'fs';
 import { lstat } from 'fs/promises';
 import { Readable } from 'stream';
-import { getSession } from '@/lib/auth/session';
+import { getSession, isPasswordRotationRequired } from '@/lib/auth/session';
 import { resolveUploadFilePath } from '@/lib/uploads-path';
 import { prisma } from '@/lib/db';
 
@@ -12,7 +12,7 @@ export async function GET(
 ) {
   const session = await getSession();
 
-  if (!session) {
+  if (!session || isPasswordRotationRequired(session.lastPasswordChange)) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

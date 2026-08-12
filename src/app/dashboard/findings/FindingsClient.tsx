@@ -1,6 +1,5 @@
 'use client';
 import { useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from './CreateFindingForm';
@@ -10,6 +9,8 @@ interface FindingsClientProps {
   addHref: string;
   showCreateModal: boolean;
   createCloseHref: string;
+  sort?: string;
+  dir?: string;
 }
 
 export function FindingsClient({
@@ -17,8 +18,9 @@ export function FindingsClient({
   addHref,
   showCreateModal,
   createCloseHref,
+  sort,
+  dir,
 }: FindingsClientProps) {
-  const router = useRouter();
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -46,10 +48,7 @@ export function FindingsClient({
             </button>
           }
         >
-          <CreateFindingForm onSuccess={() => {
-              router.refresh();
-              window.location.assign(createCloseHref);
-            }} />
+          <CreateFindingForm sort={sort} dir={dir} />
         </Modal>
       )}
     </div>

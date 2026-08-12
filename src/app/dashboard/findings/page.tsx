@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
+import { DisplayDate } from '@/components/DateFormatProvider';
 import { getSeverityStyle } from '@/lib/finding-severity';
 import { FindingsClient } from './FindingsClient';
 import { FindingDetailButton } from './FindingDetailButton';
@@ -106,6 +107,8 @@ export default async function FindingsPage({
         addHref={addHref}
         showCreateModal={create === '1'}
         createCloseHref={createCloseHref}
+        sort={sort}
+        dir={dir}
       >
         <div className="glass-panel" style={{ padding: '2rem' }}>
           {findings.length === 0 ? (
@@ -170,8 +173,8 @@ export default async function FindingsPage({
                       </span>
                     ) : null}
                   </td>
-                  <td className="cell-numeric" style={{ color: 'var(--text-muted)' }}>{finding.createdAt.toLocaleDateString()}</td>
-                  <td className="cell-numeric" style={{ color: 'var(--text-muted)' }}>{finding.updatedAt.toLocaleDateString()}</td>
+                  <td className="cell-numeric" style={{ color: 'var(--text-muted)' }}><DisplayDate value={finding.createdAt} /></td>
+                  <td className="cell-numeric" style={{ color: 'var(--text-muted)' }}><DisplayDate value={finding.updatedAt} /></td>
                   <td className="table-action-cell">
                     <DetailEyeLink href={buildPathQuery('/dashboard/findings', listParams, { detail: finding.id, create: null })} />
                   </td>

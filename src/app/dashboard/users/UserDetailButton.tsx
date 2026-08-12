@@ -15,6 +15,7 @@ import {
 
 const EDIT_FORM_ID = 'edit-user-form';
 import { focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
+import { DisplayDate } from '@/components/DateFormatProvider';
 
 
 interface User {
@@ -266,9 +267,9 @@ export function UserDetailButton({
             <div style={{ marginTop: '0.5rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{new Date(user.createdAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={user.createdAt} /></div>
                 <div>Updated</div>
-                <div>{new Date(user.updatedAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={user.updatedAt} /></div>
               </div>
             </div>
           </>

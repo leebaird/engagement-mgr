@@ -14,37 +14,22 @@ const emptyForm = {
 };
 
 export function CreateFindingForm({
-  onSuccess,
   engagementId,
   formId = 'create-finding-form',
+  sort,
+  dir,
 }: {
-  onSuccess?: () => void;
   engagementId?: string;
   formId?: string;
+  sort?: string;
+  dir?: string;
 }) {
   const [state, formAction] = useActionState(createFinding, null);
-  const formRef = useRef<HTMLFormElement>(null);
   const titleWrapRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState(emptyForm);
   const [suggestions, setSuggestions] = useState<FindingTemplateMatch[]>([]);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [searching, setSearching] = useState(false);
-
-  const resetForm = () => {
-    setForm(emptyForm);
-    setSuggestions([]);
-    setSuggestionsOpen(false);
-  };
-
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      queueMicrotask(() => {
-        resetForm();
-      });
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
 
   useEffect(() => {
     if (!engagementId) return;
@@ -163,9 +148,10 @@ export function CreateFindingForm({
     <form
       id={formId}
       action={formAction}
-      ref={formRef}
       style={engagementId ? undefined : { display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
     >
+      {sort ? <input type="hidden" name="sort" value={sort} /> : null}
+      {dir ? <input type="hidden" name="dir" value={dir} /> : null}
       {engagementId ? (
         <>
           <input type="hidden" name="engagementId" value={engagementId} />

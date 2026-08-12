@@ -74,6 +74,8 @@ export function finishDetailDelete(
       schedule: null,
       scheduleEdit: null,
       scheduleError: null,
+      findings: null,
+      createFinding: null,
       ...clearExtra,
     }),
   );
@@ -156,6 +158,8 @@ export function finishDetailUpdate(
       schedule: null,
       scheduleEdit: null,
       scheduleError: null,
+      findings: null,
+      createFinding: null,
     }),
   );
 }

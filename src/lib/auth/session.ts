@@ -74,9 +74,9 @@ async function loadSessionTokenFromDb(session: string | undefined): Promise<Sess
 
   if (!user) return null;
 
-  // Reject tokens issued before the user's last password change (revocation)
+  // Reject tokens whose password-change claim does not match the DB (covers admin reset to epoch)
   const tokenPasswordChange = Date.parse(payload.lastPasswordChange);
-  if (Number.isNaN(tokenPasswordChange) || tokenPasswordChange < user.lastPasswordChange.getTime()) {
+  if (Number.isNaN(tokenPasswordChange) || tokenPasswordChange !== user.lastPasswordChange.getTime()) {
     return null;
   }
 

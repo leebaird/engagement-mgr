@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Contact, Zap } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
+import { DateFormatSelect } from '@/components/DateFormatProvider';
 
 const navItems: { name: string; href: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -67,7 +68,8 @@ export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
         </ul>
       </nav>
 
-      <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--surface-border)' }}>
+      <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--surface-border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <DateFormatSelect />
         <form action={logout}>
           <button type="submit" style={{
             display: 'flex',

@@ -13,7 +13,9 @@ import {
   updateFindingSchema,
 } from '@/lib/validation/finding';
 import { validateScreenshotBuffer, validateScreenshotUpload } from '@/lib/validation/upload';
-import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
+import { redirect } from 'next/navigation';
+import { finishDetailDelete, finishDetailUpdate, listParamsFromForm, updateErrorCode } from '@/lib/detail-delete-form';
+import { buildPathQuery } from '@/lib/list-view-params';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -129,15 +131,24 @@ export async function createFinding(_prevState: unknown, formData: FormData) {
     }
 
     await prisma.finding.create({ data: findingData });
-    revalidatePath('/dashboard/findings');
-    if (engagementId) {
-      revalidatePath('/dashboard/engagements');
-    }
-    return { success: 'Finding created successfully.' };
   } catch (e) {
     console.error('Create Finding error:', e);
     return { error: 'Failed to create finding.' };
   }
+
+  revalidatePath('/dashboard/findings');
+  if (engagementId) {
+    revalidatePath('/dashboard/engagements');
+    redirect(buildPathQuery('/dashboard/engagements', listParamsFromForm(formData), {
+      detail: engagementId,
+      findings: '1',
+      createFinding: null,
+      finding: null,
+      edit: null,
+      delete: null,
+    }));
+  }
+  redirect(buildPathQuery('/dashboard/findings', listParamsFromForm(formData), { create: null }));
 }
 
 export async function updateFinding(id: string, _prevState: unknown, formData: FormData) {
@@ -239,8 +250,14 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
 
 export async function updateFindingFromDetail(formData: FormData): Promise<void> {
   const id = formData.get('id')?.toString() ?? '';
+  const engagementId = formData.get('engagementId')?.toString();
   const result = await updateFinding(id, {}, formData);
-  finishDetailUpdate('/dashboard/findings', formData, id, result, updateErrorCode(result.error));
+  const code = updateErrorCode(result.error);
+  if (engagementId && formData.get('engagementScoped')?.toString() === 'true') {
+    finishDetailUpdate('/dashboard/engagements', formData, engagementId, result, code, ['finding']);
+    return;
+  }
+  finishDetailUpdate('/dashboard/findings', formData, id, result, code);
 }
 
 export async function deleteFindingFromDetail(formData: FormData): Promise<void> {
@@ -349,12 +366,29 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
   }
 }
 
-export async function deleteScreenshot(screenshotId: string, findingId: string) {
+export async function deleteScreenshotFromPage(formData: FormData): Promise<void> {
+  const screenshotId = formData.get('screenshotId')?.toString() ?? '';
+  const findingId = formData.get('findingId')?.toString() ?? '';
+  const parsed = deleteScreenshotSchema.safeParse({ screenshotId, findingId });
+  if (!parsed.success) {
+    redirect('/dashboard/findings');
+  }
+
+  const result = await deleteScreenshot(parsed.data.screenshotId, parsed.data.findingId);
+  if (result.error) {
+    redirect(
+      `/dashboard/findings/${parsed.data.findingId}?delete=${parsed.data.screenshotId}&deleteError=generic`,
+    );
+  }
+  redirect(`/dashboard/findings/${parsed.data.findingId}`);
+}
+
+export async function deleteScreenshot(screenshotId: string, findingId: string): Promise<{ error?: string }> {
   const auth = await requireAuth();
-  if (isAuthError(auth)) return;
+  if (isAuthError(auth)) return { error: 'Unauthorized' };
 
   const parsed = deleteScreenshotSchema.safeParse({ screenshotId, findingId });
-  if (!parsed.success) return;
+  if (!parsed.success) return { error: 'Invalid screenshot.' };
 
   try {
     const screenshot = await prisma.screenshot.findUnique({
@@ -363,7 +397,7 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
     });
     // Require the screenshot to belong to the stated finding (prevents cross-finding deletes)
     if (!screenshot || screenshot.findingId !== parsed.data.findingId) {
-      return;
+      return { error: 'Screenshot not found.' };
     }
 
     const filePath = resolveUploadFilePath(screenshot.filePath);
@@ -372,7 +406,9 @@ export async function deleteScreenshot(screenshotId: string, findingId: string) 
     }
     await prisma.screenshot.delete({ where: { id: screenshot.id } });
     revalidatePath(`/dashboard/findings/${parsed.data.findingId}`);
+    return {};
   } catch (e) {
     console.error(e);
+    return { error: 'Failed to delete screenshot.' };
   }
 }

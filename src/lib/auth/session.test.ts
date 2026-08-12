@@ -55,4 +55,17 @@ describe('getSessionFromRequest', () => {
       lastPasswordChange: lastPasswordChange.toISOString(),
     });
   });
+
+  it('rejects a signed session after admin password reset to epoch', async (t) => {
+    const findUnique = prisma.user.findUnique;
+    prisma.user.findUnique = (async () => ({
+      role: 'User',
+      lastPasswordChange: new Date(0),
+    })) as unknown as typeof prisma.user.findUnique;
+    t.after(() => {
+      prisma.user.findUnique = findUnique;
+    });
+
+    assert.equal(await getSessionFromRequest(await sessionRequest()), null);
+  });
 });

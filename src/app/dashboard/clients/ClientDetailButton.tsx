@@ -14,6 +14,7 @@ import {
 } from '@/components/DetailModalActions';
 
 const EDIT_FORM_ID = 'edit-client-form';
+import { DisplayDate } from '@/components/DateFormatProvider';
 import { formatPhone } from '@/lib/format';
 import {
   focusEditFieldAtStart,
@@ -232,9 +233,9 @@ export function ClientDetailButton({
             <div style={{ gridColumn: '1 / -1', marginTop: '0.75rem', height: '2.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', fontSize: '0.8rem', color: 'var(--text-muted)', gap: '0 0.25rem' }}>
                 <div>Created</div>
-                <div>{new Date(client.createdAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={client.createdAt} /></div>
                 <div>Updated</div>
-                <div>{new Date(client.updatedAt).toLocaleDateString()}</div>
+                <div><DisplayDate value={client.updatedAt} /></div>
               </div>
             </div>
           </div>

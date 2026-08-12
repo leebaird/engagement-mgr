@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -12,8 +12,10 @@ import {
   type ScheduleEvent,
   type SchedulePhase,
 } from '@/lib/engagement-schedule-events';
-import { buildEngagementScheduleHref } from '@/lib/list-view-params';
+import { buildCalendarDayHref, buildEngagementScheduleHref } from '@/lib/list-view-params';
+import { formatDate, formatMonthYear } from '@/lib/date-format';
 import { Modal } from '@/components/Modal';
+import { useDateFormat } from '@/components/DateFormatProvider';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbrief'];
@@ -25,6 +27,9 @@ type EngagementCalendarProps = {
   prevHref: string;
   nextHref: string;
   todayHref: string;
+  pickerDateKey?: string | null;
+  pickerEngagements?: EngagementCalendarItem[];
+  pickerCloseHref?: string;
 };
 
 function toDateKeyFromParts(year: number, month: number, day: number): string {
@@ -68,17 +73,8 @@ function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[][
   return rows;
 }
 
-function formatMonthYear(year: number, month: number): string {
-  return new Date(year, month, 1).toLocaleDateString(undefined, {
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function formatPickerDate(dateKey: string): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  if (!year || !month || !day) return dateKey;
-  return new Date(year, month - 1, day).toLocaleDateString();
+function formatPickerDate(dateKey: string, format: Parameters<typeof formatDate>[1]): string {
+  return formatDate(dateKey, format) || dateKey;
 }
 
 export function EngagementCalendar({
@@ -88,12 +84,14 @@ export function EngagementCalendar({
   prevHref,
   nextHref,
   todayHref,
+  pickerDateKey = null,
+  pickerEngagements = [],
+  pickerCloseHref,
 }: EngagementCalendarProps) {
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
-
-  const [pickerDateKey, setPickerDateKey] = useState<string | null>(null);
-  const [pickerEngagements, setPickerEngagements] = useState<EngagementCalendarItem[]>([]);
+  const { format, ready } = useDateFormat();
+  const dateFormat = ready ? format : 'mdy';
 
   const events = useMemo(() => extractScheduleEvents(engagements), [engagements]);
   const eventsByDate = useMemo(() => {
@@ -110,14 +108,6 @@ export function EngagementCalendar({
     () => buildWorkWeekMonthGrid(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
-
-  const handleDayClick = (dateKey: string) => {
-    const dayEngagements = getEngagementsOnDate(dateKey, engagements, eventsByDate);
-    if (dayEngagements.length === 0) return;
-
-    setPickerDateKey(dateKey);
-    setPickerEngagements(dayEngagements);
-  };
 
   return (
     <>
@@ -143,7 +133,7 @@ export function EngagementCalendar({
             >
               <ChevronLeft size={16} />
             </Link>
-            <span className="engagement-calendar__month">{formatMonthYear(viewYear, viewMonth)}</span>
+            <span className="engagement-calendar__month">{formatMonthYear(viewYear, viewMonth, dateFormat)}</span>
             <Link
               href={nextHref}
               className="engagement-calendar__nav-btn"
@@ -187,14 +177,16 @@ export function EngagementCalendar({
                     const isToday = dateKey === todayKey;
                     const dayNumber = Number(dateKey.split('-')[2]);
                     const isInteractive = dayEngagements.length > 0;
-                    const singleEngagementHref = dayEngagements.length === 1
+                    const dayHref = dayEngagements.length === 1
                       ? buildEngagementScheduleHref(dayEngagements[0].id)
-                      : undefined;
+                      : dayEngagements.length > 1
+                        ? buildCalendarDayHref(viewYear, viewMonth, dateKey)
+                        : undefined;
 
-                    return isInteractive && singleEngagementHref ? (
+                    return isInteractive && dayHref ? (
                       <a
                         key={dateKey}
-                        href={singleEngagementHref}
+                        href={dayHref}
                         className={[
                           'engagement-calendar__day',
                           'engagement-calendar__day--interactive',
@@ -207,22 +199,18 @@ export function EngagementCalendar({
                         <span className="engagement-calendar__day-number">{dayNumber}</span>
                       </a>
                     ) : (
-                      <button
+                      <div
                         key={dateKey}
-                        type="button"
                         className={[
                           'engagement-calendar__day',
                           isToday ? 'engagement-calendar__day--today' : '',
-                          isInteractive ? 'engagement-calendar__day--interactive' : '',
                         ]
                           .filter(Boolean)
                           .join(' ')}
-                        aria-label={`${dateKey}, ${dayEngagements.length} scheduled engagements`}
-                        disabled={!isInteractive}
-                        onClick={() => handleDayClick(dateKey)}
+                        aria-label={`${dateKey}, 0 scheduled engagements`}
                       >
                         <span className="engagement-calendar__day-number">{dayNumber}</span>
-                      </button>
+                      </div>
                     );
                   })}
 
@@ -255,19 +243,16 @@ export function EngagementCalendar({
         </div>
       </div>
 
-      {pickerDateKey ? (
+      {pickerDateKey && pickerCloseHref && pickerEngagements.length > 0 ? (
         <Modal
           isOpen
-          onClose={() => {
-            setPickerDateKey(null);
-            setPickerEngagements([]);
-          }}
+          closeHref={pickerCloseHref}
           title="Select Engagement"
           maxWidth="420px"
           zIndex={1100}
         >
           <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            {formatPickerDate(pickerDateKey)} has multiple scheduled engagements.
+            {formatPickerDate(pickerDateKey, dateFormat)} has multiple scheduled engagements.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {pickerEngagements.map((engagement) => (
