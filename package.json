@@ -22,7 +22,7 @@
     "@prisma/client": "7.9.1",
     "argon2": "0.45.1",
     "jose": "6.2.9",
-    "lucide-react": "1.31.0",
+    "lucide-react": "1.33.0",
     "next": "16.3.1",
     "pg": "8.23.0",
     "react": "19.2.8",
@@ -33,7 +33,7 @@
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "oxlint": "1.78.0",
+    "oxlint": "1.79.0",
     "prisma": "7.9.1",
     "tsx": "4.23.12",
     "typescript": "7.0.2"
