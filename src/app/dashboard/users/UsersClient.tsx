@@ -93,7 +93,7 @@ export function UsersClient({
         <section className="glass-panel" style={{ padding: '2rem', width: sectionWidth, maxWidth: sectionWidth, flexShrink: 0 }}>
           <div className="db-panel-header">
             <div className="db-panel-icon">
-              <Database size={28} color="#0066ff" />
+              <Database size={28} />
             </div>
             <div>
               <h2 className="db-panel-title">Database</h2>
@@ -129,7 +129,7 @@ export function UsersClient({
               className="db-action-btn"
               style={{ textDecoration: 'none' }}
             >
-              <Upload size={22} color="#0066ff" />
+              <Upload size={22} color="var(--accent)" />
               <span className="db-action-btn-label">Backup</span>
               <span className="db-action-btn-desc">Password-gated full backup (5-min download link).</span>
             </Link>
@@ -139,7 +139,7 @@ export function UsersClient({
               className="db-action-btn"
               style={{ textDecoration: 'none' }}
             >
-              <Download size={22} color="#0066ff" />
+              <Download size={22} color="var(--accent)" />
               <span className="db-action-btn-label">Restore</span>
               <span className="db-action-btn-desc">Import from a previous backup zip.</span>
             </Link>
@@ -159,7 +159,7 @@ export function UsersClient({
         <section className="glass-panel" style={{ padding: '2rem', width: sectionWidth, maxWidth: sectionWidth, flexShrink: 0 }}>
           <div className="db-panel-header" style={{ marginBottom: '1.5rem' }}>
             <div className="db-panel-icon">
-              <Users size={28} color="#0066ff" />
+              <Users size={28} />
             </div>
             <div style={{ flex: 1 }}>
               <h2 className="db-panel-title">Users</h2>

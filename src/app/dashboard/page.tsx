@@ -94,64 +94,12 @@ export default async function DashboardHome({
   const engagementColumnCount = 4;
 
   const topRowIconSize = 24;
-  const iconBoxStyle = {
-    background: 'rgba(0,102,255,0.05)',
-    padding: '1rem',
-    borderRadius: '12px',
-    display: 'flex',
-  } as const;
-  const statCardIconBoxStyle = {
-    ...iconBoxStyle,
-    padding: '0.4rem',
-  };
-  const topRowIconBoxStyle = {
-    ...iconBoxStyle,
-    padding: '0.35rem',
-  };
-  const topRowCellStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    padding: '0 0.5rem',
-    boxSizing: 'border-box',
-  } as const;
-  const topRowNumberCellStyle = {
-    ...topRowCellStyle,
-    alignItems: 'center',
-  } as const;
-  const topRowIconCountStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-  } as const;
-  const statColumnStyle = {
-    padding: '0.625rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  } as const;
-  const statCardContentStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    width: 'fit-content',
-    gap: '0.25rem',
-  } as const;
-  const countStyle = {
-    fontSize: '1.5rem',
-    fontWeight: 700,
-    lineHeight: 1,
-  } as const;
-  const labelStyle = {
-    color: 'var(--text-muted)',
-    fontSize: '0.8rem',
-    lineHeight: 1,
+  const engagementCellStyle = {
+    gridRow: 1,
   } as const;
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="page-container">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div
           style={{
@@ -176,36 +124,30 @@ export default async function DashboardHome({
               boxSizing: 'border-box',
             }}
           >
-            <div style={{ ...topRowNumberCellStyle, gridRow: 1, gridColumn: 1 }}>
-              <div style={topRowIconBoxStyle}>
-                <Crosshair size={topRowIconSize} color="#0066ff" />
+            <div className="stat-card__cell" style={{ ...engagementCellStyle, gridColumn: 1 }}>
+              <div className="stat-card__icon" style={{ padding: '0.35rem' }}>
+                <Crosshair size={topRowIconSize} />
               </div>
             </div>
             {engagementStats.map((stat, index) => (
               <div
                 key={stat.label}
-                style={{
-                  ...topRowNumberCellStyle,
-                  gridRow: 1,
-                  gridColumn: index + 2,
-                }}
+                className="stat-card__cell"
+                style={{ ...engagementCellStyle, gridColumn: index + 2 }}
               >
-                <span style={countStyle}>{stat.count}</span>
+                <span className="stat-card__count">{stat.count}</span>
               </div>
             ))}
-            <div style={{ ...topRowCellStyle, gridRow: 2, gridColumn: 1 }}>
-              <span style={labelStyle}>Engagements</span>
+            <div className="stat-card__cell" style={{ gridRow: 2, gridColumn: 1 }}>
+              <span className="stat-card__label">Engagements</span>
             </div>
             {engagementStats.map((stat, index) => (
               <div
                 key={`${stat.label}-label`}
-                style={{
-                  ...topRowCellStyle,
-                  gridRow: 2,
-                  gridColumn: index + 2,
-                }}
+                className="stat-card__cell"
+                style={{ gridRow: 2, gridColumn: index + 2 }}
               >
-                <span style={labelStyle}>{stat.label}</span>
+                <span className="stat-card__label">{stat.label}</span>
               </div>
             ))}
           </Link>
@@ -221,18 +163,17 @@ export default async function DashboardHome({
               <Link
                 key={label}
                 href={href}
-                className="glass-panel dashboard-stat-link"
+                className="glass-panel dashboard-stat-link stat-card"
                 aria-label={`View ${label.toLowerCase()}`}
-                style={statColumnStyle}
               >
-                <div style={statCardContentStyle}>
-                  <div style={topRowIconCountStyle}>
-                    <div style={statCardIconBoxStyle}>
-                      <Icon size={topRowIconSize} color="#0066ff" />
+                <div className="stat-card__content">
+                  <div className="stat-card__row">
+                    <div className="stat-card__icon">
+                      <Icon size={topRowIconSize} />
                     </div>
-                    <div style={countStyle}>{count}</div>
+                    <div className="stat-card__count">{count}</div>
                   </div>
-                  <span style={{ ...labelStyle, textAlign: 'center', width: '100%' }}>{label}</span>
+                  <span className="stat-card__label">{label}</span>
                 </div>
               </Link>
             ))}

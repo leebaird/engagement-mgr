@@ -23,7 +23,7 @@ export default async function FindingDetailPage({
   if (!finding) return notFound();
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="page-container">
       <a href={`/dashboard/findings?detail=${finding.id}`} className="btn-secondary" style={{ display: 'inline-flex', width: 'fit-content', marginBottom: '1rem', textDecoration: 'none' }}>
         ← Back to Finding
       </a>
@@ -37,20 +37,20 @@ export default async function FindingDetailPage({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
           {finding.background && (
-            <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div className="glass-panel glass-panel--padded">
               <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>Background</h3>
               <p style={{ whiteSpace: 'pre-wrap' }}>{finding.background}</p>
             </div>
           )}
           {finding.remediation && (
-            <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div className="glass-panel glass-panel--padded">
               <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>Remediation</h3>
               <p style={{ whiteSpace: 'pre-wrap' }}>{finding.remediation}</p>
             </div>
           )}
 
           {finding.supportingData && (
-            <div className="glass-panel" style={{ padding: '2rem' }}>
+            <div className="glass-panel glass-panel--padded">
               <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>See Also</h3>
               <p style={{ whiteSpace: 'pre-wrap' }}>{finding.supportingData}</p>
             </div>

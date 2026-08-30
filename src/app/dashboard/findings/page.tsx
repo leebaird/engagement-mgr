@@ -110,7 +110,7 @@ export default async function FindingsPage({
         sort={sort}
         dir={dir}
       >
-        <div className="glass-panel" style={{ padding: '2rem' }}>
+        <div className="glass-panel glass-panel--padded">
           {findings.length === 0 ? (
             <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
               No findings yet. Click <strong style={{ color: 'var(--text-main)' }}>New Finding</strong> to add one.
@@ -164,11 +164,7 @@ export default async function FindingsPage({
                   </td>
                   <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={finding.severity || undefined}>
                     {finding.severity ? (
-                      <span style={{
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '4px',
-                        ...getSeverityStyle(finding.severity),
-                      }}>
+                      <span className="badge" style={getSeverityStyle(finding.severity)}>
                         {finding.severity}
                       </span>
                     ) : null}

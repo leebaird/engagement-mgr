@@ -66,7 +66,7 @@ export default async function ClientsPage({
         showCreateModal={isAdmin && create === '1'}
         createCloseHref={createCloseHref}
       >
-      <div className="glass-panel" style={{ padding: '2rem' }}>
+      <div className="glass-panel glass-panel--padded">
         {clients.length === 0 ? (
           <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
             {isAdmin ? (

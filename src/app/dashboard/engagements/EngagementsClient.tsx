@@ -62,7 +62,7 @@ export function EngagementsClient({
           />
         </Modal>
       )}
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="page-container">
         <PageHeader
           title="Engagements"
           showAddButton={isAdmin}

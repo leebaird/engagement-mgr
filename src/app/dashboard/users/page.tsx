@@ -244,12 +244,7 @@ export default async function UsersPage({
                 <td style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={user.username}>{user.username}</td>
                 <td style={{ textAlign: 'center' }}>
                   {user.role === 'Admin' ? (
-                    <span style={{
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      background: 'var(--sidebar-active-bg)',
-                      color: 'var(--sidebar-active)',
-                    }}>
+                    <span className="badge" style={{ background: 'var(--sidebar-active-bg)', color: 'var(--sidebar-active)' }}>
                       Admin
                     </span>
                   ) : (

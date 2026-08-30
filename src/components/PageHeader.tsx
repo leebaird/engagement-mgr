@@ -19,14 +19,9 @@ export function PageHeader({
   extraActions,
 }: PageHeaderProps) {
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '2rem',
-    }}>
-      <h1 style={{ fontSize: '2rem', margin: 0 }}>{title}</h1>
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+    <div className="page-header">
+      <h1 className="page-header__title">{title}</h1>
+      <div className="page-header__actions">
         {extraActions}
         {showAddButton && addHref ? (
           <Link href={addHref} className="btn-secondary" style={{ width: 'fit-content', textDecoration: 'none' }}>

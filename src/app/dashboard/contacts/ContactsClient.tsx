@@ -26,7 +26,7 @@ export function ContactsClient({
   const listRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="page-container">
       <PageHeader
         title="Contacts"
         showAddButton={isAdmin}

@@ -213,15 +213,7 @@ export function EngagementFindingsPanel({
                     </td>
                     <td style={{ padding: '0.5rem' }}>
                       {f.severity ? (
-                        <span
-                          style={{
-                            padding: '0.2rem 0.5rem',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: 600,
-                            ...getSeverityStyle(f.severity),
-                          }}
-                        >
+                        <span className="badge" style={getSeverityStyle(f.severity)}>
                           {f.severity}
                         </span>
                       ) : null}
