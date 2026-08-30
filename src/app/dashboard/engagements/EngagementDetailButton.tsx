@@ -17,14 +17,13 @@ const EDIT_FORM_ID = 'edit-engagement-form';
 import { EngagementScheduleModal } from './EngagementScheduleModal';
 import { focusEditFieldAtStart } from '@/lib/edit-field-focus';
 import { EngagementFormFields, engagementToFormValues } from './EngagementFormFields';
+import { EngagementDetailView, type EngagementDetailTab } from './EngagementDetailView';
 import {
   EngagementFindingsPanel,
   type EngagementFindingSummary,
 } from './EngagementFindingsPanel';
 import type { SearchParamRecord } from '@/lib/list-view-params';
 import { DisplayDate } from '@/components/DateFormatProvider';
-
-const noop = () => {};
 
 type EngagementRelation = { id: string };
 
@@ -47,7 +46,7 @@ type EngagementFindingForDetail = {
 type EngagementForDetail = {
   id: string;
   codeName: string;
-  client?: { company: string } | null;
+  client?: { id: string; company: string } | null;
   chargeCode?: string | null;
   status?: string | null;
   focus?: string | null;
@@ -115,13 +114,13 @@ export function EngagementDetailButton({
   showCreateFinding = false,
   showSchedule = false,
   scheduleIsEditing = false,
-  scheduleHref,
   scheduleViewHref,
   scheduleEditHref,
   scheduleCloseHref,
   scheduleError,
   scheduleEditFields,
   listParams = {},
+  activeTab = 'overview',
   showLink = true,
   showModal = true,
 }: {
@@ -149,13 +148,13 @@ export function EngagementDetailButton({
   showCreateFinding?: boolean;
   showSchedule?: boolean;
   scheduleIsEditing?: boolean;
-  scheduleHref?: string;
   scheduleViewHref?: string;
   scheduleEditHref?: string;
   scheduleCloseHref?: string;
   scheduleError?: string;
   scheduleEditFields?: ReactNode;
   listParams?: SearchParamRecord;
+  activeTab?: EngagementDetailTab;
   showLink?: boolean;
   showModal?: boolean;
 }) {
@@ -283,10 +282,9 @@ export function EngagementDetailButton({
         <Modal
           isOpen
           closeHref={closeHref}
-          title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : 'Engagement Details'}
+          title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : (engagement.codeName || 'Engagement Details')}
         maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : '1500px'}
         alignTop={!showDeleteConfirm}
-        headerExtra={showDeleteConfirm ? undefined : findingsSection}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>
@@ -304,22 +302,17 @@ export function EngagementDetailButton({
             sort={sort}
             dir={dir}
             extraFields={activeFindingId ? { finding: activeFindingId } : undefined}
-            childrenBeforeEdit={
-              scheduleHref ? (
-                <a href={scheduleHref} className="modal-action-btn" style={{ textDecoration: 'none' }}>
-                  Schedule
-                </a>
-              ) : null
-            }
           />
         ) : undefined}
       >
         {showDeleteConfirm ? (
           <DetailDeleteConfirmBody deleteError={deleteError} />
         ) : (
+        <>
+        {findingsSection}
+        {isEditing ? (
         <div className="engagement-create-form">
-          {isEditing ? (
-            <form id={EDIT_FORM_ID} action={updateEngagementFromDetail}>
+          <form id={EDIT_FORM_ID} action={updateEngagementFromDetail}>
               {editFormHiddenFields}
               <EngagementFormFields
                 key={`edit-${engagement.id}-${engagement.updatedAt}`}
@@ -353,38 +346,23 @@ export function EngagementDetailButton({
               {saveErrorMessage(saveError) ? (
                 <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
               ) : null}
-            </form>
-          ) : (
-            <EngagementFormFields
-              readOnly
-              values={engagementToFormValues(engagement)}
-              clients={clients}
+          </form>
+        </div>
+        ) : (
+          <>
+            <EngagementDetailView
+              engagement={engagement}
               contacts={contacts}
               operators={operators}
-              selectedOps={engagement.operators?.map((o) => o.id) || []}
-              setSelectedOps={noop}
-              opsOpen={false}
-              setOpsOpen={noop}
-              selectedContacts={engagement.contacts?.map((c) => c.id) || []}
-              setSelectedContacts={noop}
-              contactsOpen={false}
-              setContactsOpen={noop}
-              selectedTAs={engagement.trustedAgents?.map((t) => t.id) || []}
-              setSelectedTAs={noop}
-              tasOpen={false}
-              setTasOpen={noop}
-              dropdownRef={dropdownRef}
-              contactDropdownRef={contactDropdownRef}
-              taDropdownRef={taDropdownRef}
-              codeNameRef={codeNameInputRef}
-              notesRef={notesRef}
-              contactsTriggerRef={contactsTriggerRef}
-              taTriggerRef={taTriggerRef}
-              operatorsTriggerRef={operatorsTriggerRef}
-              footer={timestampsFooter}
+              activeTab={activeTab}
+              listParams={listParams}
+              scheduleEditHref={scheduleEditHref}
+              isAdmin={isAdmin}
             />
-          )}
-        </div>
+            {timestampsFooter}
+          </>
+        )}
+        </>
         )}
       </Modal>
       )}

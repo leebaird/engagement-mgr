@@ -10,3 +10,14 @@ export function formatPhone(phone: string | null | undefined): string {
   // Return original if not a standard 10-digit US number
   return phone;
 }
+
+export function formatEngagementType(type: string): string {
+  return type
+    .split('_')
+    .map((word) => {
+      const upper = word.toUpperCase();
+      if (upper === 'AI' || upper === 'USB') return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}

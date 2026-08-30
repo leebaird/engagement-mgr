@@ -15,7 +15,6 @@ interface ModalProps {
   hideHeaderActions?: boolean;
   maxWidth?: string;
   zIndex?: number;
-  headerExtra?: React.ReactNode;
   headerActions?: React.ReactNode;
   alignTop?: boolean;
 }
@@ -31,7 +30,6 @@ export function Modal({
   hideHeaderActions,
   maxWidth,
   zIndex = 1000,
-  headerExtra,
   headerActions,
   alignTop = false,
 }: ModalProps) {
@@ -122,7 +120,7 @@ export function Modal({
           />
         )}
         <div
-          className={`glass-panel modal-panel${headerExtra ? ' modal-panel--has-centered-extra' : ''}`}
+          className="glass-panel modal-panel"
           style={{
             width: `min(100%, ${maxWidth || '775px'})`,
             maxWidth: maxWidth || '775px',
@@ -137,7 +135,6 @@ export function Modal({
           onMouseDown={e => e.stopPropagation()}
           onClick={e => e.stopPropagation()}
         >
-          {headerExtra ? <div className="modal-panel__centered-extra">{headerExtra}</div> : null}
           <div className="modal-header">
             <h2 className="modal-header__title">{title}</h2>
             <div className="modal-header__actions">
@@ -155,32 +152,14 @@ export function Modal({
                   )}
                   {!hideHeaderActions && !onEdit && !onDelete && (
                     closeHref ? (
-                      <a
-                        href={closeHref}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          padding: '0.5rem',
-                          display: 'flex',
-                          textDecoration: 'none',
-                        }}
-                      >
+                      <a href={closeHref} className="modal-close-btn">
                         <X size={20} />
                       </a>
                     ) : (
                       <button
                         type="button"
                         onClick={onClose}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          padding: '0.5rem',
-                          display: 'flex',
-                        }}
+                        className="modal-close-btn"
                       >
                         <X size={20} />
                       </button>

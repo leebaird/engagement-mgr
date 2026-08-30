@@ -10,17 +10,7 @@ import { DisplayDate } from '@/components/DateFormatProvider';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
 import { EngagementScheduleEditFields } from './EngagementScheduleEditFields';
-
-function formatEngagementType(type: string): string {
-  return type
-    .split('_')
-    .map((word) => {
-      const upper = word.toUpperCase();
-      if (upper === 'AI' || upper === 'USB') return upper;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(' ');
-}
+import { formatEngagementType } from '@/lib/format';
 
 const listSelect = {
   id: true,
@@ -36,18 +26,20 @@ const listSelect = {
 export default async function EngagementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; findings?: string; createFinding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string }>;
+  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; findings?: string; createFinding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string; tab?: string }>;
 }) {
   const session = await getSession();
   const isAdmin = session?.role === 'Admin';
-  const { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError } = await searchParams;
+  const { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError, tab } = await searchParams;
+  const activeTab = tab === 'scope' || tab === 'people' || tab === 'schedule' ? tab : 'overview';
+  const tabExtra = activeTab === 'overview' ? {} : { tab: activeTab };
   const listParams = { sort, dir };
-  const currentParams = { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError };
+  const currentParams = { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError, tab };
   const addHref = isAdmin
     ? buildPathQuery('/dashboard/engagements', listParams, { create: '1', detail: null })
     : undefined;
   const createCloseHref = buildPathQuery('/dashboard/engagements', listParams, { create: null });
-  const listCloseHref = buildPathQuery('/dashboard/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, findings: null, createFinding: null, schedule: null, scheduleEdit: null, scheduleError: null });
+  const listCloseHref = buildPathQuery('/dashboard/engagements', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null, finding: null, findings: null, createFinding: null, schedule: null, scheduleEdit: null, scheduleError: null, tab: null });
 
   const validSortColumns = ['codeName', 'client', 'status', 'focus', 'type', 'startTesting', 'endTesting'];
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'codeName';
@@ -142,7 +134,7 @@ export default async function EngagementsPage({
     ? serializeEngagementScheduleDates(rawDetailEngagement)
     : undefined;
   const detailHrefs = detailEngagement
-    ? buildDetailHrefs('/dashboard/engagements', listParams, detailEngagement.id, finding ? { finding } : {})
+    ? buildDetailHrefs('/dashboard/engagements', listParams, detailEngagement.id, { ...(finding ? { finding } : {}), ...tabExtra })
     : null;
   const scheduleFormValues = detailEngagement
     ? engagementToScheduleValues(detailEngagement)
@@ -187,17 +179,17 @@ export default async function EngagementsPage({
           showCreateFinding={createFinding === '1' && !finding}
           showSchedule={schedule === '1' && !finding && !edit && deleteConfirm !== '1' && findings !== '1' && createFinding !== '1'}
           scheduleIsEditing={scheduleEdit === '1'}
-          scheduleHref={detailHrefs!.schedule}
           scheduleViewHref={detailHrefs!.schedule}
           scheduleEditHref={detailHrefs!.scheduleEdit}
           scheduleCloseHref={detailHrefs!.view}
           scheduleError={scheduleError}
           scheduleEditFields={scheduleEditFields}
-          listParams={listParams}
+          listParams={{ ...listParams, ...tabExtra }}
+          activeTab={activeTab}
         />
       ) : null}
     >
-      <div className="glass-panel" style={{ padding: '2rem' }}>
+      <div className="glass-panel glass-panel--padded">
         {engagements.length === 0 ? (
           <p style={{ margin: 0, color: 'var(--text-muted)', textAlign: 'center', padding: '1rem 0' }}>
             {isAdmin ? (
