@@ -150,8 +150,8 @@ This application stores **strictly confidential** offensive-security engagement 
 - **Password policy**: 16–128 characters with uppercase, lowercase, number, and symbol — never weaken (`src/lib/auth/password.ts`). Cap length before Argon2 to prevent CPU DoS.
 - **File paths**: Never pass user-controlled paths to `fs` directly. Screenshot downloads must go through `resolveUploadFilePath()` and only serve filenames that exist as `Screenshot` rows.
 - **CSP nonces**: `src/proxy.ts` sets per-request nonces on the request `Content-Security-Policy` header so Next can apply them to framework scripts. Keep root layout dynamic (`connection()`).
-- **Database access**: Use Prisma parameterised queries. Do not build raw SQL from user input. Backup/restore (`src/lib/db-backup.ts`) runs arbitrary SQL only from trusted admin uploads — treat as highly privileged.
-- **Shell commands**: Use `execFile` with argument arrays for `pg_dump`/`psql`/`zip`/`unzip` — never `exec` with string interpolation.
+- **Database access**: Use Prisma parameterised queries. Do not build raw SQL from user input. Backup/restore accepts only the structured application archive and uses transactional `pg_restore`.
+- **Shell commands**: Use `execFile` with argument arrays and explicit timeouts for `pg_dump`/`pg_restore`/`zip`. Keep credentials out of argv and child environments.
 - **Client boundaries**: Never import `prisma`, `fs`, secrets, or password hashes into Client Components. Do not return passwords or tokens in Server Action state.
 
 **OWASP Top 10 — what to watch for here**
