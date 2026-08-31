@@ -4,12 +4,14 @@ import { Crosshair, ShieldAlert, Building2, Zap, Contact } from 'lucide-react';
 import { EngagementCalendar } from './EngagementCalendar';
 import { extractScheduleEvents, getEngagementsOnDate } from '@/lib/engagement-schedule-events';
 import { buildCalendarDayCloseHref, buildCalendarNavHrefs, parseCalendarDayKey, parseCalendarView } from '@/lib/list-view-params';
+import { requireDashboardSession } from '@/lib/require-auth';
 
 export default async function DashboardHome({
   searchParams,
 }: {
   searchParams: Promise<{ month?: string; year?: string; day?: string }>;
 }) {
+  await requireDashboardSession();
   const calendarParams = await searchParams;
   const { viewYear, viewMonth } = parseCalendarView(calendarParams);
   const { prevHref, nextHref, todayHref } = buildCalendarNavHrefs(viewYear, viewMonth);

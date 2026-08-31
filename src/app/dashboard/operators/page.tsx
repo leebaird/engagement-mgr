@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth/session';
+import { requireDashboardSession } from '@/lib/require-auth';
 import Link from 'next/link';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
@@ -13,8 +13,8 @@ export default async function OperatorsPage({
 }: {
   searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
 }) {
-  const session = await getSession();
-  const isAdmin = session?.role === 'Admin';
+  const session = await requireDashboardSession();
+  const isAdmin = session.role === 'Admin';
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };

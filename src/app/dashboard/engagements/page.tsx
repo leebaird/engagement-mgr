@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getSession } from '@/lib/auth/session';
+import { requireDashboardSession } from '@/lib/require-auth';
 import Link from 'next/link';
 import { engagementToScheduleValues, serializeEngagementScheduleDates } from '@/lib/date-input-value';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
@@ -28,8 +28,8 @@ export default async function EngagementsPage({
 }: {
   searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; finding?: string; findings?: string; createFinding?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string; schedule?: string; scheduleEdit?: string; scheduleError?: string; tab?: string }>;
 }) {
-  const session = await getSession();
-  const isAdmin = session?.role === 'Admin';
+  const session = await requireDashboardSession();
+  const isAdmin = session.role === 'Admin';
   const { sort, dir, create, detail, finding, findings, createFinding, edit, delete: deleteConfirm, deleteError, saveError, schedule, scheduleEdit, scheduleError, tab } = await searchParams;
   const activeTab = tab === 'scope' || tab === 'people' || tab === 'schedule' ? tab : 'overview';
   const tabExtra = activeTab === 'overview' ? {} : { tab: activeTab };

@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import { UploadScreenshotForm } from './UploadScreenshotForm';
 import { DeleteScreenshotButton } from './DeleteScreenshotButton';
+import { requireDashboardSession } from '@/lib/require-auth';
 
 export default async function FindingDetailPage({
   params,
@@ -10,6 +11,7 @@ export default async function FindingDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ delete?: string; deleteError?: string }>;
 }) {
+  await requireDashboardSession();
   const resolvedParams = await params;
   const { delete: deleteScreenshotId, deleteError } = await searchParams;
   const finding = await prisma.finding.findUnique({

@@ -6,12 +6,14 @@ import { DisplayDate } from '@/components/DateFormatProvider';
 import { getSeverityStyle } from '@/lib/finding-severity';
 import { FindingsClient } from './FindingsClient';
 import { FindingDetailButton } from './FindingDetailButton';
+import { requireDashboardSession } from '@/lib/require-auth';
 
 export default async function FindingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
 }) {
+  await requireDashboardSession();
   const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
   const listParams = { sort, dir };
   const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
