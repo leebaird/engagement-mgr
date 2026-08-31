@@ -655,33 +655,39 @@ a.engagement-calendar__nav-btn {
   box-shadow: 0 4px 15px var(--accent-ring);
 }
 
-.db-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.db-panel-icon {
-  background: var(--accent-bg);
-  border: 1px solid rgba(255, 51, 102, 0.25);
-  border-radius: 12px;
-  padding: 0.75rem;
-  display: flex;
-  flex-shrink: 0;
-  color: var(--accent);
-}
-
-.db-panel-title {
-  font-size: 2rem;
-  margin: 0;
-  line-height: 1.2;
-}
-
 .db-action-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 22rem));
   gap: 1rem;
+}
+
+@media (max-width: 720px) {
+  .db-action-grid {
+    grid-template-columns: minmax(0, 22rem);
+  }
+}
+
+.danger-zone {
+  border: 1px solid rgba(255, 51, 102, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(255, 51, 102, 0.04);
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.danger-zone__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-hover);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.danger-zone .db-action-btn {
+  max-width: 22rem;
 }
 
 .db-action-btn {

@@ -46,6 +46,7 @@ export function DatabaseRestoreModal({
       <form id="restore-database-form" action={importDatabaseBackup} encType="multipart/form-data">
         {sort ? <input type="hidden" name="sort" value={sort} /> : null}
         {dir ? <input type="hidden" name="dir" value={dir} /> : null}
+        <input type="hidden" name="tab" value="database" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             Restore will replace all database data and uploaded screenshots with the selected backup. This cannot be undone.

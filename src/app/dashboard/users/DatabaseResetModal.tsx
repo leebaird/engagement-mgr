@@ -47,6 +47,7 @@ export function DatabaseResetModal({
       <form id="reset-database-form" action={resetDatabase}>
         {sort ? <input type="hidden" name="sort" value={sort} /> : null}
         {dir ? <input type="hidden" name="dir" value={dir} /> : null}
+        <input type="hidden" name="tab" value="database" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             This will permanently remove all database records and uploaded screenshots, then recreate the default admin account. Your current password becomes the temporary admin password and must be changed on first login.

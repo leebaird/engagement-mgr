@@ -29,7 +29,8 @@ import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation
 function usersListParams(formData: FormData) {
   const sort = formData.get('sort')?.toString();
   const dir = formData.get('dir')?.toString();
-  return { sort, dir };
+  const tab = formData.get('tab')?.toString();
+  return { sort, dir, tab };
 }
 
 /**

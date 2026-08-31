@@ -46,6 +46,7 @@ export function DatabaseBackupModal({
       <form id="backup-database-form" action={exportDatabaseBackup}>
         {sort ? <input type="hidden" name="sort" value={sort} /> : null}
         {dir ? <input type="hidden" name="dir" value={dir} /> : null}
+        <input type="hidden" name="tab" value="database" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             Create a full backup zip (database dump and screenshots) on the server under
