@@ -39,7 +39,7 @@ export function EngagementsClient({
           isOpen
           closeHref={createCloseHref}
           title="Add New Engagement"
-          maxWidth="1500px"
+          maxWidth="900px"
           headerActions={
             <button
               type="submit"

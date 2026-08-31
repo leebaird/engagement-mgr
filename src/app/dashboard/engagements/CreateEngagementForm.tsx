@@ -23,10 +23,6 @@ export function CreateEngagementForm({
   const contactDropdownRef = useRef<HTMLDivElement>(null);
   const taDropdownRef = useRef<HTMLDivElement>(null);
   const codeNameRef = useRef<HTMLInputElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const contactsTriggerRef = useRef<HTMLDivElement>(null);
-  const taTriggerRef = useRef<HTMLDivElement>(null);
-  const operatorsTriggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -86,10 +82,6 @@ export function CreateEngagementForm({
         contactDropdownRef={contactDropdownRef}
         taDropdownRef={taDropdownRef}
         codeNameRef={codeNameRef}
-        notesRef={notesRef}
-        contactsTriggerRef={contactsTriggerRef}
-        taTriggerRef={taTriggerRef}
-        operatorsTriggerRef={operatorsTriggerRef}
         autoFocusCodeName
       />
 

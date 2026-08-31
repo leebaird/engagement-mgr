@@ -180,10 +180,6 @@ export function EngagementDetailButton({
   const contactDropdownRef = useRef<HTMLDivElement>(null);
   const taDropdownRef = useRef<HTMLDivElement>(null);
   const codeNameInputRef = useRef<HTMLInputElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const operatorsTriggerRef = useRef<HTMLDivElement>(null);
-  const contactsTriggerRef = useRef<HTMLDivElement>(null);
-  const taTriggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isEditing) {
@@ -283,7 +279,7 @@ export function EngagementDetailButton({
           isOpen
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : (engagement.codeName || 'Engagement Details')}
-        maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : '1500px'}
+        maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : isEditing ? '900px' : '1500px'}
         alignTop={!showDeleteConfirm}
         headerActions={isEditing ? (
           <>
@@ -307,10 +303,11 @@ export function EngagementDetailButton({
       >
         {showDeleteConfirm ? (
           <DetailDeleteConfirmBody deleteError={deleteError} />
-        ) : (
+        ) : isEditing ? (
         <>
-        {findingsSection}
-        {isEditing ? (
+        {saveErrorMessage(saveError) ? (
+          <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
+        ) : null}
         <div className="engagement-create-form">
           <form id={EDIT_FORM_ID} action={updateEngagementFromDetail}>
               {editFormHiddenFields}
@@ -337,19 +334,15 @@ export function EngagementDetailButton({
                 contactDropdownRef={contactDropdownRef}
                 taDropdownRef={taDropdownRef}
                 codeNameRef={codeNameInputRef}
-                notesRef={notesRef}
-                contactsTriggerRef={contactsTriggerRef}
-                taTriggerRef={taTriggerRef}
-                operatorsTriggerRef={operatorsTriggerRef}
                 footer={timestampsFooter}
               />
-              {saveErrorMessage(saveError) ? (
-                <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
-              ) : null}
           </form>
         </div>
+        {findingsSection}
+        </>
         ) : (
           <>
+            {findingsSection}
             <EngagementDetailView
               engagement={engagement}
               contacts={contacts}
@@ -361,8 +354,6 @@ export function EngagementDetailButton({
             />
             {timestampsFooter}
           </>
-        )}
-        </>
         )}
       </Modal>
       )}

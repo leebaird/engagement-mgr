@@ -755,37 +755,16 @@ a.db-action-btn {
   flex-direction: column;
 }
 
-.engagement-form-grid {
+.engagement-form-pairs {
   display: grid;
-  grid-template-columns: minmax(250px, 0.95fr) minmax(360px, 1.55fr) minmax(260px, 0.95fr);
-  row-gap: 0.5rem;
-  column-gap: 1.5rem;
-  align-items: start;
-  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
 }
 
-.engagement-form-col-right {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-  align-self: stretch;
-  position: relative;
-  min-height: 0;
-}
-
-.engagement-form-col--relations {
-  flex: 1;
-}
-
-.engagement-form-relations-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.engagement-form-grid .form-input {
-  min-width: 0;
+@media (max-width: 560px) {
+  .engagement-form-pairs {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .engagement-select {
@@ -850,27 +829,6 @@ a.db-action-btn {
 
 .engagement-select__option--selected {
   background: rgba(255, 51, 102, 0.2);
-}
-
-.engagement-form-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.engagement-col-left {
-  overflow: visible;
-}
-
-/* Span columns 1+2 while staying in left-column flow under Location */
-.engagement-form-notes-wide {
-  width: calc((100% * (0.95 + 1.55) / 0.95) + 1.5rem);
-  max-width: none;
-}
-
-.engagement-form-col--relations .form-group {
-  margin-bottom: 0;
 }
 
 .dashboard-stat-link {
@@ -1062,7 +1020,7 @@ a.db-action-btn {
   pointer-events: none;
 }
 
-.engagement-create-form .engagement-col-left .form-input {
+.engagement-create-form input.form-input {
   min-height: calc(0.75rem * 2 + 1rem * 1.5);
   box-sizing: border-box;
 }
@@ -1085,22 +1043,9 @@ a.db-action-btn {
   white-space: nowrap;
 }
 
-.engagement-relation-picker__trigger--2 {
-  min-height: calc(0.75rem * 2 + 2 * (1.5rem + 0.84rem) + 0.125rem);
-}
-
-.engagement-relation-picker__selected--2 {
-  max-height: calc(2 * (1.5rem + 0.84rem) + 0.125rem);
-  overflow-y: auto;
-}
-
-.engagement-relation-picker__trigger--6 {
-  min-height: calc(0.75rem * 2 + 6 * (1.5rem + 0.84rem) + 5 * 0.125rem);
-}
-
-.engagement-relation-picker__selected--6 {
-  max-height: calc(6 * (1.5rem + 0.84rem) + 5 * 0.125rem);
-  overflow-y: auto;
+.engagement-relation-picker__placeholder {
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .engagement-relation-picker__list--2 {
@@ -1109,34 +1054,6 @@ a.db-action-btn {
 
 .engagement-relation-picker__list--6 {
   max-height: calc(1rem + 6 * (1rem + 1.5rem + 0.85rem) + 0.5rem);
-}
-
-@media (max-width: 1200px) {
-  .engagement-form-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .engagement-form-notes-wide {
-    width: calc(200% + 1.5rem);
-  }
-
-  .engagement-form-col--relations {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 760px) {
-  .engagement-form-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .engagement-form-notes-wide {
-    width: 100%;
-  }
-
-  .engagement-form-col--relations {
-    grid-column: auto;
-  }
 }
 
 /* Utilities */
@@ -1482,6 +1399,19 @@ a.modal-action-btn {
   gap: 1.25rem;
 }
 
+.detail-tabpanel--hidden {
+  display: none;
+}
+
+/* Tab buttons inside edit/create forms (button reset over .detail-tab) */
+.detail-tab--btn {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .detail-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1665,6 +1595,12 @@ a.modal-action-btn {
 /* Findings summary as a bar inside modal body */
 .modal-panel > .engagement-findings-section {
   margin-bottom: 1.25rem;
+}
+
+/* In edit mode the findings bar sits below the form instead */
+.modal-panel > .engagement-create-form + .engagement-findings-section {
+  margin-top: 1.25rem;
+  margin-bottom: 0;
 }
 
 /* Collapsible sidebar */
