@@ -1,26 +1,29 @@
-import * as argon2 from 'argon2';
 import { prisma } from '@/lib/db';
+import { verifyPasswordHash } from '@/lib/auth/password';
 import {
-  clearLoginRateLimit,
-  isLoginRateLimited,
-  loginRateLimitKey,
-  recordLoginFailure,
+  clearRateLimit,
+  consumeRateLimitAttempt,
+  LOGIN_RATE_LIMITS,
+  passwordConfirmationRateLimitKey,
 } from '@/lib/auth/login-rate-limit';
 
-export async function verifyUserPassword(userId: string, password: string): Promise<boolean> {
+export async function verifyUserPassword(
+  userId: string,
+  password: string
+): Promise<'verified' | 'invalid' | 'busy'> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { passwordHash: true },
   });
 
   if (!user) {
-    return false;
+    return 'invalid';
   }
 
   try {
-    return await argon2.verify(user.passwordHash, password);
+    return await verifyPasswordHash(user.passwordHash, password);
   } catch {
-    return false;
+    return 'invalid';
   }
 }
 
@@ -37,20 +40,22 @@ export async function verifyUserPasswordRateLimited(
   userId: string,
   password: string
 ): Promise<RateLimitedPasswordResult> {
-  const key = loginRateLimitKey('confirm', userId);
-  const rateLimit = await isLoginRateLimited(key);
+  const key = passwordConfirmationRateLimitKey(userId);
+  const rateLimit = await consumeRateLimitAttempt(key, LOGIN_RATE_LIMITS.confirmation);
 
-  if (rateLimit.limited) {
+  if (!rateLimit.allowed) {
     return { ok: false, limited: true, retryAfterMinutes: rateLimit.retryAfterMinutes };
   }
 
-  const valid = await verifyUserPassword(userId, password);
+  const verification = await verifyUserPassword(userId, password);
 
-  if (!valid) {
-    await recordLoginFailure(key);
+  if (verification === 'busy') {
+    return { ok: false, limited: true, retryAfterMinutes: 1 };
+  }
+  if (verification === 'invalid') {
     return { ok: false, limited: false };
   }
 
-  await clearLoginRateLimit(key);
+  await clearRateLimit(key);
   return { ok: true };
 }

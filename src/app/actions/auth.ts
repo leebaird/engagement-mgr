@@ -5,12 +5,16 @@ import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import {
-  clearLoginRateLimit,
-  isLoginRateLimited,
-  loginRateLimitKey,
-  recordLoginFailure,
+  consumeRateLimitAttempt,
+  LOGIN_RATE_LIMITS,
+  sourceLoginRateLimitKey,
 } from '@/lib/auth/login-rate-limit';
-import { validatePasswordComplexity, verifyAgainstDummyHash, ARGON2_OPTIONS } from '@/lib/auth/password';
+import {
+  ARGON2_OPTIONS,
+  validatePasswordComplexity,
+  verifyAgainstDummyHash,
+  verifyPasswordHash,
+} from '@/lib/auth/password';
 import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
 import { getClientIp } from '@/lib/request-client-ip';
 import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
@@ -28,17 +32,16 @@ export async function login(_prevState: unknown, formData: FormData) {
 
   const { username, password } = parsed.data;
   const clientIp = await getClientIp();
-  const rateLimitKeys = [
-    loginRateLimitKey(`ip:${clientIp}`, username),
-    loginRateLimitKey('account', username),
-  ];
-  const rateLimits = await Promise.all(rateLimitKeys.map((key) => isLoginRateLimited(key)));
-  const rateLimit = rateLimits.find((result) => result.limited);
-
-  if (rateLimit?.limited) {
-    return {
-      error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
-    };
+  if (clientIp !== 'direct' && clientIp !== 'unknown') {
+    const rateLimit = await consumeRateLimitAttempt(
+      sourceLoginRateLimitKey(clientIp),
+      LOGIN_RATE_LIMITS.source
+    );
+    if (!rateLimit.allowed) {
+      return {
+        error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
+      };
+    }
   }
 
   const user = await prisma.user.findUnique({
@@ -47,22 +50,24 @@ export async function login(_prevState: unknown, formData: FormData) {
 
   if (!user) {
     // Equalize response timing with the known-user path (prevents user enumeration)
-    await verifyAgainstDummyHash(password);
-    await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));
+    const dummyVerification = await verifyAgainstDummyHash(password);
+    if (dummyVerification === 'busy') {
+      return { error: 'Too many login attempts. Try again shortly.' };
+    }
     return { error: 'Invalid credentials' };
   }
 
   let needsPasswordChange = false;
 
   try {
-    const isPasswordValid = await argon2.verify(user.passwordHash, password);
+    const passwordResult = await verifyPasswordHash(user.passwordHash, password);
 
-    if (!isPasswordValid) {
-      await Promise.all(rateLimitKeys.map((key) => recordLoginFailure(key)));
+    if (passwordResult === 'busy') {
+      return { error: 'Too many login attempts. Try again shortly.' };
+    }
+    if (passwordResult === 'invalid') {
       return { error: 'Invalid credentials' };
     }
-
-    await Promise.all(rateLimitKeys.map((key) => clearLoginRateLimit(key)));
 
     // Record the login timestamp
     await prisma.user.update({

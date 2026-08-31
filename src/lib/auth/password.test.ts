@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import {
   MAX_PASSWORD_LENGTH,
   MIN_PASSWORD_LENGTH,
+  runPasswordVerification,
   validatePasswordComplexity,
 } from './password';
 
@@ -25,5 +26,25 @@ describe('validatePasswordComplexity', () => {
     const result = validatePasswordComplexity('Aa1!');
     assert.equal(result.valid, false);
     assert.ok(result.errors.some((e) => e.includes(`at least ${MIN_PASSWORD_LENGTH}`)));
+  });
+});
+
+describe('password verification capacity', () => {
+  it('fails fast when all verification slots are occupied', async () => {
+    const capacity = { active: 0, limit: 2 };
+    let release!: () => void;
+    const blocked = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+
+    const first = runPasswordVerification(async () => blocked, capacity);
+    const second = runPasswordVerification(async () => blocked, capacity);
+    const rejected = await runPasswordVerification(async () => true, capacity);
+    assert.deepEqual(rejected, { status: 'busy' });
+
+    release();
+    assert.equal((await first).status, 'completed');
+    assert.equal((await second).status, 'completed');
+    assert.equal(capacity.active, 0);
   });
 });

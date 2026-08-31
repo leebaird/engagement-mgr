@@ -33,17 +33,47 @@ export function validatePasswordComplexity(password: string): { valid: boolean; 
 }
 
 let dummyHashPromise: Promise<string> | undefined;
+const passwordVerificationCapacity = { active: 0, limit: 4 };
+
+type VerificationCapacity = { active: number; limit: number };
+
+export async function runPasswordVerification<T>(
+  operation: () => Promise<T>,
+  capacity: VerificationCapacity = passwordVerificationCapacity
+): Promise<{ status: 'completed'; value: T } | { status: 'busy' }> {
+  if (capacity.active >= capacity.limit) {
+    return { status: 'busy' };
+  }
+  capacity.active += 1;
+  try {
+    return { status: 'completed', value: await operation() };
+  } finally {
+    capacity.active -= 1;
+  }
+}
+
+export async function verifyPasswordHash(
+  passwordHash: string,
+  password: string
+): Promise<'verified' | 'invalid' | 'busy'> {
+  const result = await runPasswordVerification(() => argon2.verify(passwordHash, password));
+  if (result.status === 'busy') return 'busy';
+  return result.value ? 'verified' : 'invalid';
+}
 
 /**
  * Verify the supplied password against a throwaway hash. Used to equalize
  * login timing when the username does not exist (prevents user enumeration).
  */
-export async function verifyAgainstDummyHash(password: string): Promise<void> {
+export async function verifyAgainstDummyHash(password: string): Promise<'completed' | 'busy'> {
   const dummyHash = await (dummyHashPromise ??= argon2.hash(
     'dummy-password-for-timing-equalization',
     ARGON2_OPTIONS
   ));
-  await argon2.verify(dummyHash, password).catch(() => {});
+  const result = await runPasswordVerification(() =>
+    argon2.verify(dummyHash, password).catch(() => false)
+  );
+  return result.status;
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
