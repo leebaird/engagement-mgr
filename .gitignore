@@ -47,3 +47,6 @@ next-env.d.ts
 # local runtime data
 /uploads/*
 !/uploads/.gitkeep
+/initial-admin-credentials.txt
+/.uploads-restore-*
+/.uploads-previous-*
