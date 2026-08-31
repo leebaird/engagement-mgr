@@ -4,17 +4,17 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    # Enforce a 5-day minimum release age before creating PRs
+    # Enforce a 7-day minimum release age before creating PRs
     cooldown:
-      default-days: 5
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
-    # Enforce a 5-day minimum release age before creating PRs
+    # Enforce a 7-day minimum release age before creating PRs
     cooldown:
-      default-days: 5
+      default-days: 7
     # Group all npm dependencies into a single PR
     groups:
       all-dependencies:
