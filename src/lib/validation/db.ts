@@ -26,11 +26,10 @@ export function validateBackupFile(
         .refine(
           (name) => {
             const lower = name.toLowerCase();
-            return lower.endsWith('.zip') || lower.endsWith('.sql');
+            return lower.endsWith('.zip');
           },
           {
-            message:
-              'Use a .zip full backup from Backup, or a .sql database-only file',
+            message: 'Use a .zip file created by Engagement Manager Backup',
           }
         ),
       size: z

@@ -32,8 +32,19 @@ export function getDatabaseUrl(): string {
   return url;
 }
 
-/** Connection string for pg_dump/psql (strips Prisma-only query params such as schema=). */
-export function getPgToolsConnectionUrl(): string {
+function decodeUrlComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    throw new Error('DATABASE_URL contains invalid encoding');
+  }
+}
+
+function escapePgPassField(value: string): string {
+  return value.replaceAll('\\', '\\\\').replaceAll(':', '\\:');
+}
+
+export function getPgToolsConnection(): { connectionUrl: string; pgPassLine: string } {
   const parsed = new URL(getDatabaseUrl());
   const prismaOnlyParams = [
     'schema',
@@ -47,8 +58,20 @@ export function getPgToolsConnectionUrl(): string {
   for (const key of prismaOnlyParams) {
     parsed.searchParams.delete(key);
   }
+  const password = decodeUrlComponent(parsed.password);
+  if (password.includes('\n') || password.includes('\r')) {
+    throw new Error('DATABASE_URL password contains an unsupported newline');
+  }
+  const database = decodeUrlComponent(parsed.pathname.replace(/^\//, ''));
+  const username = decodeUrlComponent(parsed.username);
+  const host = parsed.hostname.replace(/^\[(.*)\]$/, '$1');
+  const port = parsed.port || '5432';
+  parsed.password = '';
   if (!parsed.searchParams.toString()) {
     parsed.search = '';
   }
-  return parsed.toString();
+  return {
+    connectionUrl: parsed.toString(),
+    pgPassLine: [host, port, database, username, password].map(escapePgPassField).join(':'),
+  };
 }

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createReadStream } from 'fs';
-import { stat } from 'fs/promises';
+import { lstat } from 'fs/promises';
 import { Readable } from 'stream';
 import { getSession, isPasswordRotationRequired } from '@/lib/auth/session';
 import { resolveBackupFilePath } from '@/lib/backup-path';
-import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
+import {
+  backupDownloadCookieOptions,
+  backupDownloadCookieName,
+  verifyBackupDownloadToken,
+} from '@/lib/backup-download-token';
 
 /**
  * Download an existing backup file written by the password-gated export action.
@@ -18,12 +22,13 @@ export async function GET(request: NextRequest) {
   }
 
   const filename = request.nextUrl.searchParams.get('file')?.trim() ?? '';
-  const token = request.nextUrl.searchParams.get('token')?.trim() ?? '';
   const absolutePath = resolveBackupFilePath(filename);
 
   if (!absolutePath) {
     return new NextResponse('File not found', { status: 404 });
   }
+  const cookieName = backupDownloadCookieName(filename);
+  const token = request.cookies.get(cookieName)?.value ?? '';
 
   const tokenOk = await verifyBackupDownloadToken(token, session.userId, filename);
   if (!tokenOk) {
@@ -31,14 +36,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const fileStat = await stat(absolutePath);
-    if (!fileStat.isFile()) {
+    const fileStat = await lstat(absolutePath);
+    if (fileStat.isSymbolicLink() || !fileStat.isFile()) {
       return new NextResponse('File not found', { status: 404 });
     }
 
     const stream = Readable.toWeb(createReadStream(absolutePath));
 
-    return new NextResponse(stream as unknown as BodyInit, {
+    const response = new NextResponse(stream as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/zip',
         'Content-Length': String(fileStat.size),
@@ -47,6 +52,11 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'no-store',
       },
     });
+    response.cookies.set(cookieName, '', {
+      ...backupDownloadCookieOptions(),
+      maxAge: 0,
+    });
+    return response;
   } catch {
     return new NextResponse('File not found', { status: 404 });
   }

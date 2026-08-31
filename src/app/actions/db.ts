@@ -2,6 +2,7 @@
 
 import { writeFile } from 'fs/promises';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { buildPathQuery } from '@/lib/list-view-params';
 import {
@@ -13,11 +14,14 @@ import {
   deleteAllDatabaseData,
   exportDatabaseArchive,
   importDatabaseArchive,
-  importDatabaseSql,
 } from '@/lib/db-backup';
 import { validatePasswordComplexity } from '@/lib/auth/password';
 import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
-import { createBackupDownloadToken } from '@/lib/backup-download-token';
+import {
+  backupDownloadCookieOptions,
+  backupDownloadCookieName,
+  createBackupDownloadToken,
+} from '@/lib/backup-download-token';
 import { logAuditEvent } from '@/lib/audit-log';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { adminConfirmPasswordSchema, validateBackupFile } from '@/lib/validation/db';
@@ -50,8 +54,6 @@ export async function exportDatabaseBackup(formData: FormData): Promise<void> {
   }
 
   let exportedFilename: string | null = null;
-  let downloadToken: string | null = null;
-
   try {
     const zip = await exportDatabaseArchive();
     const filename = backupFilename();
@@ -62,13 +64,17 @@ export async function exportDatabaseBackup(formData: FormData): Promise<void> {
       throw new Error('Failed to prepare backup file path.');
     }
 
-    await writeFile(absolutePath, zip, { mode: 0o600 });
+    await writeFile(absolutePath, zip, { flag: 'wx', mode: 0o600 });
     const token = await createBackupDownloadToken(session.userId, filename);
     if (!token) {
       throw new Error('Failed to prepare backup download token.');
     }
+    (await cookies()).set(
+      backupDownloadCookieName(filename),
+      token,
+      backupDownloadCookieOptions()
+    );
     exportedFilename = filename;
-    downloadToken = token;
   } catch {
     await logAuditEvent('db.export', session.userId, 'failure');
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'backup', dbError: 'generic' }));
@@ -79,7 +85,6 @@ export async function exportDatabaseBackup(formData: FormData): Promise<void> {
     buildPathQuery('/dashboard/users', listParams, {
       dbMsg: 'backup',
       backupFile: exportedFilename,
-      backupToken: downloadToken,
       db: null,
       dbError: null,
     })
@@ -111,20 +116,8 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
   let restoreError = 'generic';
 
   try {
-    const file = fileResult.file;
-    const name = file.name.toLowerCase();
-
-    if (name.endsWith('.zip')) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await importDatabaseArchive(buffer);
-    } else {
-      const sql = await file.text();
-      if (!sql.trim()) {
-        restoreError = 'file';
-        throw new Error('Backup SQL file is empty');
-      }
-      await importDatabaseSql(sql);
-    }
+    const buffer = Buffer.from(await fileResult.file.arrayBuffer());
+    await importDatabaseArchive(buffer);
 
     revalidatePath('/', 'layout');
   } catch {

@@ -5,7 +5,7 @@ const DB_ERRORS: Record<string, string> = {
   password: 'Incorrect password.',
   file: 'Invalid or missing backup file.',
   unauthorized: 'Unauthorized.',
-  generic: 'Restore failed. Use a valid .zip or .sql backup file.',
+  generic: 'Restore failed. Use a valid .zip file created by Engagement Manager Backup.',
 };
 
 export function DatabaseRestoreModal({
@@ -58,7 +58,7 @@ export function DatabaseRestoreModal({
               type="file"
               name="file"
               className="form-input"
-              accept=".zip,.sql,application/zip,application/sql,text/plain"
+              accept=".zip,application/zip"
               required
               style={{ width: '100%' }}
             />

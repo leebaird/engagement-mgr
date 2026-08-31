@@ -3,7 +3,7 @@ import { createReadStream } from 'fs';
 import { lstat } from 'fs/promises';
 import { Readable } from 'stream';
 import { getSession, isPasswordRotationRequired } from '@/lib/auth/session';
-import { resolveUploadFilePath } from '@/lib/uploads-path';
+import { ensureUploadsDirectory, resolveUploadFilePath } from '@/lib/uploads-path';
 import { prisma } from '@/lib/db';
 
 export async function GET(
@@ -17,6 +17,7 @@ export async function GET(
   }
 
   const resolvedParams = await params;
+  await ensureUploadsDirectory();
   const filePath = resolveUploadFilePath(resolvedParams.filename);
 
   if (!filePath) {
@@ -50,7 +51,7 @@ export async function GET(
       headers: {
         'Content-Type': mimeType,
         'Content-Length': String(stats.size),
-        'Cache-Control': 'private, max-age=86400',
+        'Cache-Control': 'private, no-store',
         'X-Content-Type-Options': 'nosniff',
       },
     });

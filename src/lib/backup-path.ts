@@ -1,6 +1,6 @@
 import { homedir } from 'os';
 import { basename, join, resolve } from 'path';
-import { mkdir } from 'fs/promises';
+import { chmod, mkdir } from 'fs/promises';
 
 export const BACKUP_DIR_NAME = 'engagement-mgr-backups';
 
@@ -56,6 +56,7 @@ export function resolveBackupFilePath(filename: string): string | null {
 
 export async function ensureBackupDirectory(): Promise<string> {
   const dir = getBackupDirectory();
-  await mkdir(dir, { recursive: true });
+  await mkdir(dir, { recursive: true, mode: 0o700 });
+  await chmod(dir, 0o700);
   return dir;
 }

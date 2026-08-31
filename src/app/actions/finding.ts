@@ -1,9 +1,14 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { writeFile, unlink } from 'fs/promises';
+import { rename, unlink, writeFile } from 'fs/promises';
+import { dirname, join } from 'path';
 import { isAuthError, requireAuth } from '@/lib/require-auth';
-import { createUploadFilePath, resolveUploadFilePath } from '@/lib/uploads-path';
+import {
+  createUploadFilePath,
+  ensureUploadsDirectory,
+  resolveUploadFilePath,
+} from '@/lib/uploads-path';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import {
   createFindingSchema,
@@ -16,6 +21,12 @@ import { validateScreenshotBuffer, validateScreenshotUpload } from '@/lib/valida
 import { redirect } from 'next/navigation';
 import { finishDetailDelete, finishDetailUpdate, listParamsFromForm, updateErrorCode } from '@/lib/detail-delete-form';
 import { buildPathQuery } from '@/lib/list-view-params';
+import {
+  assertScreenshotQuota,
+  getScreenshotStorageUsage,
+  ScreenshotQuotaError,
+  withUploadsMaintenanceLock,
+} from '@/lib/screenshot-storage';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -284,19 +295,26 @@ export async function deleteFinding(id: string) {
   }
 
   try {
-    const screenshots = await prisma.screenshot.findMany({ where: { findingId: idParsed.data } });
-    const finding = await prisma.finding.findUnique({
-      where: { id: idParsed.data },
-      select: { engagementId: true },
+    const finding = await withUploadsMaintenanceLock(async () => {
+      const [screenshots, record] = await Promise.all([
+        prisma.screenshot.findMany({
+          where: { findingId: idParsed.data },
+        }),
+        prisma.finding.findUnique({
+          where: { id: idParsed.data },
+          select: { engagementId: true },
+        }),
+      ]);
+      await prisma.$transaction([
+        prisma.screenshot.deleteMany({ where: { findingId: idParsed.data } }),
+        prisma.finding.delete({ where: { id: idParsed.data } }),
+      ]);
+      for (const screenshot of screenshots) {
+        const filePath = resolveUploadFilePath(screenshot.filePath);
+        if (filePath) await unlink(filePath).catch(() => {});
+      }
+      return record;
     });
-    await prisma.finding.delete({ where: { id: idParsed.data } });
-    // Remove files only after the DB delete succeeds (a failed delete must not
-    // leave screenshot records pointing at missing files)
-    for (const snap of screenshots) {
-      const filePath = resolveUploadFilePath(snap.filePath);
-      if (!filePath) continue;
-      await unlink(filePath).catch(() => {});
-    }
     revalidatePath('/dashboard/findings');
     if (finding?.engagementId) {
       revalidatePath('/dashboard/engagements');
@@ -332,6 +350,8 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
   const findingId = findingIdParsed.data;
   const { file } = fileResult;
   const { absolutePath, fileName } = uploadPath;
+  const temporaryFileName = `.${fileName}.tmp`;
+  const temporaryPath = join(dirname(absolutePath), temporaryFileName);
 
   const finding = await prisma.finding.findUnique({
     where: { id: findingId },
@@ -350,18 +370,46 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
   }
 
   try {
-    await writeFile(absolutePath, buffer);
-    await prisma.screenshot.create({
-      data: {
-        findingId,
-        description,
-        filePath: fileName,
-      },
+    const uploadsDirectory = await ensureUploadsDirectory();
+    await withUploadsMaintenanceLock(async () => {
+      try {
+        await prisma.$transaction(
+          async (transaction) => {
+            const [{ storedBytes, storedFiles }, findingFiles] = await Promise.all([
+              getScreenshotStorageUsage(uploadsDirectory),
+              transaction.screenshot.count({ where: { findingId } }),
+            ]);
+            assertScreenshotQuota({
+              storedBytes,
+              storedFiles,
+              findingFiles,
+              uploadBytes: buffer.length,
+            });
+
+            await writeFile(temporaryPath, buffer, { flag: 'wx', mode: 0o600 });
+            await rename(temporaryPath, absolutePath);
+            await transaction.screenshot.create({
+              data: {
+                findingId,
+                description,
+                filePath: fileName,
+              },
+            });
+          },
+          { maxWait: 5_000, timeout: 30_000 }
+        );
+      } catch (error) {
+        await unlink(temporaryPath).catch(() => {});
+        await unlink(absolutePath).catch(() => {});
+        throw error;
+      }
     });
     revalidatePath(`/dashboard/findings/${findingId}`);
     return { success: 'Screenshot uploaded.' };
-  } catch {
-    await unlink(absolutePath).catch(() => {});
+  } catch (error) {
+    if (error instanceof ScreenshotQuotaError) {
+      return { error: error.message };
+    }
     return { error: 'Upload failed.' };
   }
 }
@@ -391,20 +439,21 @@ export async function deleteScreenshot(screenshotId: string, findingId: string):
   if (!parsed.success) return { error: 'Invalid screenshot.' };
 
   try {
-    const screenshot = await prisma.screenshot.findUnique({
-      where: { id: parsed.data.screenshotId },
-      select: { id: true, findingId: true, filePath: true },
-    });
-    // Require the screenshot to belong to the stated finding (prevents cross-finding deletes)
-    if (!screenshot || screenshot.findingId !== parsed.data.findingId) {
-      return { error: 'Screenshot not found.' };
-    }
+    const deleted = await withUploadsMaintenanceLock(async () => {
+      const screenshot = await prisma.screenshot.findUnique({
+        where: { id: parsed.data.screenshotId },
+        select: { id: true, findingId: true, filePath: true },
+      });
+      if (!screenshot || screenshot.findingId !== parsed.data.findingId) {
+        return false;
+      }
 
-    const filePath = resolveUploadFilePath(screenshot.filePath);
-    if (filePath) {
-      await unlink(filePath).catch(() => {});
-    }
-    await prisma.screenshot.delete({ where: { id: screenshot.id } });
+      await prisma.screenshot.delete({ where: { id: screenshot.id } });
+      const filePath = resolveUploadFilePath(screenshot.filePath);
+      if (filePath) await unlink(filePath).catch(() => {});
+      return true;
+    });
+    if (!deleted) return { error: 'Screenshot not found.' };
     revalidatePath(`/dashboard/findings/${parsed.data.findingId}`);
     return {};
   } catch (e) {

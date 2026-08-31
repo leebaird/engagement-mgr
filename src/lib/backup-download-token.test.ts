@@ -10,11 +10,16 @@ describe('backup download tokens', () => {
 
   let createBackupDownloadToken: typeof import('./backup-download-token').createBackupDownloadToken;
   let verifyBackupDownloadToken: typeof import('./backup-download-token').verifyBackupDownloadToken;
+  let backupDownloadCookieName: typeof import('./backup-download-token').backupDownloadCookieName;
+  let backupDownloadCookieOptions: typeof import('./backup-download-token').backupDownloadCookieOptions;
 
   before(async () => {
-    ({ createBackupDownloadToken, verifyBackupDownloadToken } = await import(
-      './backup-download-token'
-    ));
+    ({
+      createBackupDownloadToken,
+      verifyBackupDownloadToken,
+      backupDownloadCookieName,
+      backupDownloadCookieOptions,
+    } = await import('./backup-download-token'));
   });
 
   it('mints a token that verifies for the same user and file', async () => {
@@ -44,5 +49,20 @@ describe('backup download tokens', () => {
   it('rejects garbage tokens', async () => {
     assert.equal(await verifyBackupDownloadToken('not.a.jwt', userId, filename), false);
     assert.equal(await verifyBackupDownloadToken('', userId, filename), false);
+  });
+
+  it('uses a separate short-lived HttpOnly cookie for each backup', () => {
+    assert.notEqual(
+      backupDownloadCookieName(filename),
+      backupDownloadCookieName('em-backup-2026-06-02-15-00.zip')
+    );
+    assert.deepEqual(backupDownloadCookieOptions(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/db/backup',
+      maxAge: 300,
+      priority: 'high',
+    });
   });
 });

@@ -1,4 +1,3 @@
-import { getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
@@ -11,7 +10,7 @@ import { DatabaseBackupModal } from './DatabaseBackupModal';
 import { DatabaseResetModal } from './DatabaseResetModal';
 import { DatabaseRestoreModal } from './DatabaseRestoreModal';
 import { formatBackupPathForDisplay, resolveBackupFilePath } from '@/lib/backup-path';
-import { verifyBackupDownloadToken } from '@/lib/backup-download-token';
+import { requireDashboardSession } from '@/lib/require-auth';
 
 export default async function UsersPage({
   searchParams,
@@ -29,7 +28,6 @@ export default async function UsersPage({
     dbError?: string;
     dbMsg?: string;
     backupFile?: string;
-    backupToken?: string;
   }>;
 }) {
   const {
@@ -45,7 +43,6 @@ export default async function UsersPage({
     dbError,
     dbMsg,
     backupFile,
-    backupToken,
   } = await searchParams;
   const listParams = { sort, dir };
   const currentParams = {
@@ -61,9 +58,8 @@ export default async function UsersPage({
     dbError,
     dbMsg,
     backupFile,
-    backupToken,
   };
-  const clearBackupParams = { backupFile: null, backupToken: null } as const;
+  const clearBackupParams = { backupFile: null } as const;
   const addHref = buildPathQuery('/dashboard/users', listParams, {
     create: '1',
     detail: null,
@@ -105,8 +101,8 @@ export default async function UsersPage({
     create: null,
     ...clearBackupParams,
   });
-  const session = await getSession();
-  if (session?.role !== 'Admin') {
+  const session = await requireDashboardSession();
+  if (session.role !== 'Admin') {
     redirect('/dashboard');
   }
 
@@ -128,13 +124,9 @@ export default async function UsersPage({
 
   const safeBackupFile =
     backupFile && resolveBackupFilePath(backupFile) ? backupFile : null;
-  const downloadTokenOk =
-    !!safeBackupFile &&
-    !!backupToken &&
-    (await verifyBackupDownloadToken(backupToken, session.userId, safeBackupFile));
   const backupDownloadHref =
-    downloadTokenOk && safeBackupFile && backupToken
-      ? `/api/db/backup?file=${encodeURIComponent(safeBackupFile)}&token=${encodeURIComponent(backupToken)}`
+    safeBackupFile
+      ? `/api/db/backup?file=${encodeURIComponent(safeBackupFile)}`
       : null;
   const backupSavedPath = safeBackupFile
     ? formatBackupPathForDisplay(resolveBackupFilePath(safeBackupFile)!)
@@ -144,9 +136,7 @@ export default async function UsersPage({
   if (dbMsg === 'restore') {
     dbMessage = 'Database restored successfully.';
   } else if (dbMsg === 'backup' && backupSavedPath) {
-    dbMessage = downloadTokenOk
-      ? `Backup created at ${backupSavedPath}. Download link expires in 5 minutes.`
-      : `Backup created at ${backupSavedPath}.`;
+    dbMessage = `Backup created at ${backupSavedPath}. Download link expires in 5 minutes.`;
   } else if (dbMsg === 'backup') {
     dbMessage = 'Backup created successfully.';
   }

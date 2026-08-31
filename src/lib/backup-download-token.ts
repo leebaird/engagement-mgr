@@ -1,9 +1,28 @@
 import { SignJWT, jwtVerify } from 'jose';
+import { createHash } from 'crypto';
 import { getJwtSecretKey } from '@/lib/jwt-secret';
 import { resolveBackupFilePath } from '@/lib/backup-path';
 
 const DOWNLOAD_TOKEN_TTL = '5m';
 const DOWNLOAD_TOKEN_PURPOSE = 'backup-download';
+export const BACKUP_DOWNLOAD_COOKIE_PATH = '/api/db/backup';
+export const BACKUP_DOWNLOAD_TOKEN_TTL_SECONDS = 5 * 60;
+
+export function backupDownloadCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict' as const,
+    path: BACKUP_DOWNLOAD_COOKIE_PATH,
+    maxAge: BACKUP_DOWNLOAD_TOKEN_TTL_SECONDS,
+    priority: 'high' as const,
+  };
+}
+
+export function backupDownloadCookieName(filename: string): string {
+  const suffix = createHash('sha256').update(filename).digest('hex').slice(0, 20);
+  return `backup-download-${suffix}`;
+}
 
 export type BackupDownloadTokenPayload = {
   purpose: typeof DOWNLOAD_TOKEN_PURPOSE;
