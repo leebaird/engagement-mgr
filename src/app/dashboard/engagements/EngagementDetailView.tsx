@@ -96,9 +96,9 @@ function PeopleGroup({
 }: {
   label: string;
   ids: string[];
-  resolve: (id: string) => { name: string; title?: string | null } | null;
+  resolve: (id: string) => { id: string; name: string; title?: string | null } | null;
 }) {
-  const entries = ids.map((id) => resolve(id)).filter((e): e is { name: string; title?: string | null } => e !== null);
+  const entries = ids.map((id) => resolve(id)).filter((e): e is { id: string; name: string; title?: string | null } => e !== null);
   return (
     <section className="detail-section">
       <h3 className="detail-section__label">{label} ({entries.length})</h3>
@@ -107,7 +107,7 @@ function PeopleGroup({
       ) : (
         <div className="people-list">
           {entries.map((entry) => (
-            <PersonChip key={entry.name} name={entry.name} title={entry.title} />
+            <PersonChip key={entry.id} name={entry.name} title={entry.title} />
           ))}
         </div>
       )}
@@ -155,11 +155,11 @@ export function EngagementDetailView({
 
   const resolveContact = (id: string) => {
     const contact = contacts.find((c) => c.id === id);
-    return contact ? { name: contact.name, title: contact.title } : null;
+    return contact ? { id: contact.id, name: contact.name, title: contact.title } : null;
   };
   const resolveOperator = (id: string) => {
     const operator = operators.find((o) => o.id === id);
-    return operator ? { name: operator.name, title: operator.title } : null;
+    return operator ? { id: operator.id, name: operator.name, title: operator.title } : null;
   };
 
   return (

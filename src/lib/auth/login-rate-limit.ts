@@ -4,6 +4,7 @@ const WINDOW_MS = 15 * 60 * 1000;
 
 export const LOGIN_RATE_LIMITS = {
   source: { maxAttempts: 30, windowMs: WINDOW_MS },
+  account: { maxAttempts: 5, windowMs: WINDOW_MS },
   confirmation: { maxAttempts: 5, windowMs: WINDOW_MS },
 } as const;
 
@@ -18,12 +19,57 @@ export type RateLimitResult =
   | { allowed: true }
   | { allowed: false; retryAfterMinutes: number };
 
-export function sourceLoginRateLimitKey(clientIp: string): string {
+export function sourceLoginRateLimitKey(clientIp: string, username: string): string {
+  if (clientIp === 'direct' || clientIp === 'unknown') {
+    return `login:source:${clientIp}:${username}`;
+  }
   return `login:source:${clientIp}`;
+}
+
+export function accountLoginRateLimitKey(username: string): string {
+  return `login:account:${username}`;
 }
 
 export function passwordConfirmationRateLimitKey(userId: string): string {
   return `password-confirmation:${userId}`;
+}
+
+export async function consumeLoginRateLimitAttempt(
+  clientIp: string,
+  username: string,
+  client: RateLimitClient = prisma
+): Promise<RateLimitResult> {
+  const sourceLimit = await consumeRateLimitAttempt(
+    sourceLoginRateLimitKey(clientIp, username),
+    LOGIN_RATE_LIMITS.source,
+    client
+  );
+  if (!sourceLimit.allowed) {
+    return sourceLimit;
+  }
+
+  return consumeRateLimitAttempt(
+    accountLoginRateLimitKey(username),
+    LOGIN_RATE_LIMITS.account,
+    client
+  );
+}
+
+export async function releaseLoginRateLimitAttempt(
+  clientIp: string,
+  username: string,
+  client: RateLimitClient = prisma
+): Promise<void> {
+  await client.$queryRawUnsafe(
+    `
+      UPDATE "LoginRateLimit"
+      SET "count" = GREATEST("count" - 1, 0)
+      WHERE "key" IN ($1, $2)
+      RETURNING "key"
+    `,
+    sourceLoginRateLimitKey(clientIp, username),
+    accountLoginRateLimitKey(username)
+  );
 }
 
 export async function consumeRateLimitAttempt(

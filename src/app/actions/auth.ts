@@ -5,9 +5,8 @@ import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import {
-  consumeRateLimitAttempt,
-  LOGIN_RATE_LIMITS,
-  sourceLoginRateLimitKey,
+  consumeLoginRateLimitAttempt,
+  releaseLoginRateLimitAttempt,
 } from '@/lib/auth/login-rate-limit';
 import {
   ARGON2_OPTIONS,
@@ -32,16 +31,11 @@ export async function login(_prevState: unknown, formData: FormData) {
 
   const { username, password } = parsed.data;
   const clientIp = await getClientIp();
-  if (clientIp !== 'direct' && clientIp !== 'unknown') {
-    const rateLimit = await consumeRateLimitAttempt(
-      sourceLoginRateLimitKey(clientIp),
-      LOGIN_RATE_LIMITS.source
-    );
-    if (!rateLimit.allowed) {
-      return {
-        error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
-      };
-    }
+  const rateLimit = await consumeLoginRateLimitAttempt(clientIp, username);
+  if (!rateLimit.allowed) {
+    return {
+      error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
+    };
   }
 
   const user = await prisma.user.findUnique({
@@ -52,6 +46,7 @@ export async function login(_prevState: unknown, formData: FormData) {
     // Equalize response timing with the known-user path (prevents user enumeration)
     const dummyVerification = await verifyAgainstDummyHash(password);
     if (dummyVerification === 'busy') {
+      await releaseLoginRateLimitAttempt(clientIp, username);
       return { error: 'Too many login attempts. Try again shortly.' };
     }
     return { error: 'Invalid credentials' };
@@ -63,11 +58,14 @@ export async function login(_prevState: unknown, formData: FormData) {
     const passwordResult = await verifyPasswordHash(user.passwordHash, password);
 
     if (passwordResult === 'busy') {
+      await releaseLoginRateLimitAttempt(clientIp, username);
       return { error: 'Too many login attempts. Try again shortly.' };
     }
     if (passwordResult === 'invalid') {
       return { error: 'Invalid credentials' };
     }
+
+    await releaseLoginRateLimitAttempt(clientIp, username);
 
     // Record the login timestamp
     await prisma.user.update({

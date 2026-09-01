@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -37,6 +38,24 @@ describe('security boundary regressions', () => {
     assert.equal(limiter.includes('login:global'), false);
   });
 
+  it('applies source and account login budgets and releases successful reservations', async () => {
+    const action = await repositoryFile('src/app/actions/auth.ts');
+    const limiter = await repositoryFile('src/lib/auth/login-rate-limit.ts');
+    assert.match(action, /consumeLoginRateLimitAttempt\(clientIp, username\)/);
+    assert.match(action, /releaseLoginRateLimitAttempt\(clientIp, username\)/);
+    assert.match(limiter, /accountLoginRateLimitKey\(username\)/);
+    assert.match(limiter, /clientIp === 'direct' \|\| clientIp === 'unknown'/);
+    assert.doesNotMatch(action, /clientIp !== 'direct'/);
+    assert.doesNotMatch(action, /clientIp !== 'unknown'/);
+  });
+
+  it('serializes seed credential replacement with a recoverable database lock', async () => {
+    const seed = await repositoryFile('prisma/seed.ts');
+    assert.match(seed, /pg_advisory_lock/);
+    assert.match(seed, /pg_advisory_unlock/);
+    assert.doesNotMatch(seed, /credentialsPath}\.lock/);
+  });
+
   it('prevents browser caching of confidential screenshots', async () => {
     const route = await repositoryFile('src/app/api/uploads/[filename]/route.ts');
     assert.match(route, /'Cache-Control': 'private, no-store'/);
@@ -52,6 +71,18 @@ describe('security boundary regressions', () => {
     assert.equal(setup.includes('urlencode "$DB_PASSWORD"'), false);
     assert.match(setup, /urllib\.parse\.quote\(sys\.stdin\.read\(\)/);
     assert.equal(summary.includes('$DB_PASSWORD'), false);
+  });
+
+  it('rejects legacy setup password arguments with an actionable migration example', () => {
+    for (const argument of ['--db-pass=do-not-print-this', '--db-pass']) {
+      const result = spawnSync('bash', ['setup.sh', argument], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+      });
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /--db-pass-file=\/secure\/db-password/);
+      assert.doesNotMatch(result.stderr, /do-not-print-this/);
+    }
   });
 
   it('pins every registry dependency artifact in package-lock.json', async () => {

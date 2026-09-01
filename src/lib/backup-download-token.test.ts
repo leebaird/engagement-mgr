@@ -5,7 +5,7 @@ import { before, describe, it } from 'node:test';
 process.env.JWT_SECRET ??= 'test-only-jwt-secret-at-least-32-chars!!';
 
 describe('backup download tokens', () => {
-  const filename = 'em-backup-2026-06-02-14-30.zip';
+  const filename = 'em-backup-2026-06-02-14-30-45-a1b2c3d4e5f6.zip';
   const userId = '11111111-1111-4111-8111-111111111111';
 
   let createBackupDownloadToken: typeof import('./backup-download-token').createBackupDownloadToken;
@@ -36,7 +36,7 @@ describe('backup download tokens', () => {
       false
     );
     assert.equal(
-      await verifyBackupDownloadToken(token!, userId, 'em-backup-2026-06-02-15-00.zip'),
+      await verifyBackupDownloadToken(token!, userId, 'em-backup-2026-06-02-15-00-00-123456789abc.zip'),
       false
     );
   });
@@ -54,7 +54,7 @@ describe('backup download tokens', () => {
   it('uses a separate short-lived HttpOnly cookie for each backup', () => {
     assert.notEqual(
       backupDownloadCookieName(filename),
-      backupDownloadCookieName('em-backup-2026-06-02-15-00.zip')
+      backupDownloadCookieName('em-backup-2026-06-02-15-00-00-123456789abc.zip')
     );
     assert.deepEqual(backupDownloadCookieOptions(), {
       httpOnly: true,

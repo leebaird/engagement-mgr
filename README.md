@@ -80,12 +80,20 @@ The script installs prerequisites, prompts for a database username and password,
 For headless or CI use:
 
 ```bash
+sudo install -d -m 700 -o "$USER" /secure
 openssl rand -base64 24 > /secure/db-password
 chmod 600 /secure/db-password
 ./setup.sh -y --db-user=em_admin --db-pass-file=/secure/db-password
 ```
 
 Run `./setup.sh --help` for all options.
+
+#### Upgrade notes for hardened setup and backups
+
+- `--db-pass=...` was removed because command-line secrets are visible to other processes. Put the password in an owner-only file and replace the old argument with `--db-pass-file=/secure/db-password`; the automated setup example above is copy-paste ready.
+- `setup.sh` no longer installs Node.js. Install a supported Node.js release (`^22.12.0` or `>=24.0.0`) from a trusted package source before running it.
+- Dependency installation now uses `npm ci`, so `package-lock.json` must be present and in sync with `package.json`.
+- Legacy `.sql` backups cannot be restored. Before retiring an old server, upgrade it to a version that can create the structured application backup and re-export the data as a `.zip`.
 
 ### Manual setup
 
@@ -194,8 +202,9 @@ After seeding the database, you can log in using the generated temporary admin a
 
 On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
 
-**Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app). After a successful export, use **Download copy** on the Admin page. A short-lived signed grant is held in an `HttpOnly` cookie and only works for the admin who created the backup.
-- The timestamp uses the **local time** of the server running the app (year, month, day, hour, and minute). Example: `em-backup-2026-06-02-14-30.zip`.
+**Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM-SS-RANDOM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app). After a successful export, use **Download copy** on the Admin page. A short-lived signed grant is held in an `HttpOnly` cookie and only works for the admin who created the backup.
+
+- The timestamp uses the **local time** of the server running the app and the random suffix prevents collisions between rapid exports. Example: `em-backup-2026-06-02-14-30-45-a1b2c3d4e5f6.zip`.
 
 | Path | Contents |
 |------|----------|
@@ -203,7 +212,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
 - **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
-- **Reset** wipes all data and recreates the default `admin` account. Requires typing `RESET` and entering your admin password to confirm.
+- **Reset** wipes all application data and recreates `admin` using the confirming administrator's current password as its temporary password. Requires typing `RESET`; the temporary password must be changed on first login.
 
 **Old server**
 
@@ -212,7 +221,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 3. Save the `.zip` and copy it to the new server (for example with `scp` or `rsync`):
 
    ```bash
-   scp em-backup-2026-06-02-14-30.zip user@new-server:/path/to/
+   scp em-backup-2026-06-02-14-30-45-a1b2c3d4e5f6.zip user@new-server:/path/to/
    ```
 
 **New server**

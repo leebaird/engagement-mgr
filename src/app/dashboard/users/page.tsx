@@ -370,7 +370,7 @@ export default async function UsersPage({
               >
                 <Trash2 size={22} color="#ff3366" />
                 <span className="db-action-btn-label">Reset</span>
-                <span className="db-action-btn-desc">Wipe all records and restore default creds.</span>
+                <span className="db-action-btn-desc">Wipe all records; your password becomes the temporary admin password.</span>
               </Link>
             </section>
           </div>

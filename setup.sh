@@ -55,8 +55,8 @@ parse_args() {
       --db-pass-file=*)
         DB_PASSWORD_FILE="${1#*=}"
         ;;
-      --db-pass=*)
-        die "--db-pass exposes secrets in process arguments; use --db-pass-file"
+      --db-pass|--db-pass=*)
+        die $'--db-pass was removed because it exposes secrets in process arguments.\nMigration example:\n  sudo install -d -m 700 -o "$USER" /secure\n  sudo install -m 600 -o "$USER" /dev/null /secure/db-password\n  read -rsp "Database password: " db_password; printf "\\n"\n  printf "%s\\n" "$db_password" > /secure/db-password; unset db_password\n  ./setup.sh -y --db-pass-file=/secure/db-password'
         ;;
       --overwrite-env)
         OVERWRITE_ENV=true

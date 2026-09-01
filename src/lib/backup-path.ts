@@ -1,6 +1,7 @@
 import { homedir } from 'os';
 import { basename, join, resolve } from 'path';
 import { chmod, mkdir } from 'fs/promises';
+import { randomBytes } from 'crypto';
 
 export const BACKUP_DIR_NAME = 'engagement-mgr-backups';
 
@@ -22,8 +23,8 @@ export function backupFilename(): string {
   const timestamp =
     [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-') +
     '-' +
-    [pad(now.getHours()), pad(now.getMinutes())].join('-');
-  return `em-backup-${timestamp}.zip`;
+    [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join('-');
+  return `em-backup-${timestamp}-${randomBytes(6).toString('hex')}.zip`;
 }
 
 export function resolveBackupFilePath(filename: string): string | null {
@@ -40,7 +41,7 @@ export function resolveBackupFilePath(filename: string): string | null {
     return null;
   }
 
-  if (!/^em-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.zip$/.test(safeName)) {
+  if (!/^em-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}(?:-\d{2}-[a-f0-9]{12})?\.zip$/.test(safeName)) {
     return null;
   }
 
