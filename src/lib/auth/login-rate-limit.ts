@@ -19,6 +19,8 @@ export type RateLimitResult =
   | { allowed: true }
   | { allowed: false; retryAfterMinutes: number };
 
+type RateLimitReservationResult = RateLimitResult & { resetAt: Date };
+
 export function sourceLoginRateLimitKey(clientIp: string, username: string): string {
   if (clientIp === 'direct' || clientIp === 'unknown') {
     return `login:source:${clientIp}:${username}`;
@@ -39,8 +41,9 @@ export async function consumeLoginRateLimitAttempt(
   username: string,
   client: RateLimitClient = prisma
 ): Promise<RateLimitResult> {
+  const sourceKey = sourceLoginRateLimitKey(clientIp, username);
   const sourceLimit = await consumeRateLimitAttempt(
-    sourceLoginRateLimitKey(clientIp, username),
+    sourceKey,
     LOGIN_RATE_LIMITS.source,
     client
   );
@@ -48,11 +51,25 @@ export async function consumeLoginRateLimitAttempt(
     return sourceLimit;
   }
 
-  return consumeRateLimitAttempt(
+  const accountLimit = await consumeRateLimitAttempt(
     accountLoginRateLimitKey(username),
     LOGIN_RATE_LIMITS.account,
     client
   );
+  if (!accountLimit.allowed) {
+    await client.$queryRawUnsafe(
+      `
+        UPDATE "LoginRateLimit"
+        SET "count" = GREATEST("count" - 1, 0)
+        WHERE "key" = $1 AND "resetAt" = $2
+        RETURNING "key"
+      `,
+      sourceKey,
+      sourceLimit.resetAt
+    );
+  }
+
+  return accountLimit;
 }
 
 export async function releaseLoginRateLimitAttempt(
@@ -76,7 +93,7 @@ export async function consumeRateLimitAttempt(
   key: string,
   options: RateLimitOptions,
   client: RateLimitClient = prisma
-): Promise<RateLimitResult> {
+): Promise<RateLimitReservationResult> {
   const now = new Date();
   const nextResetAt = new Date(now.getTime() + options.windowMs);
   const rows = await client.$queryRawUnsafe<Array<{ count: number; resetAt: Date }>>(
@@ -108,11 +125,12 @@ export async function consumeRateLimitAttempt(
   }
 
   if (reservation.count <= options.maxAttempts) {
-    return { allowed: true };
+    return { allowed: true, resetAt: reservation.resetAt };
   }
 
   return {
     allowed: false,
+    resetAt: reservation.resetAt,
     retryAfterMinutes: Math.max(
       1,
       Math.ceil((reservation.resetAt.getTime() - now.getTime()) / 60_000)

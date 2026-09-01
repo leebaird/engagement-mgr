@@ -74,6 +74,95 @@ describe('consumeLoginRateLimitAttempt', () => {
     assert.equal(results[5]?.allowed, false);
   });
 
+  it('releases only the source reservation when the account budget denies', async () => {
+    const sourceKey = sourceLoginRateLimitKey('203.0.113.10', 'locked-user');
+    const accountKey = accountLoginRateLimitKey('locked-user');
+    const resetAt = new Date(Date.now() + 60_000);
+    const counts = new Map<string, number>([
+      [sourceKey, 29],
+      [accountKey, LOGIN_RATE_LIMITS.account.maxAttempts],
+    ]);
+    const releasedKeys: string[] = [];
+    const client = {
+      $queryRawUnsafe: async (query: string, ...parameters: unknown[]) => {
+        const key = parameters[0] as string;
+        if (query.includes('GREATEST')) {
+          releasedKeys.push(key);
+          counts.set(key, Math.max((counts.get(key) ?? 0) - 1, 0));
+          return [{ key }];
+        }
+
+        const count = (counts.get(key) ?? 0) + 1;
+        counts.set(key, count);
+        return [{ count, resetAt }];
+      },
+    };
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const result = await consumeLoginRateLimitAttempt(
+        '203.0.113.10',
+        'locked-user',
+        client as never
+      );
+      assert.equal(result.allowed, false);
+    }
+
+    assert.equal(counts.get(sourceKey), 29);
+    assert.equal(counts.get(accountKey), LOGIN_RATE_LIMITS.account.maxAttempts + 3);
+    assert.deepEqual(releasedKeys, [sourceKey, sourceKey, sourceKey]);
+    assert.equal(
+      (await consumeLoginRateLimitAttempt('203.0.113.10', 'other-user', client as never)).allowed,
+      true
+    );
+  });
+
+  it('does not release a reservation from a newer source window', async () => {
+    const sourceKey = sourceLoginRateLimitKey('203.0.113.10', 'locked-user');
+    const accountKey = accountLoginRateLimitKey('locked-user');
+    const reservedResetAt = new Date(Date.now() + 60_000);
+    const newerResetAt = new Date(reservedResetAt.getTime() + 60_000);
+    const counts = new Map<string, number>([
+      [sourceKey, 29],
+      [accountKey, LOGIN_RATE_LIMITS.account.maxAttempts],
+    ]);
+    let sourceResetAt = reservedResetAt;
+    let releaseQuery = '';
+    let releaseParameters: unknown[] = [];
+    const client = {
+      $queryRawUnsafe: async (query: string, ...parameters: unknown[]) => {
+        const key = parameters[0] as string;
+        if (query.includes('GREATEST')) {
+          releaseQuery = query;
+          releaseParameters = parameters;
+          if (parameters[1] === sourceResetAt) {
+            counts.set(key, Math.max((counts.get(key) ?? 0) - 1, 0));
+          }
+          return [];
+        }
+
+        const count = (counts.get(key) ?? 0) + 1;
+        counts.set(key, count);
+        if (key === accountKey) {
+          counts.set(sourceKey, 1);
+          sourceResetAt = newerResetAt;
+        }
+        return [{ count, resetAt: key === sourceKey ? reservedResetAt : newerResetAt }];
+      },
+    };
+
+    const result = await consumeLoginRateLimitAttempt(
+      '203.0.113.10',
+      'locked-user',
+      client as never
+    );
+
+    assert.equal(result.allowed, false);
+    assert.match(releaseQuery, /"key" = \$1 AND "resetAt" = \$2/);
+    assert.deepEqual(releaseParameters, [sourceKey, reservedResetAt]);
+    assert.equal(counts.get(sourceKey), 1);
+    assert.equal(counts.get(accountKey), LOGIN_RATE_LIMITS.account.maxAttempts + 1);
+  });
+
   it('releases only the current successful reservation', async () => {
     let query = '';
     let keys: string[] = [];

@@ -212,7 +212,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
 - **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
-- **Reset** wipes all application data and recreates `admin` using the confirming administrator's current password as its temporary password. Requires typing `RESET`; the temporary password must be changed on first login.
+- **Reset** wipes all application data and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
 
 **Old server**
 
