@@ -62,6 +62,23 @@ describe('security boundary regressions', () => {
     assert.equal(route.includes('max-age'), false);
   });
 
+  it('keeps global appearance changes behind server-side admin authorization', async () => {
+    const action = await repositoryFile('src/app/actions/settings.ts');
+    const layout = await repositoryFile('src/app/layout.tsx');
+    const reset = await repositoryFile('src/lib/db-backup.ts');
+    const seed = await repositoryFile('prisma/seed.ts');
+    const migration = await repositoryFile(
+      'prisma/migrations/20260902120000_add_application_highlight_setting/migration.sql'
+    );
+    assert.match(action, /^'use server';/);
+    assert.match(action, /await requireAdminAuth\(\)/);
+    assert.match(action, /isHighlightColor\(highlightColor\)/);
+    assert.match(layout, /data-highlight-color=/);
+    assert.match(reset, /transaction\.applicationSetting\.create/);
+    assert.match(seed, /applicationSetting\.upsert/);
+    assert.match(migration, /VALUES \(1, 'Pink', CURRENT_TIMESTAMP\)/);
+  });
+
   it('does not pipe a remote installer to root or print generated secrets', async () => {
     const setup = await repositoryFile('setup.sh');
     const summary = setup.slice(setup.indexOf('print_summary()'), setup.indexOf('\nmain()'));

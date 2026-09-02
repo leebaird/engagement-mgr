@@ -128,7 +128,7 @@ export function CreateFindingForm({
               cursor: 'pointer',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 51, 102, 0.08)';
+              e.currentTarget.style.background = 'var(--accent-softer)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';

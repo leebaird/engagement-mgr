@@ -15,7 +15,7 @@ import {
 import { buildCalendarDayHref, buildEngagementScheduleHref } from '@/lib/list-view-params';
 import { formatDate, formatMonthYear } from '@/lib/date-format';
 import { Modal } from '@/components/Modal';
-import { useDateFormat } from '@/components/DateFormatProvider';
+import { useDateTimePreferences } from '@/components/DateTimePreferencesProvider';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 const PHASES: SchedulePhase[] = ['Prep', 'Recon', 'Testing', 'Reporting', 'Outbrief'];
@@ -90,8 +90,8 @@ export function EngagementCalendar({
 }: EngagementCalendarProps) {
   const today = new Date();
   const todayKey = toDateKeyFromParts(today.getFullYear(), today.getMonth(), today.getDate());
-  const { format, ready } = useDateFormat();
-  const dateFormat = ready ? format : 'mdy';
+  const { dateFormat: preferredDateFormat, ready } = useDateTimePreferences();
+  const dateFormat = ready ? preferredDateFormat : 'mdy';
 
   const events = useMemo(() => extractScheduleEvents(engagements), [engagements]);
   const eventsByDate = useMemo(() => {

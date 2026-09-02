@@ -20,6 +20,7 @@ import { tmpdir } from 'os';
 import { prisma } from '@/lib/db';
 import { getPgToolsConnection } from '@/lib/require-admin';
 import { prepareDefaultAdminUser } from '@/lib/seed-default-admin';
+import { APPLICATION_SETTING_ID } from '@/lib/highlight-color';
 import {
   getUploadsDirectory,
   ensureUploadsDirectory,
@@ -503,6 +504,9 @@ export async function deleteAllDatabaseData(defaultAdminPassword?: string): Prom
             END $$;
           `);
           await transaction.user.create({ data: admin.data });
+          await transaction.applicationSetting.create({
+            data: { id: APPLICATION_SETTING_ID, highlightColor: 'Pink' },
+          });
         },
         { maxWait: 5_000, timeout: 30_000 }
       )

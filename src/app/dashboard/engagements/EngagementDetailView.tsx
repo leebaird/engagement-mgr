@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { buildPathQuery, type SearchParamRecord } from '@/lib/list-view-params';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 import { formatEngagementType } from '@/lib/format';
 import { SCHEDULE_PHASE_COLORS, type SchedulePhase } from '@/lib/engagement-schedule-events';
 import { sortContactIds } from '@/lib/contact-title-sort';
@@ -267,9 +267,9 @@ export function EngagementDetailView({
                     <span className="timeline-phase__dot" style={{ background: SCHEDULE_PHASE_COLORS[row.label] }} />
                     {row.label}
                   </div>
-                  <div className="schedule-table__date">{start ? <DisplayDate value={start} /> : '—'}</div>
+                  <div className="schedule-table__date">{start ? <DisplayDate value={start} dateOnly /> : '—'}</div>
                   <div className="schedule-table__date">
-                    {row.end ? (end ? <DisplayDate value={end} /> : '—') : ''}
+                    {row.end ? (end ? <DisplayDate value={end} dateOnly /> : '—') : ''}
                   </div>
                 </div>
               );

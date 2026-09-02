@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Contact, Zap, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
-import { DateFormatSelect } from '@/components/DateFormatProvider';
+import { DateTimePreferencesControls } from '@/components/DateTimePreferencesProvider';
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 
@@ -71,7 +71,7 @@ export function Navigation({ isAdmin = false }: { isAdmin?: boolean }) {
       </nav>
 
       <div className="sidebar__footer">
-        <DateFormatSelect />
+        <DateTimePreferencesControls />
         <form action={logout}>
           <button type="submit" className="signout-btn" title="Sign Out">
             <LogOut size={20} />

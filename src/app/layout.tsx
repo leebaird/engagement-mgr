@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { connection } from "next/server";
 import { headers } from "next/headers";
+import { getHighlightColor } from '@/lib/application-settings';
+import { highlightColorCssName } from '@/lib/highlight-color';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,9 +29,14 @@ export default async function RootLayout({
   // Dynamic rendering required for per-request CSP nonces (proxy sets x-nonce)
   await connection();
   const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const highlightColor = await getHighlightColor();
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      data-highlight-color={highlightColorCssName(highlightColor)}
+    >
       <body data-nonce={nonce}>
         {children}
         <div id="modal-root" />

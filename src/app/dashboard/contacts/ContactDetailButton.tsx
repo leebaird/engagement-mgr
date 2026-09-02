@@ -14,7 +14,7 @@ import {
 } from '@/components/DetailModalActions';
 
 const EDIT_FORM_ID = 'edit-contact-form';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 import { formatPhone } from '@/lib/format';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 

@@ -7,6 +7,7 @@ import {
 import { replaceStaleInitialAdminCredentials } from '../src/lib/initial-admin-credentials';
 import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { APPLICATION_SETTING_ID } from '../src/lib/highlight-color';
 
 async function main() {
   console.log('Start seeding...');
@@ -38,6 +39,12 @@ async function main() {
     } else {
       console.log('Admin user already exists, skipping...');
     }
+
+    await prisma.applicationSetting.upsert({
+      where: { id: APPLICATION_SETTING_ID },
+      create: { id: APPLICATION_SETTING_ID, highlightColor: 'Pink' },
+      update: {},
+    });
   } finally {
     try {
       await lockClient.query('SELECT pg_advisory_unlock($1::integer)', [1_394_517_093]);

@@ -5,7 +5,7 @@ import {
   type EngagementScheduleValues,
 } from '@/lib/date-input-value';
 import { formatDate } from '@/lib/date-format';
-import { useDateFormat } from '@/components/DateFormatProvider';
+import { useDateTimePreferences } from '@/components/DateTimePreferencesProvider';
 
 export type { EngagementScheduleValues };
 export { engagementToScheduleValues };
@@ -27,10 +27,10 @@ type EngagementScheduleFieldsProps = {
 };
 
 export function EngagementScheduleFields({ values }: EngagementScheduleFieldsProps) {
-  const { format, ready } = useDateFormat();
+  const { dateFormat, ready } = useDateTimePreferences();
   const formatValue = (iso: string) => {
     if (!iso) return '';
-    return formatDate(iso, ready ? format : 'ymd');
+    return formatDate(iso, ready ? dateFormat : 'ymd', true);
   };
 
   return (

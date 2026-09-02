@@ -15,7 +15,7 @@ import {
 
 const EDIT_FORM_ID = 'edit-operator-form';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 
 interface Operator {
   id: string;

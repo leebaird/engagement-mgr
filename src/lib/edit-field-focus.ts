@@ -53,7 +53,7 @@ export function focusEditFieldAtStart(
   });
 }
 
-const CLIENT_FOCUS_RING = '0 0 0 3px rgba(255, 51, 102, 0.3)';
+const CLIENT_FOCUS_RING = '0 0 0 3px var(--accent-ring)';
 
 export function handleClientEditFieldFocus(
   e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>

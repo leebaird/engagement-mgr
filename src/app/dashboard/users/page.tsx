@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Upload, Download, Trash2 } from 'lucide-react';
 import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-view-params';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 import { UsersClient } from './UsersClient';
 import { UserDetailButton } from './UserDetailButton';
 import { DatabaseBackupModal } from './DatabaseBackupModal';
@@ -12,8 +12,11 @@ import { DatabaseResetModal } from './DatabaseResetModal';
 import { DatabaseRestoreModal } from './DatabaseRestoreModal';
 import { formatBackupPathForDisplay, resolveBackupFilePath } from '@/lib/backup-path';
 import { requireDashboardSession } from '@/lib/require-auth';
+import { getHighlightColor } from '@/lib/application-settings';
+import { HIGHLIGHT_COLOR_OPTIONS } from '@/lib/highlight-color';
+import { updateHighlightColor } from '@/app/actions/settings';
 
-type AdminTab = 'users' | 'database';
+type AdminTab = 'users' | 'database' | 'appearance';
 
 export default async function UsersPage({
   searchParams,
@@ -32,6 +35,8 @@ export default async function UsersPage({
     dbError?: string;
     dbMsg?: string;
     backupFile?: string;
+    appearanceError?: string;
+    appearanceMsg?: string;
   }>;
 }) {
   const {
@@ -48,6 +53,8 @@ export default async function UsersPage({
     dbError,
     dbMsg,
     backupFile,
+    appearanceError,
+    appearanceMsg,
   } = await searchParams;
   const listParams = { sort, dir };
   const currentParams = {
@@ -64,6 +71,8 @@ export default async function UsersPage({
     dbError,
     dbMsg,
     backupFile,
+    appearanceError,
+    appearanceMsg,
   };
   const clearBackupParams = { backupFile: null } as const;
   const addHref = buildPathQuery('/dashboard/users', listParams, {
@@ -73,6 +82,8 @@ export default async function UsersPage({
     db: null,
     dbError: null,
     dbMsg: null,
+    appearanceError: null,
+    appearanceMsg: null,
     ...clearBackupParams,
   });
   const createCloseHref = buildPathQuery('/dashboard/users', listParams, { create: null, tab: null });
@@ -136,6 +147,10 @@ export default async function UsersPage({
     ...clearTabParams,
     tab: 'database',
   });
+  const appearanceTabHref = buildPathQuery('/dashboard/users', listParams, {
+    ...clearTabParams,
+    tab: 'appearance',
+  });
   const session = await requireDashboardSession();
   if (session.role !== 'Admin') {
     redirect('/dashboard');
@@ -145,10 +160,13 @@ export default async function UsersPage({
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'username';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  const users = await prisma.user.findMany({
-    select: { id: true, username: true, role: true, createdAt: true, updatedAt: true, lastPasswordChange: true, lastLogin: true },
-    orderBy: { [sortCol]: sortDir }
-  });
+  const [users, highlightColor] = await Promise.all([
+    prisma.user.findMany({
+      select: { id: true, username: true, role: true, createdAt: true, updatedAt: true, lastPasswordChange: true, lastLogin: true },
+      orderBy: { [sortCol]: sortDir }
+    }),
+    getHighlightColor(),
+  ]);
 
   const adminCount = users.filter(u => u.role === 'Admin').length;
 
@@ -176,13 +194,22 @@ export default async function UsersPage({
     dbMessage = 'Backup created successfully.';
   }
 
-  let activeTab: AdminTab = tab === 'database' ? 'database' : 'users';
+  let activeTab: AdminTab = tab === 'database' || tab === 'appearance' ? tab : 'users';
   if (db || dbError || dbMsg || backupFile) {
     activeTab = 'database';
   }
   if (create === '1' || detail) {
     activeTab = 'users';
   }
+
+  const appearanceMessage = appearanceMsg === 'saved'
+    ? 'Highlight colour updated for everyone.'
+    : null;
+  const appearanceErrorMessage = appearanceError === 'invalid'
+    ? 'Select a valid highlight colour.'
+    : appearanceError === 'save'
+      ? 'Unable to update the highlight colour.'
+      : null;
 
   return (
     <>
@@ -252,6 +279,14 @@ export default async function UsersPage({
           >
             Database
           </Link>
+          <Link
+            href={appearanceTabHref}
+            scroll={false}
+            className={activeTab === 'appearance' ? 'detail-tab detail-tab--active' : 'detail-tab'}
+            aria-current={activeTab === 'appearance' ? 'page' : undefined}
+          >
+            Appearance
+          </Link>
         </nav>
 
         {activeTab === 'users' ? (
@@ -311,7 +346,7 @@ export default async function UsersPage({
               </tbody>
             </table>
           )
-        ) : (
+        ) : activeTab === 'database' ? (
           <div className="detail-tabpanel">
             {dbMessage ? (
               <div
@@ -368,11 +403,51 @@ export default async function UsersPage({
                 className="db-action-btn db-action-btn--danger"
                 style={{ textDecoration: 'none' }}
               >
-                <Trash2 size={22} color="#ff3366" />
+                <Trash2 size={22} color="var(--danger-color)" />
                 <span className="db-action-btn-label">Reset</span>
                 <span className="db-action-btn-desc">Wipe all records; your password becomes the temporary admin password.</span>
               </Link>
             </section>
+          </div>
+        ) : (
+          <div className="detail-tabpanel">
+            {appearanceMessage ? (
+              <p className="settings-message settings-message--success">{appearanceMessage}</p>
+            ) : null}
+            {appearanceErrorMessage ? (
+              <p className="settings-message settings-message--error">{appearanceErrorMessage}</p>
+            ) : null}
+            <form action={updateHighlightColor} className="appearance-settings-form">
+              <input type="hidden" name="sort" value={sort ?? ''} />
+              <input type="hidden" name="dir" value={dir ?? ''} />
+              <fieldset className="highlight-color-fieldset">
+                <legend className="detail-section__label">Highlight colour</legend>
+                <p className="appearance-settings-description">
+                  Choose the highlight colour used throughout Engagement Manager.
+                </p>
+                <div className="highlight-color-options">
+                  {HIGHLIGHT_COLOR_OPTIONS.map((option) => (
+                    <label key={option.id} className="highlight-color-option">
+                      <input
+                        type="radio"
+                        name="highlightColor"
+                        value={option.id}
+                        defaultChecked={highlightColor === option.id}
+                      />
+                      <span
+                        className="highlight-color-option__swatch"
+                        style={{ backgroundColor: option.color }}
+                        aria-hidden="true"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <button type="submit" className="btn-primary appearance-settings-submit">
+                Save appearance
+              </button>
+            </form>
           </div>
         )}
       </div>

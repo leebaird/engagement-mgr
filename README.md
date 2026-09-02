@@ -214,10 +214,11 @@ After seeding the database, you can log in using the generated temporary admin a
 
 ## Server migration (Backup / Restore / Reset)
 
+- The sidebar stores each browser's date format and time zone preference locally. Time zone can follow the viewer's operating system or display timestamps in UTC; engagement schedule dates remain unchanged calendar dates.
 - Admin can back up and restore the full application data from the **Admin** page (`/dashboard/users`).
 - Use this when moving from an old server to a new one: clone the app on the new host, then restore a backup from the old host.
 
-On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users.
+On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users. The **Appearance** panel lets an admin choose the application-wide highlight colour.
 
 **Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM-SS-RANDOM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app). After a successful export, use **Download copy** on the Admin page. A short-lived signed grant is held in an `HttpOnly` cookie and only works for the admin who created the backup.
 
@@ -229,7 +230,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
 - **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
-- **Reset** wipes all application data and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
+- **Reset** wipes all application data, restores the default pink highlight colour, and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
 
 **Old server**
 
@@ -282,6 +283,7 @@ This section documents the architecture, database schema, security measures, and
 
 - **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
 - **LoginRateLimit**: `key`, `count`, `resetAt` — atomic source and password-confirmation attempt reservations. Password verification also has a bounded concurrency limit.
+- **ApplicationSetting**: singleton application-wide settings record with `highlightColor` (Pink, Blue, Teal, Green, Purple, or Amber) and `updatedAt`.
 - **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Prep, Recon, Testing, Reporting, Complete), `focus`, `type` (AI, Code_Review, Firewall, Multi, Pentest, Phishing, Physical, Purple_Team, Red_Team, USB_Drop, Vishing, Web_App, Wireless), `location` (Internal, External), `startPrep`, `endPrep`, `startRecon`, `endRecon`, `startTesting`, `endTesting`, `startReporting`, `endReporting`, `outbrief`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.
@@ -317,7 +319,7 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 
 ### Security Architecture
 
-1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Every dashboard page refreshes the session against the database before reading confidential data. Only admins can access the Admin page (`/dashboard/users`), manage accounts, and back up, restore, or reset the database. Backup, restore, and reset require password re-confirmation. Creating a backup is a Server Action; browser download uses `GET /api/db/backup?file=…` with the Admin session and a five-minute signed grant in an `HttpOnly` cookie.
+1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Every dashboard page refreshes the session against the database before reading confidential data. Only admins can access the Admin page (`/dashboard/users`), manage accounts, change the application-wide highlight colour, and back up, restore, or reset the database. Backup, restore, and reset require password re-confirmation. Creating a backup is a Server Action; browser download uses `GET /api/db/backup?file=…` with the Admin session and a five-minute signed grant in an `HttpOnly` cookie.
 2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.

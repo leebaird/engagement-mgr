@@ -1,19 +1,30 @@
 import { toDateInputValue } from '@/lib/date-input-value';
 
 export const DATE_FORMAT_STORAGE_KEY = 'em-date-format';
+export const TIME_ZONE_STORAGE_KEY = 'em-time-zone';
 
-export type DateTimeFormatId = 'os' | 'mdy' | 'dmy' | 'ymd';
+export type DateFormatId = 'os' | 'mdy' | 'dmy' | 'ymd';
+export type TimeZoneId = 'os' | 'utc';
 
-export const DATE_FORMAT_OPTIONS: { id: DateTimeFormatId; label: string }[] = [
+export const DATE_FORMAT_OPTIONS: { id: DateFormatId; label: string }[] = [
   { id: 'os', label: 'Operating system' },
   { id: 'mdy', label: '8/12/2026' },
   { id: 'dmy', label: '12/08/2026' },
   { id: 'ymd', label: '2026-08-12' },
 ];
 
-export function parseDateTimeFormatId(value: unknown): DateTimeFormatId {
+export const TIME_ZONE_OPTIONS: { id: TimeZoneId; label: string }[] = [
+  { id: 'os', label: 'Operating system' },
+  { id: 'utc', label: 'UTC' },
+];
+
+export function parseDateFormatId(value: unknown): DateFormatId {
   if (value === 'os' || value === 'mdy' || value === 'dmy' || value === 'ymd') return value;
   return 'os';
+}
+
+export function parseTimeZoneId(value: unknown): TimeZoneId {
+  return value === 'utc' ? 'utc' : 'os';
 }
 
 function parseLocalDateKey(value: string): Date | null {
@@ -55,26 +66,34 @@ export function toDisplayDate(
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function localeFor(format: DateTimeFormatId): string | undefined {
+function localeFor(format: DateFormatId): string | undefined {
   if (format === 'os') return undefined;
   if (format === 'dmy') return 'en-GB';
   if (format === 'ymd') return 'sv-SE';
   return 'en-US';
 }
 
+function timeZoneFor(timeZone: TimeZoneId): string | undefined {
+  return timeZone === 'utc' ? 'UTC' : undefined;
+}
+
 export function formatDate(
   value: string | Date | null | undefined,
-  format: DateTimeFormatId,
+  format: DateFormatId,
   dateOnly = false,
+  timeZone: TimeZoneId = 'os',
 ): string {
   const date = toDisplayDate(value, dateOnly);
   if (!date) return '';
-  return date.toLocaleDateString(localeFor(format));
+  return date.toLocaleDateString(localeFor(format), {
+    timeZone: dateOnly ? undefined : timeZoneFor(timeZone),
+  });
 }
 
 export function formatDateTime(
   value: string | Date | null | undefined,
-  format: DateTimeFormatId,
+  format: DateFormatId,
+  timeZone: TimeZoneId = 'os',
 ): string {
   const date = toDisplayDate(value);
   if (!date) return '';
@@ -84,10 +103,11 @@ export function formatDateTime(
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: timeZoneFor(timeZone),
   });
 }
 
-export function formatMonthYear(year: number, month: number, format: DateTimeFormatId): string {
+export function formatMonthYear(year: number, month: number, format: DateFormatId): string {
   return new Date(year, month, 1).toLocaleDateString(localeFor(format), {
     month: 'long',
     year: 'numeric',

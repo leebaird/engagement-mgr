@@ -4,18 +4,28 @@ import {
   formatDate,
   formatDateTime,
   formatMonthYear,
-  parseDateTimeFormatId,
+  parseDateFormatId,
+  parseTimeZoneId,
   toDisplayDate,
 } from './date-format';
 
-describe('parseDateTimeFormatId', () => {
+describe('parseDateFormatId', () => {
   it('accepts known format ids and defaults to os', () => {
-    assert.equal(parseDateTimeFormatId('os'), 'os');
-    assert.equal(parseDateTimeFormatId('mdy'), 'mdy');
-    assert.equal(parseDateTimeFormatId('dmy'), 'dmy');
-    assert.equal(parseDateTimeFormatId('ymd'), 'ymd');
-    assert.equal(parseDateTimeFormatId('nope'), 'os');
-    assert.equal(parseDateTimeFormatId(undefined), 'os');
+    assert.equal(parseDateFormatId('os'), 'os');
+    assert.equal(parseDateFormatId('mdy'), 'mdy');
+    assert.equal(parseDateFormatId('dmy'), 'dmy');
+    assert.equal(parseDateFormatId('ymd'), 'ymd');
+    assert.equal(parseDateFormatId('nope'), 'os');
+    assert.equal(parseDateFormatId(undefined), 'os');
+  });
+});
+
+describe('parseTimeZoneId', () => {
+  it('accepts UTC and defaults to the operating system', () => {
+    assert.equal(parseTimeZoneId('utc'), 'utc');
+    assert.equal(parseTimeZoneId('os'), 'os');
+    assert.equal(parseTimeZoneId('Europe/London'), 'os');
+    assert.equal(parseTimeZoneId(undefined), 'os');
   });
 });
 
@@ -63,6 +73,16 @@ describe('formatDateTime', () => {
     const text = formatDateTime(date, 'ymd');
     assert.match(text, /2026-08-12/);
     assert.match(text, /14:05|2:05/);
+  });
+
+  it('formats absolute timestamps in UTC when selected', () => {
+    const text = formatDateTime('2026-08-12T23:05:00.000-07:00', 'ymd', 'utc');
+    assert.match(text, /2026-08-13/);
+    assert.match(text, /0?6:05/);
+  });
+
+  it('does not shift stored calendar dates when UTC is selected', () => {
+    assert.equal(formatDate('2026-08-12', 'ymd', true, 'utc'), '2026-08-12');
   });
 });
 

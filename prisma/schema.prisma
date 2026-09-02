@@ -28,6 +28,21 @@ enum Role {
   User
 }
 
+model ApplicationSetting {
+  id             Int            @id @default(1)
+  highlightColor HighlightColor @default(Pink)
+  updatedAt      DateTime       @updatedAt
+}
+
+enum HighlightColor {
+  Pink
+  Blue
+  Teal
+  Green
+  Purple
+  Amber
+}
+
 model Engagement {
   id                   String        @id @default(uuid())
   codeName             String

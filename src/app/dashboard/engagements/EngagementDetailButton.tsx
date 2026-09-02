@@ -23,7 +23,7 @@ import {
   type EngagementFindingSummary,
 } from './EngagementFindingsPanel';
 import type { SearchParamRecord } from '@/lib/list-view-params';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 
 type EngagementRelation = { id: string };
 

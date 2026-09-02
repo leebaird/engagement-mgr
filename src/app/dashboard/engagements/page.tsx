@@ -6,7 +6,7 @@ import { buildDetailHrefs, buildPathQuery, buildSortHrefs } from '@/lib/list-vie
 import { sortContactsByTitle } from '@/lib/contact-title-sort';
 import { sortOperatorsByTitle } from '@/lib/operator-title-sort';
 import { DetailEyeLink } from '@/components/DetailEyeLink';
-import { DisplayDate } from '@/components/DateFormatProvider';
+import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 import { EngagementsClient } from './EngagementsClient';
 import { EngagementDetailButton } from './EngagementDetailButton';
 import { EngagementScheduleEditFields } from './EngagementScheduleEditFields';

@@ -34,7 +34,7 @@ export function DatabaseResetModal({
             type="submit"
             form="reset-database-form"
             className="btn-save"
-            style={{ boxShadow: 'none', borderColor: '#ff3366', color: '#ff3366' }}
+            style={{ boxShadow: 'none', borderColor: 'var(--danger-color)', color: 'var(--danger-color)' }}
           >
             Reset
           </button>
