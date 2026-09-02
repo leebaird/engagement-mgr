@@ -1,3 +1,4 @@
+import { networkInterfaces } from 'node:os';
 import type { NextConfig } from 'next';
 
 const securityHeaders = [
@@ -14,9 +15,30 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+function allowedDevOriginsFromEnv(): string[] {
+  return (process.env.ALLOWED_DEV_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function lanIPv4Addresses(): string[] {
+  const addresses = new Set<string>();
+  for (const addrs of Object.values(networkInterfaces())) {
+    for (const net of addrs ?? []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        addresses.add(net.address);
+      }
+    }
+  }
+  return [...addresses];
+}
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  // Dev-only: this machine's LAN IPs plus optional ALLOWED_DEV_ORIGINS (hostnames).
+  allowedDevOrigins: [...new Set([...lanIPv4Addresses(), ...allowedDevOriginsFromEnv()])],
   experimental: {
     optimizePackageImports: ['lucide-react'],
     useTypeScriptCli: true,

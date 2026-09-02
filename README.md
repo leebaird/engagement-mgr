@@ -12,6 +12,15 @@ sudo apt update && sudo apt install -y nodejs npm postgresql postgresql-client p
 
 `postgresql-client` provides `pg_dump`, `pg_restore`, and `psql`; `zip` creates backup archives. Restore extraction is handled by the application with strict entry and size validation.
 
+Installing the packages does not always leave PostgreSQL running. Start and enable the service before creating roles or starting the app:
+
+```bash
+sudo systemctl enable --now postgresql
+sudo systemctl status postgresql --no-pager
+```
+
+If the app later fails with `Can't reach database server at 127.0.0.1:5432`, run `sudo systemctl start postgresql` and confirm with `pg_isready -h 127.0.0.1 -p 5432`.
+
 The app requires Node.js `^22.12.0` or `>=24.0.0` (see `engines` in `package.json`). If the OS package is older, install a supported release from a trusted package source whose signatures you verify before running `setup.sh`.
 
 ## Environment Configuration
@@ -31,6 +40,7 @@ chmod 600 .env
 | `DATABASE_URL` | Yes | PostgreSQL connection string. Prisma uses the `schema=public` query parameter. Backup and restore use an owner-only temporary pgpass file so the password is not placed in subprocess arguments. |
 | `JWT_SECRET` | Yes in production | Must be at least **32 characters**. The app refuses to start in production without it. Rotating this invalidates all existing sessions. |
 | `TRUST_PROXY` | No | Set to `1` (or `true`) only when the app is behind a reverse proxy that **overwrites** `X-Forwarded-For` / `X-Real-IP`. When unset, those headers are ignored for rate limiting and audit IPs so clients cannot spoof them. |
+| `ALLOWED_DEV_ORIGINS` | No | **Development only.** Extra hostnames allowed to load `/_next` assets (comma-separated). The server’s current LAN IPv4 addresses are allowed automatically. Use this for a stable DNS name. Production builds ignore this. |
 
 Generate a strong secret:
 
@@ -39,6 +49,8 @@ openssl rand -base64 32
 ```
 
 ## Database Setup
+
+Make sure PostgreSQL is running first (see [Prerequisites](#prerequisites)). Automated `./setup.sh` starts the service for you; the manual steps below assume it is already up.
 
 ### Development
 
@@ -75,7 +87,7 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script installs prerequisites, prompts for a database username and password, writes a `chmod 600` `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account. It does not install Node.js from a remote shell script; install a supported Node.js release first.
+The script installs prerequisites, starts and enables the PostgreSQL service, prompts for a database username and password, writes a `chmod 600` `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account. It does not install Node.js from a remote shell script; install a supported Node.js release first.
 
 For headless or CI use:
 
@@ -117,21 +129,26 @@ Run `./setup.sh --help` for all options.
 
 ## Running the Application
 
-Start the development server:
+PostgreSQL must be running before you start the app (`sudo systemctl start postgresql` if needed). Then start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+Startup prints both a loopback URL and this machine’s LAN address:
 
-To expose the dev server on your LAN (for example, testing from another device on the same network), bind to all interfaces:
-
-```bash
-npx next dev -H 0.0.0.0
+```
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.20:3000
 ```
 
-Then open `http://<this-machine-ip>:3000` from the other device. Use this only on trusted networks — dev mode is not hardened for production.
+`npm run dev` and `npm start` bind `0.0.0.0` so the Network URL works on the LAN. Use that only on trusted networks — dev mode is not hardened for production.
+
+If you open the app by **hostname** (not IP) and the remote browser is a blank white page, add that name to `.env` and restart:
+
+```bash
+ALLOWED_DEV_ORIGINS=dev.office.example
+```
 
 ## Production Deployment
 
