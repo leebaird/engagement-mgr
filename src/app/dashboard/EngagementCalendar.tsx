@@ -74,7 +74,7 @@ function buildWorkWeekMonthGrid(year: number, month: number): (string | null)[][
 }
 
 function formatPickerDate(dateKey: string, format: Parameters<typeof formatDate>[1]): string {
-  return formatDate(dateKey, format) || dateKey;
+  return formatDate(dateKey, format, true) || dateKey;
 }
 
 export function EngagementCalendar({

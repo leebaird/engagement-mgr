@@ -531,7 +531,7 @@ export function EngagementFormFields({
                       padding: '0.5rem 0.75rem',
                       cursor: selectedTAs.includes(c.id) || selectedTAs.length < MAX_TRUSTED_AGENTS ? 'pointer' : 'not-allowed',
                       borderRadius: '4px',
-                      background: selectedTAs.includes(c.id) ? 'rgba(255,51,102,0.16)' : 'transparent',
+                      background: selectedTAs.includes(c.id) ? 'rgb(var(--accent-rgb) / 0.16)' : 'transparent',
                       opacity: !selectedTAs.includes(c.id) && selectedTAs.length >= MAX_TRUSTED_AGENTS ? 0.5 : 1,
                     }}
                   >
@@ -636,7 +636,7 @@ export function EngagementFormFields({
                       padding: '0.5rem 0.75rem',
                       cursor: selectedContacts.includes(c.id) || selectedContacts.length < MAX_CONTACTS ? 'pointer' : 'not-allowed',
                       borderRadius: '4px',
-                      background: selectedContacts.includes(c.id) ? 'rgba(255,51,102,0.16)' : 'transparent',
+                      background: selectedContacts.includes(c.id) ? 'rgb(var(--accent-rgb) / 0.16)' : 'transparent',
                       opacity: !selectedContacts.includes(c.id) && selectedContacts.length >= MAX_CONTACTS ? 0.5 : 1,
                     }}
                   >
@@ -743,7 +743,7 @@ export function EngagementFormFields({
                       padding: '0.5rem 0.75rem',
                       cursor: selectedOps.includes(o.id) || selectedOps.length < MAX_OPERATORS ? 'pointer' : 'not-allowed',
                       borderRadius: '4px',
-                      background: selectedOps.includes(o.id) ? 'rgba(255,51,102,0.16)' : 'transparent',
+                      background: selectedOps.includes(o.id) ? 'rgb(var(--accent-rgb) / 0.16)' : 'transparent',
                       opacity: !selectedOps.includes(o.id) && selectedOps.length >= MAX_OPERATORS ? 0.5 : 1,
                     }}
                   >
