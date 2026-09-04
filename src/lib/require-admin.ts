@@ -15,15 +15,6 @@ export async function requireAdminAuth(): Promise<AdminResult> {
   return session;
 }
 
-/** @deprecated Prefer requireAdminAuth() for consistent error handling. */
-export async function requireAdmin() {
-  const session = await getSession();
-  if (!session || session.role !== 'Admin' || isPasswordRotationRequired(session.lastPasswordChange)) {
-    return null;
-  }
-  return session;
-}
-
 export function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
   if (!url) {

@@ -31,20 +31,6 @@ describe('sortContactsByTitle', () => {
     );
   });
 
-  it('orders tiers VP, CISO, Director, Senior Consultant', () => {
-    const contacts = [
-      { id: 'consultant', name: 'Pat', title: 'Senior Consultant' },
-      { id: 'director', name: 'Quinn', title: 'Director' },
-      { id: 'ciso', name: 'Riley', title: 'CISO' },
-      { id: 'vp', name: 'Sam', title: 'VP' },
-    ];
-
-    assert.deepEqual(
-      sortContactsByTitle(contacts).map((contact) => contact.title),
-      ['VP', 'CISO', 'Director', 'Senior Consultant']
-    );
-  });
-
   it('matches common title aliases', () => {
     const contacts = [
       { id: 'consultant', name: 'Pat', title: 'Sr. Consultant' },

@@ -1,5 +1,4 @@
 'use client';
-import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
@@ -21,7 +20,6 @@ export function ClientsClient({
   createCloseHref,
 }: ClientsClientProps) {
   const router = useRouter();
-  const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="page-container">
@@ -32,7 +30,7 @@ export function ClientsClient({
         addHref={addHref}
       />
 
-      <div ref={listRef}>
+      <div>
         {children}
       </div>
 

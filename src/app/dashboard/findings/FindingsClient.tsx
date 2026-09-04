@@ -1,5 +1,4 @@
 'use client';
-import { useRef } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateFindingForm } from './CreateFindingForm';
@@ -21,15 +20,11 @@ export function FindingsClient({
   sort,
   dir,
 }: FindingsClientProps) {
-  const listRef = useRef<HTMLDivElement>(null);
-
   return (
     <div className="page-container">
       <PageHeader title="Findings" addButtonLabel="New Finding" addHref={addHref} />
       
-      <div ref={listRef}>
-        {children}
-      </div>
+      {children}
 
       {showCreateModal && (
         <Modal

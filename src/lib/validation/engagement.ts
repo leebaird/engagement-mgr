@@ -26,11 +26,6 @@ const engagementBaseSchema = z.object({
   notes: trimmedFormString(10000),
 });
 
-export const createEngagementSchema = engagementBaseSchema.refine(
-  (data) => Boolean(data.clientId || data.clientName),
-  { message: 'A Client is required.' }
-);
-
 export const updateEngagementSchema = engagementBaseSchema
   .extend({
     status: optionalEngagementStatus(),

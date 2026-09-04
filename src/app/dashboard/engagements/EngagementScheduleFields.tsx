@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  engagementToScheduleValues,
-  type EngagementScheduleValues,
-} from '@/lib/date-input-value';
+import type { EngagementScheduleValues } from '@/lib/date-input-value';
 import { formatDate } from '@/lib/date-format';
 import { useDateTimePreferences } from '@/components/DateTimePreferencesProvider';
-
-export type { EngagementScheduleValues };
-export { engagementToScheduleValues };
 
 const SCHEDULE_ROWS: {
   label: string;

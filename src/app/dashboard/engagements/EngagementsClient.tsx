@@ -1,5 +1,4 @@
 'use client';
-import { useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
@@ -29,7 +28,6 @@ export function EngagementsClient({
   createCloseHref,
 }: EngagementsClientProps) {
   const router = useRouter();
-  const listRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -70,7 +68,7 @@ export function EngagementsClient({
           addHref={addHref}
         />
 
-        <div ref={listRef}>
+        <div>
           {children}
         </div>
       </div>

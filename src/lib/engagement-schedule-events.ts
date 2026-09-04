@@ -131,12 +131,6 @@ export function getPhaseRangesForEngagement(engagement: EngagementScheduleSource
   ];
 }
 
-export function formatScheduleEventLabel(event: ScheduleEvent): string {
-  if (event.phase === 'Outbrief') return `${event.codeName} — Outbrief`;
-  const kindLabel = event.kind === 'start' ? 'Start' : 'End';
-  return `${event.codeName} — ${event.phase} ${kindLabel}`;
-}
-
 export function getEngagementPhaseBanners(engagement: EngagementCalendarItem): PhaseBanner[] {
   const banners: PhaseBanner[] = [];
 

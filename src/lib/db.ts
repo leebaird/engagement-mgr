@@ -10,12 +10,7 @@ const globalForDatabase = global as unknown as {
 };
 
 const pool = globalForDatabase.pool ?? new Pool({ connectionString });
-const prisma =
-  globalForDatabase.prisma ??
-  (() => {
-    const adapter = new PrismaPg(pool);
-    return new PrismaClient({ adapter });
-  })();
+const prisma = globalForDatabase.prisma ?? new PrismaClient({ adapter: new PrismaPg(pool) });
 
 if (process.env.NODE_ENV !== 'production') {
   globalForDatabase.pool = pool;
