@@ -22,12 +22,12 @@
     "@prisma/client": "7.10.0",
     "argon2": "0.45.1",
     "jose": "6.2.10",
-    "lucide-react": "1.34.0",
+    "lucide-react": "1.35.0",
     "next": "16.3.3",
     "pg": "8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "zod": "4.4.3"
+    "zod": "4.5.1"
   },
   "devDependencies": {
     "@types/node": "26.4.0",
