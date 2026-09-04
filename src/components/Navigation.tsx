@@ -15,6 +15,10 @@ const navItems: { name: string; href: string; icon: typeof LayoutDashboard; admi
   { name: 'Clients', href: '/dashboard/clients', icon: Building2 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Contact },
   { name: 'Findings', href: '/dashboard/findings', icon: ShieldAlert },
+  { name: 'Templates', href: '/dashboard/templates', icon: ShieldAlert },
+  { name: 'Reviews', href: '/dashboard/reviews', icon: ShieldAlert },
+  { name: 'Reports', href: '/dashboard/reports', icon: Crosshair },
+  { name: 'Imports', href: '/dashboard/imports', icon: ShieldAlert },
   { name: 'Operators', href: '/dashboard/operators', icon: Zap },
   { name: 'Admin', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];

@@ -68,6 +68,7 @@ export default async function FindingsPage({
   const detailFinding = rawDetail
     ? {
         id: rawDetail.id,
+        version: rawDetail.version,
         title: rawDetail.title,
         category: rawDetail.category,
         severity: rawDetail.severity,
@@ -89,6 +90,7 @@ export default async function FindingsPage({
     <>
       {detailFinding && detailHrefs ? (
         <FindingDetailButton
+          key={`${detailFinding.id}-${detailFinding.version}`}
           finding={detailFinding}
           isDetailOpen
           isEditing={edit === '1'}

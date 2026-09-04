@@ -6,6 +6,7 @@ export type UpdateActionResult = { error?: string; success?: boolean | string };
 
 export function updateErrorCode(error?: string): string {
   if (!error) return 'generic';
+  if (error.includes('finding changed')) return 'conflict';
   if (error.includes('Unauthorized')) return 'unauthorized';
   if (error.includes('last admin')) return 'last-admin';
   if (error.includes('already exists')) return 'duplicate';

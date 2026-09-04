@@ -10,6 +10,7 @@ const DELETE_ERRORS: Record<string, string> = {
 };
 
 const SAVE_ERRORS: Record<string, string> = {
+  conflict: 'This finding changed in another tab. Reload before saving.',
   generic: 'Save failed.',
   unauthorized: 'Unauthorized.',
   'last-admin': 'Cannot remove the last admin account.',

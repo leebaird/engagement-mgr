@@ -9,6 +9,7 @@ import { countFindingsBySeverity, getSeverityStyle } from '@/lib/finding-severit
 
 export type EngagementFindingSummary = {
   id: string;
+  version?: number;
   title: string;
   observation?: string | null;
   severity: string;
@@ -126,6 +127,7 @@ export function EngagementFindingsPanel({
     <>
       {detailFinding && engagementIdForLinks && findingHrefs ? (
         <FindingDetailButton
+          key={`${detailFinding.id}-${detailFinding.version}`}
           engagementScoped
           engagementId={engagementIdForLinks}
           zIndex={1200}

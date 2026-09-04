@@ -29,6 +29,7 @@ type EngagementRelation = { id: string };
 
 type EngagementFindingForDetail = {
   id: string;
+  version?: number;
   title: string;
   severity: string;
   category: string | null;
@@ -76,6 +77,7 @@ type EngagementForDetail = {
 function mapEngagementFindings(findings: EngagementFindingForDetail[] = []): EngagementFindingSummary[] {
   return findings.map((f) => ({
     id: f.id,
+    version: f.version,
     title: f.title,
     severity: f.severity,
     category: f.category,

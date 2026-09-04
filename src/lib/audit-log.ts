@@ -3,7 +3,13 @@ import { getClientIp } from '@/lib/request-client-ip';
 export type AuditAction =
   | 'db.export'
   | 'db.restore'
-  | 'db.reset';
+  | 'db.reset'
+  | 'finding.save'
+  | 'finding.review'
+  | 'finding.import'
+  | 'template.save'
+  | 'report.issue'
+  | 'report.download';
 
 /**
  * Structured audit trail for destructive/sensitive admin operations.

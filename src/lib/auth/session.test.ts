@@ -31,7 +31,7 @@ describe('getSessionFromRequest', () => {
 
   it('rejects a signed session after its user is deleted', async (t) => {
     const findUnique = prisma.user.findUnique;
-    prisma.user.findUnique = (async () => null) as typeof prisma.user.findUnique;
+    prisma.user.findUnique = (async () => null) as unknown as typeof prisma.user.findUnique;
     t.after(() => {
       prisma.user.findUnique = findUnique;
     });

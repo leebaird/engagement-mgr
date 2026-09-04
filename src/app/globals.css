@@ -1801,3 +1801,18 @@ body.sidebar-collapsed .sidebar-toggle__label,
 body.sidebar-collapsed .sidebar__footer .date-time-preferences {
   display: none;
 }
+.writing-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 1.5rem; align-items: start; }
+.writing-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin: 1rem 0; }
+.writing-toolbar > .form-input { width: auto; max-width: 100%; }
+.writing-form, .writing-sidebar { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.writing-help { color: var(--text-muted); font-size: 0.875rem; }
+.finding-markdown { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; margin: 1rem 0; }
+.finding-markdown pre, .import-preview { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f1115; padding: 1rem; border-radius: 6px; }
+.finding-markdown table { width: 100%; border-collapse: collapse; }
+.finding-markdown td, .finding-markdown th { border: 1px solid var(--surface-border); padding: 0.5rem; }
+.finding-markdown blockquote { border-left: 3px solid var(--text-muted); padding-left: 1rem; }
+.evidence-card { margin: 1rem 0; border-top: 1px solid var(--surface-border); padding-top: 1rem; }
+.evidence-card img { max-width: 100%; height: auto; }
+.writing-sidebar form { margin: 0.75rem 0; }
+.writing-sidebar button { margin-top: 0.5rem; }
+@media (max-width: 1000px) { .writing-layout { grid-template-columns: 1fr; } }

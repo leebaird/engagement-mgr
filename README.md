@@ -2,6 +2,61 @@
 
 Engagement Manager is a web application for tracking offensive security engagements. It features a modern UI, built with Next.js, Prisma, and PostgreSQL. The dashboard includes an engagement schedule calendar; other sections cover engagements, clients, contacts, findings, and operators.
 
+## Writing findings and producing PDF reports
+
+- **Writing workspace:** open a finding's **Write & review** link for Markdown editing and a safe preview. Private drafts save after 15 seconds of inactivity or on demand; they are stored on the server, not in browser local storage. Recover a draft explicitly after reopening. Conflicting saves preserve the editor's text and require comparison with the current revision. Text revisions can be inspected and restored; restoring does not restore deleted evidence.
+- **Reusable templates:** search approved wording by title, category or severity. Users can propose templates; administrators curate and approve them. Applying a template creates an independent engagement finding with empty observations, affected hosts and evidence, preventing accidental reuse of another engagement's proof.
+- **Evidence:** upload or paste up to four PNG/JPEG images together, add captions, and edit caption/order in the writing workspace. Images are decoded, stripped of metadata, resized to at most 2000 × 2000 pixels, and saved as PNG. Keep original forensic evidence separately if original bytes or metadata are required.
+- **Review:** send complete findings from Draft/Changes Requested to Ready. An assigned reviewer or administrator, other than the current author, can approve or request changes. Administrators assign reviewers. Text, evidence and restored-revision changes clear approval. The review queue, comments, readiness checklist and revision history support hand-off.
+- **PDF reports:** choose an engagement in Reports, write its executive summary, select/order findings and save settings. Draft PDFs are visibly marked. Only administrators can issue a final PDF, and every selected finding must be approved and pass readiness checks. Each issued version stores its PDF, explicit content snapshot and SHA-256 digest; later edits do not regenerate it. Deleting the parent engagement still deletes its reports through the existing lifecycle.
+- **Scanner imports:** preview an export, select findings, then confirm. Imports never execute scans or contact targets. Server-side fingerprinting skips matching findings in the same engagement; all new records start as Draft and must be checked by an operator.
+
+| Scanner/export family | Accepted export |
+| --- | --- |
+| Burp Suite | Issues XML, including the inert internal schema DTD |
+| Nessus / Tenable | Nessus v2 XML (`.nessus`) |
+| Nmap | XML; open ports and their script output become informational observations, not inferred vulnerabilities |
+| OpenVAS / Greenbone | Native XML report or GMP `get_reports_response` |
+| OWASP ZAP | Traditional JSON report with sites and alerts |
+| Nuclei | JSON Lines (`-jsonl`) |
+| Qualys | Scan-result XML (`SCAN/IP` structure), not the separate host-detection API format |
+| Semgrep / CodeQL and other SARIF producers | SARIF JSON runs, rules and results |
+
+Exports are limited to 2 MB and 500 findings per import. Unknown layouts fail visibly rather than silently being treated as a successful import. Scanner severities are suggestions: review their context before approval. Referenced URLs, HTML and embedded remote images are not fetched or executed.
+
+Reports allow 1–100 findings, up to 100 evidence images (5 MB each, 20 MB total input), 500 pages and 25 MB output. Issuance is limited to 50 versions per engagement and 1 GB of issued PDFs across the application. Preview and issuance have per-user rate limits. Findings retain at most 1000 revisions and 500 comments; reaching a limit fails without overwriting history. DejaVu fonts and their redistribution license are included in `assets/fonts`; deployments must retain these assets (Next output tracing includes them).
+
+### Reporting security and deployment
+
+This preserves the existing **shared authenticated workspace**, not a new per-client tenancy model. All new pages, actions and PDF downloads check a current database-backed session. Drafts are scoped to their owner; review, template approval and issuance permissions are enforced server-side. Confidential PDF responses are private/no-store. Final PDFs contain only an explicit report field allowlist, never private drafts, review comments or unrelated engagements.
+
+The implementation uses the [OWASP Top 10:2025](https://owasp.org/Top10/2025/) checklist: access checks (A01), private responses and existing CSP/CSRF controls (A02), pinned dependencies and CI (A03), existing session/secret protections plus report integrity checks (A04/A08), inert Markdown/XML and parameterized database access (A05), bounded processing and independent review (A06), live session checks (A07), content-free audit events (A09), and transactional changes with cleanup on failure (A10). A digest detects accidental corruption; it is not a digital signature or protection from a database administrator. This is not a compliance certification. Production still requires HTTPS, protected database/backup storage and operational monitoring of audit output.
+
+Before deploying this upgrade, take a normal application backup and apply the additive `20260904221808_reporting_workflow` migration with `npm run db:migrate`, then regenerate Prisma Client and rebuild. Existing findings begin as Draft at version 1. Do not reset an existing database. Backups include the new tables and issued PDFs through the existing full-database export.
+
+### Verification
+
+```bash
+npm test
+npm run lint
+npx tsc --noEmit --noUnusedLocals --noUnusedParameters
+npm run build
+npm audit
+```
+
+`npm test` uses Node's non-isolated test mode with `tsx` so the individual TypeScript test cases execute, rather than merely reporting file subprocess success. Keep the explicit assertion totals visible in CI.
+
+Database and browser regressions require a **dedicated local database named `reporting_tests`**, with migrations applied. They create and delete their own fixture rows; never point these tests at an application database. Set `REPORTING_TEST_DATABASE_URL` to that test database, then run:
+
+```bash
+DATABASE_URL="$REPORTING_TEST_DATABASE_URL" npx prisma migrate deploy
+npm run test:reporting
+npx playwright install chromium
+npm run test:browser
+```
+
+The browser suite starts its own loopback development server on port 3317 with a test-only session secret; it refuses to reuse an existing server. Set `REPORTING_TEST_BROWSER` to an installed Chromium executable if desired. It tests draft privacy, conflicting edits, evidence upload, independent review, PDF permissions/immutability, template creation without JavaScript, and selective deduplicated imports. Integration tests exercise actual transactional conflicts and rollback. The suites do not replace remote-LAN, Safari or production-deployment verification.
+
 ## Prerequisites
 
 This application is designed to run on Ubuntu, and requires the following:
@@ -280,6 +335,8 @@ This section documents the architecture, database schema, security measures, and
 - **Styling**: Vanilla CSS with a glassmorphism dark-mode aesthetic on page panels; modals are fully opaque via `Modal.tsx` and `.modal-panel` in `globals.css`.
 
 ### Database Schema
+
+Reporting additions: **Finding** also stores `version`, `reviewStatus`, `authorId`, `reviewerId`, `templateId`, and `importFingerprint`; **Screenshot** stores `sortOrder`. **FindingTemplate** holds reviewed reusable wording; **FindingRevision** holds immutable text revisions; **FindingDraft** holds private per-user drafts with conflict versions; **FindingComment** records review discussions; **EngagementReport** holds report title, executive summary and ordered finding IDs; **IssuedReport** stores an immutable PDF, content snapshot and SHA-256 digest for each issued version. User author/reviewer relationships use `SetNull`; private drafts are removed when their user is removed. Reporting records follow their parent engagement/finding lifecycle.
 
 - **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
 - **LoginRateLimit**: `key`, `count`, `resetAt` — atomic source and password-confirmation attempt reservations. Password verification also has a bounded concurrency limit.

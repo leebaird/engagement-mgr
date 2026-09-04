@@ -30,6 +30,7 @@ export default async function FindingDetailPage({
         ← Back to Finding
       </a>
       <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{finding.title}</h1>
+      <a href={`/dashboard/findings/${finding.id}/write`}>Write and review this finding</a>
       <div style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
         Engagement: {finding.engagement?.codeName || 'Unassigned'} &nbsp;|&nbsp; 
         Severity: <span style={{ color: 'var(--primary-color)' }}>{finding.severity}</span>
@@ -63,7 +64,7 @@ export default async function FindingDetailPage({
         <div>
           <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
             <h3 style={{ marginBottom: '1rem' }}>Upload Screenshot</h3>
-            <UploadScreenshotForm findingId={finding.id} />
+            <UploadScreenshotForm findingId={finding.id} version={finding.version} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -76,6 +77,7 @@ export default async function FindingDetailPage({
                 <DeleteScreenshotButton
                   screenshotId={s.id}
                   findingId={finding.id}
+                  version={finding.version}
                   confirmHref={`/dashboard/findings/${finding.id}?delete=${s.id}`}
                   cancelHref={`/dashboard/findings/${finding.id}`}
                   showConfirm={deleteScreenshotId === s.id}

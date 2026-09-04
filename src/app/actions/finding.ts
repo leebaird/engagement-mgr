@@ -21,6 +21,9 @@ import { validateScreenshotBuffer, validateScreenshotUpload } from '@/lib/valida
 import { redirect } from 'next/navigation';
 import { finishDetailDelete, finishDetailUpdate, listParamsFromForm, updateErrorCode } from '@/lib/detail-delete-form';
 import { buildPathQuery } from '@/lib/list-view-params';
+import { changeFinding } from '@/lib/finding-workflow';
+import { versionSchema, WorkflowError } from '@/lib/reporting';
+import { normalizeScreenshot } from '@/lib/normalize-screenshot';
 import {
   assertScreenshotQuota,
   getScreenshotStorageUsage,
@@ -141,7 +144,7 @@ export async function createFinding(_prevState: unknown, formData: FormData) {
       };
     }
 
-    await prisma.finding.create({ data: findingData });
+    await prisma.finding.create({ data: { ...findingData, authorId: auth.userId } });
   } catch (e) {
     console.error('Create Finding error:', e);
     return { error: 'Failed to create finding.' };
@@ -170,6 +173,9 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
   if (!idParsed.success) {
     return { error: firstZodError(idParsed.error) };
   }
+
+  const version = versionSchema.safeParse(formData.get('version'));
+  if (!version.success) return { error: 'This finding changed. Reload before saving.' };
 
   const parsed = updateFindingSchema.safeParse({
     engagementId: formData.get('engagementId'),
@@ -220,33 +226,28 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
     };
     if (engagementId) data.engagementId = engagementId;
 
-    const existing = await prisma.finding.findUnique({
-      where: { id: idParsed.data },
-      select: { engagementId: true },
-    });
-
-    await prisma.finding.update({
-      where: { id: idParsed.data },
-      data,
-    });
-
-    const scopedEngagementId = engagementId || existing?.engagementId;
-    if (engagementScoped && scopedEngagementId) {
-      await prisma.engagementFindingContext.upsert({
-        where: { findingId: idParsed.data },
-        create: {
-          engagementId: scopedEngagementId,
-          findingId: idParsed.data,
-          observation: observation || null,
-          affectedHosts: affectedHosts || null,
-        },
-        update: {
-          engagementId: scopedEngagementId,
-          observation: observation || null,
-          affectedHosts: affectedHosts || null,
-        },
+    let scopedEngagementId: string | null = null;
+    await prisma.$transaction(async tx => {
+      await changeFinding(tx, idParsed.data, version.data, auth.userId, 'Finding edited', async existing => {
+        if (engagementId && engagementId !== existing.engagementId) throw new WorkflowError('Finding does not belong to this engagement.');
+        scopedEngagementId = existing.engagementId;
+        await tx.finding.update({ where: { id: idParsed.data }, data: { ...data, authorId: auth.userId } });
+        if (engagementScoped && scopedEngagementId) await tx.engagementFindingContext.upsert({
+          where: { findingId: idParsed.data },
+          create: {
+            engagementId: scopedEngagementId,
+            findingId: idParsed.data,
+            observation: observation || null,
+            affectedHosts: affectedHosts || null,
+          },
+          update: {
+            engagementId: scopedEngagementId,
+            observation: observation || null,
+            affectedHosts: affectedHosts || null,
+          },
+        });
       });
-    }
+    });
 
     revalidatePath('/dashboard/findings');
     if (scopedEngagementId) {
@@ -254,6 +255,7 @@ export async function updateFinding(id: string, _prevState: unknown, formData: F
     }
     return { success: 'Finding updated successfully.' };
   } catch (e) {
+    if (e instanceof WorkflowError) return { error: e.message };
     console.error('Update Finding error:', e);
     return { error: 'Failed to update finding.' };
   }
@@ -334,80 +336,70 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
     return { error: firstZodError(findingIdParsed.error) };
   }
 
-  const fileResult = validateScreenshotUpload(formData.get('screenshot'));
-  if (!fileResult.ok) {
-    return { error: fileResult.error };
-  }
-
-  const uploadPath = createUploadFilePath(fileResult.extension);
-  if (!uploadPath) {
-    return { error: 'Upload failed.' };
-  }
-
+  const version = versionSchema.safeParse(formData.get('version'));
+  if (!version.success) return { error: 'Reload this finding before uploading.' };
+  const files = formData.getAll('screenshot');
+  if (files.length < 1 || files.length > 4) return { error: 'Upload between 1 and 4 images at a time.' };
   const descriptionParsed = screenshotDescriptionSchema.safeParse(formData.get('description') ?? '');
-  const description = descriptionParsed.success ? descriptionParsed.data : '';
-
+  if (!descriptionParsed.success) return { error: 'Caption must be at most 500 characters.' };
+  const description = descriptionParsed.data;
   const findingId = findingIdParsed.data;
-  const { file } = fileResult;
-  const { absolutePath, fileName } = uploadPath;
-  const temporaryFileName = `.${fileName}.tmp`;
-  const temporaryPath = join(dirname(absolutePath), temporaryFileName);
-
-  const finding = await prisma.finding.findUnique({
-    where: { id: findingId },
-    select: { id: true },
-  });
-  if (!finding) {
-    return { error: 'Finding not found.' };
-  }
-
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  const bufferResult = validateScreenshotBuffer(buffer, fileResult.extension);
-  if (!bufferResult.ok) {
-    return { error: bufferResult.error };
-  }
-
   try {
-    const uploadsDirectory = await ensureUploadsDirectory();
     await withUploadsMaintenanceLock(async () => {
+      const uploadsDirectory = await ensureUploadsDirectory();
+      const written: string[] = [];
       try {
         await prisma.$transaction(
           async (transaction) => {
-            const [{ storedBytes, storedFiles }, findingFiles] = await Promise.all([
-              getScreenshotStorageUsage(uploadsDirectory),
-              transaction.screenshot.count({ where: { findingId } }),
-            ]);
-            assertScreenshotQuota({
-              storedBytes,
-              storedFiles,
-              findingFiles,
-              uploadBytes: buffer.length,
-            });
-
-            await writeFile(temporaryPath, buffer, { flag: 'wx', mode: 0o600 });
-            await rename(temporaryPath, absolutePath);
-            await transaction.screenshot.create({
-              data: {
-                findingId,
-                description,
-                filePath: fileName,
-              },
+            await changeFinding(transaction, findingId, version.data, auth.userId, 'Evidence uploaded', async () => {
+              const [usage, count] = await Promise.all([
+                getScreenshotStorageUsage(uploadsDirectory),
+                transaction.screenshot.count({ where: { findingId } }),
+              ]);
+              let findingFiles = count;
+              for (const file of files) {
+                const fileResult = validateScreenshotUpload(file);
+                if (!fileResult.ok) throw new WorkflowError(fileResult.error);
+                const input = Buffer.from(await fileResult.file.arrayBuffer());
+                const validation = validateScreenshotBuffer(input, fileResult.extension);
+                if (!validation.ok) throw new WorkflowError(validation.error);
+                const buffer = await normalizeScreenshot(input);
+                const { absolutePath, fileName } = createUploadFilePath('png')!;
+                const temporaryPath = join(dirname(absolutePath), `.${fileName}.tmp`);
+                assertScreenshotQuota({
+                  ...usage,
+                  findingFiles,
+                  uploadBytes: buffer.length,
+                });
+                written.push(temporaryPath, absolutePath);
+                await writeFile(temporaryPath, buffer, { flag: 'wx', mode: 0o600 });
+                await rename(temporaryPath, absolutePath);
+                await transaction.screenshot.create({
+                  data: {
+                    findingId,
+                    description,
+                    filePath: fileName,
+                    sortOrder: findingFiles,
+                  },
+                });
+                usage.storedBytes += buffer.length;
+                usage.storedFiles++;
+                findingFiles++;
+              }
+              await transaction.finding.update({ where: { id: findingId }, data: { authorId: auth.userId } });
             });
           },
           { maxWait: 5_000, timeout: 30_000 }
         );
       } catch (error) {
-        await unlink(temporaryPath).catch(() => {});
-        await unlink(absolutePath).catch(() => {});
+        for (const path of written) await unlink(path).catch(() => {});
         throw error;
       }
     });
-    revalidatePath(`/dashboard/findings/${findingId}`);
+    revalidatePath('/dashboard', 'layout');
     return { success: 'Screenshot uploaded.' };
   } catch (error) {
-    if (error instanceof ScreenshotQuotaError) {
+    if (error instanceof ScreenshotQuotaError || error instanceof WorkflowError) {
       return { error: error.message };
     }
     return { error: 'Upload failed.' };
@@ -422,7 +414,9 @@ export async function deleteScreenshotFromPage(formData: FormData): Promise<void
     redirect('/dashboard/findings');
   }
 
-  const result = await deleteScreenshot(parsed.data.screenshotId, parsed.data.findingId);
+  const version = versionSchema.safeParse(formData.get('version'));
+  if (!version.success) redirect(`/dashboard/findings/${parsed.data.findingId}`);
+  const result = await deleteScreenshot(parsed.data.screenshotId, parsed.data.findingId, version.data);
   if (result.error) {
     redirect(
       `/dashboard/findings/${parsed.data.findingId}?delete=${parsed.data.screenshotId}&deleteError=generic`,
@@ -431,12 +425,12 @@ export async function deleteScreenshotFromPage(formData: FormData): Promise<void
   redirect(`/dashboard/findings/${parsed.data.findingId}`);
 }
 
-export async function deleteScreenshot(screenshotId: string, findingId: string): Promise<{ error?: string }> {
+export async function deleteScreenshot(screenshotId: string, findingId: string, version: number): Promise<{ error?: string }> {
   const auth = await requireAuth();
   if (isAuthError(auth)) return { error: 'Unauthorized' };
 
   const parsed = deleteScreenshotSchema.safeParse({ screenshotId, findingId });
-  if (!parsed.success) return { error: 'Invalid screenshot.' };
+  if (!parsed.success || !versionSchema.safeParse(version).success) return { error: 'Invalid screenshot.' };
 
   try {
     const deleted = await withUploadsMaintenanceLock(async () => {
@@ -448,13 +442,18 @@ export async function deleteScreenshot(screenshotId: string, findingId: string):
         return false;
       }
 
-      await prisma.screenshot.delete({ where: { id: screenshot.id } });
+      await prisma.$transaction(async tx => {
+        await changeFinding(tx, findingId, version, auth.userId, 'Evidence deleted', async () => {
+          await tx.screenshot.delete({ where: { id: screenshot.id } });
+          await tx.finding.update({ where: { id: findingId }, data: { authorId: auth.userId } });
+        });
+      });
       const filePath = resolveUploadFilePath(screenshot.filePath);
       if (filePath) await unlink(filePath).catch(() => {});
       return true;
     });
     if (!deleted) return { error: 'Screenshot not found.' };
-    revalidatePath(`/dashboard/findings/${parsed.data.findingId}`);
+    revalidatePath('/dashboard', 'layout');
     return {};
   } catch (e) {
     console.error(e);

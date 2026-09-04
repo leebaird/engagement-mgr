@@ -20,6 +20,7 @@ import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 
 export type FindingDetail = {
   id: string;
+  version?: number;
   title: string;
   observation?: string | null;
   category?: string | null;
@@ -139,6 +140,7 @@ export function FindingDetailButton({
     setError(null);
     try {
       const data = new FormData();
+      data.set('version', String(finding.version ?? 1));
       Object.entries(formData).forEach(([key, value]) => {
         if (!engagementScoped && (key === 'observation' || key === 'affectedHosts')) return;
         data.append(key, value as string);
@@ -162,6 +164,7 @@ export function FindingDetailButton({
 
   const editFormFields = (
     <>
+      <input type="hidden" name="version" value={finding.version ?? 1} />
       <DetailEditFormFields
         recordId={finding.id}
         sort={sort}
@@ -251,6 +254,7 @@ export function FindingDetailButton({
             sort={sort}
             dir={dir}
             childrenBeforeEdit={
+              <><a href={`/dashboard/findings/${finding.id}/write`} className="modal-action-btn">Write &amp; review</a>
               <a
                 href={`/dashboard/findings/${finding.id}`}
                 className="modal-action-btn"
@@ -258,6 +262,7 @@ export function FindingDetailButton({
               >
                 Screenshots
               </a>
+              </>
             }
             extraFields={
               engagementScoped && engagementId

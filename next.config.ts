@@ -37,11 +37,14 @@ function lanIPv4Addresses(): string[] {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   devIndicators: false,
+  serverExternalPackages: ['pdfkit', 'sharp'],
+  outputFileTracingIncludes: { '/api/reports/*': ['./assets/fonts/**/*'], '/dashboard/reports': ['./assets/fonts/**/*'] },
   // Dev-only: this machine's LAN IPs plus optional ALLOWED_DEV_ORIGINS (hostnames).
   allowedDevOrigins: [...new Set([...lanIPv4Addresses(), ...allowedDevOriginsFromEnv()])],
   experimental: {
     optimizePackageImports: ['lucide-react'],
     useTypeScriptCli: true,
+    serverActions: { bodySizeLimit: '25mb' },
   },
   async headers() {
     return [

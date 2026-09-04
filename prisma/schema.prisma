@@ -15,6 +15,9 @@ model User {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   lastLogin            DateTime?
+  authoredFindings     Finding[] @relation("FindingAuthor")
+  assignedReviews      Finding[] @relation("FindingReviewer")
+  findingDrafts        FindingDraft[]
 }
 
 model LoginRateLimit {
@@ -71,6 +74,8 @@ model Engagement {
   trustedAgents        Contact[]     @relation("TrustedAgents")
   findings             Finding[]
   findingContexts      EngagementFindingContext[]
+  report               EngagementReport?
+  issuedReports        IssuedReport[]
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -154,8 +159,23 @@ model Finding {
   engagementContext    EngagementFindingContext?
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+  version              Int           @default(1)
+  reviewStatus         FindingReviewStatus @default(Draft)
+  authorId             String?
+  author               User? @relation("FindingAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewerId           String?
+  reviewer             User? @relation("FindingReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  templateId           String?
+  importFingerprint    String?
+  revisions            FindingRevision[]
+  drafts               FindingDraft[]
+  comments             FindingComment[]
 
   @@index([engagementId])
+  @@index([reviewStatus])
+  @@index([authorId])
+  @@index([reviewerId])
+  @@unique([engagementId, importFingerprint])
 }
 
 model EngagementFindingContext {
@@ -180,9 +200,90 @@ model Screenshot {
   filePath             String
   description          String?
   createdAt            DateTime      @default(now())
+  sortOrder            Int           @default(0)
 
   @@index([findingId])
   @@index([filePath])
+}
+
+enum FindingReviewStatus {
+  Draft
+  Ready
+  ChangesRequested
+  Approved
+}
+
+model FindingTemplate {
+  id        String @id @default(uuid())
+  title     String
+  category  String
+  severity  String
+  content   Json
+  approved  Boolean @default(false)
+  version   Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FindingRevision {
+  id        String @id @default(uuid())
+  findingId String
+  finding   Finding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  version   Int
+  content   Json
+  actorId   String
+  reason    String
+  createdAt DateTime @default(now())
+  @@unique([findingId, version])
+}
+
+model FindingDraft {
+  id          String @id @default(uuid())
+  findingId   String
+  finding     Finding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseVersion Int
+  version     Int @default(1)
+  content     Json
+  updatedAt   DateTime @updatedAt
+  @@unique([findingId, userId])
+  @@index([userId])
+}
+
+model FindingComment {
+  id        String @id @default(uuid())
+  findingId String
+  finding   Finding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  actorId   String
+  username  String
+  body      String
+  createdAt DateTime @default(now())
+  @@index([findingId, createdAt])
+}
+
+model EngagementReport {
+  engagementId     String @id
+  engagement       Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  title            String
+  executiveSummary String @default("")
+  findingIds       String[]
+  version          Int @default(1)
+  updatedAt        DateTime @updatedAt
+}
+
+model IssuedReport {
+  id           String @id @default(uuid())
+  engagementId String
+  engagement   Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  version      Int
+  title        String
+  issuedBy     String
+  snapshot     Json
+  pdf          Bytes
+  sha256       String
+  createdAt    DateTime @default(now())
+  @@unique([engagementId, version])
 }
 
 model Operator {

@@ -4,6 +4,7 @@ import { DetailDeleteConfirmBody } from '@/components/DetailModalActions';
 export function DeleteScreenshotButton({
   screenshotId,
   findingId,
+  version,
   confirmHref,
   cancelHref,
   showConfirm,
@@ -11,6 +12,7 @@ export function DeleteScreenshotButton({
 }: {
   screenshotId: string;
   findingId: string;
+  version: number;
   confirmHref: string;
   cancelHref: string;
   showConfirm: boolean;
@@ -58,6 +60,7 @@ export function DeleteScreenshotButton({
         <form action={deleteScreenshotFromPage}>
           <input type="hidden" name="screenshotId" value={screenshotId} />
           <input type="hidden" name="findingId" value={findingId} />
+          <input type="hidden" name="version" value={version} />
           <button type="submit" className="modal-action-btn modal-action-btn--danger">
             Confirm Delete
           </button>
