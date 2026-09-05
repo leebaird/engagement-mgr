@@ -30,8 +30,19 @@ function plain(value: unknown): string {
     typeof value === 'string' || typeof value === 'number'
       ? String(value)
       : String(object(value)['#text'] ?? '');
-  return text
-    .replace(/<[^>]*>/g, ' ')
+  const parts: string[] = [];
+  let offset = 0;
+  let start = text.indexOf('<');
+  while (start !== -1) {
+    const end = text.indexOf('>', start + 1);
+    if (end === -1) break;
+    parts.push(text.slice(offset, start), ' ');
+    offset = end + 1;
+    start = text.indexOf('<', offset);
+  }
+  parts.push(text.slice(offset));
+  return parts
+    .join('')
     .replace(
       /&(amp|lt|gt|quot|apos);/g,
       (_, key: string) =>
@@ -97,6 +108,75 @@ export function importFingerprint(finding: ImportFinding): string {
     .digest('hex');
 }
 
+function prepareXml(text: string): string {
+  if (/<!ENTITY/i.test(text))
+    throw new Error('Entity declarations are not allowed.');
+  const parts: string[] = [];
+  let copied = 0;
+  let offset = 0;
+  let depth = 0;
+  let tags = 0;
+  // Advance past each token once, including malformed input and ignored content.
+  while (offset < text.length) {
+    const start = text.indexOf('<', offset);
+    if (start === -1) break;
+    const terminator = text.startsWith('<!--', start)
+      ? '-->'
+      : text.startsWith('<![CDATA[', start)
+        ? ']]>'
+        : text.startsWith('<?', start)
+          ? '?>'
+          : null;
+    if (terminator) {
+      const end = text.indexOf(terminator, start + 2);
+      if (end === -1) throw new Error('Invalid XML export.');
+      offset = end + terminator.length;
+      continue;
+    }
+    const doctype = text.slice(start, start + 9).toUpperCase() === '<!DOCTYPE';
+    let quote = '';
+    let subsetDepth = 0;
+    let end = start + 1;
+    for (; end < text.length; end++) {
+      const char = text[end];
+      if (quote) {
+        if (char === quote) quote = '';
+      } else if (
+        doctype && (text.startsWith('<!--', end) || text.startsWith('<?', end))
+      ) {
+        const terminator = text.startsWith('<!--', end) ? '-->' : '?>';
+        const contentEnd = text.indexOf(terminator, end + 2);
+        if (contentEnd === -1) throw new Error('Invalid XML export.');
+        end = contentEnd + terminator.length - 1;
+      } else if (char === '"' || char === "'") quote = char;
+      else if (doctype && char === '[') subsetDepth++;
+      else if (doctype && char === ']') subsetDepth--;
+      else if (char === '>' && subsetDepth === 0) break;
+    }
+    if (end === text.length) throw new Error('Invalid XML export.');
+    offset = end + 1;
+    if (doctype) {
+      // Burp's internal schema is discarded; external identifiers remain forbidden.
+      const declaration = text.slice(start, offset);
+      if (/\bSYSTEM\b|\bPUBLIC\b|%/i.test(declaration))
+        throw new Error('External DTDs are not allowed.');
+      if (
+        !/^<!DOCTYPE\s+[A-Za-z_][\w:.-]*\s*(?:\[[\s\S]*\]\s*)?>$/i.test(declaration)
+      )
+        throw new Error('External or malformed DTDs are not allowed.');
+      parts.push(text.slice(copied, start));
+      copied = offset;
+      continue;
+    }
+    if (++tags > 30000) throw new Error('Export has too many XML elements.');
+    if (text.startsWith('</', start)) depth--;
+    else if (text[end - 1] !== '/' && ++depth > 64)
+      throw new Error('Export nesting is too deep.');
+  }
+  parts.push(text.slice(copied));
+  return parts.join('');
+}
+
 export function parseScannerExport(
   text: string,
   format: ScannerFormat
@@ -124,30 +204,7 @@ export function parseScannerExport(
       throw new Error('Invalid JSON export. Nuclei requires JSON Lines.');
     }
   } else {
-    // Burp includes an internal schema DTD; discard it without interpreting it.
-    // External identifiers and entity declarations are never accepted or resolved.
-    if (/<!ENTITY/i.test(text))
-      throw new Error('Entity declarations are not allowed.');
-    text = text.replace(
-      /<!DOCTYPE\s+[A-Za-z_][\w:.-]*\s*(?:\[[\s\S]*?\]\s*)?>/gi,
-      (declaration) => {
-        if (/\bSYSTEM\b|\bPUBLIC\b|%/i.test(declaration))
-          throw new Error('External DTDs are not allowed.');
-        return '';
-      }
-    );
-    if (/<!DOCTYPE/i.test(text))
-      throw new Error('External or malformed DTDs are not allowed.');
-    let depth = 0;
-    let tags = 0;
-    for (const match of text
-      .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '')
-      .matchAll(/<\/?[A-Za-z][^>]*>/g)) {
-      if (++tags > 30000) throw new Error('Export has too many XML elements.');
-      if (match[0].startsWith('</')) depth--;
-      else if (!match[0].endsWith('/>') && ++depth > 64)
-        throw new Error('Export nesting is too deep.');
-    }
+    text = prepareXml(text);
     if (XMLValidator.validate(text) !== true)
       throw new Error('Invalid XML export.');
     root = object(

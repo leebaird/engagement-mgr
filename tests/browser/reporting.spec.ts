@@ -360,10 +360,10 @@ test.describe.serial('authoring and reporting', () => {
       .locator('textarea[name=remediation]')
       .fill('Reusable remediation');
     await page
-      .locator('.writing-form select[name=severity]')
+      .locator('.modal-panel select[name=severity]')
       .selectOption('High');
     await page.locator('input[name=approved]').check();
-    await page.getByRole('button', { name: 'Save template' }).click();
+    await page.getByRole('button', { name: 'Save Template' }).click();
     await expect(page.getByRole('heading', { name: title })).toBeVisible();
     templateId = (
       await db.findingTemplate.findFirstOrThrow({ where: { title } })

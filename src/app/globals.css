@@ -1816,3 +1816,14 @@ body.sidebar-collapsed .sidebar__footer .date-time-preferences {
 .writing-sidebar form { margin: 0.75rem 0; }
 .writing-sidebar button { margin-top: 0.5rem; }
 @media (max-width: 1000px) { .writing-layout { grid-template-columns: 1fr; } }
+
+/* Import scanner findings */
+.import-form__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem 1rem; }
+.import-form__grid .form-label { margin: 0; }
+.import-candidates { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; text-align: left; }
+.import-candidate { border: 1px solid var(--surface-border); border-radius: var(--radius-md); background: rgba(0, 0, 0, 0.15); }
+.import-candidate summary { padding: 0.6rem 0.9rem; cursor: pointer; }
+.import-candidate__label { display: flex; align-items: center; gap: 0.6rem; font-weight: 500; pointer-events: none; }
+.import-candidate__label input { pointer-events: auto; }
+.import-candidate__body { padding: 0 0.9rem 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; font-weight: 400; }
+.import-candidate__body p { margin: 0; color: var(--text-muted); }

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import {
   importFingerprint,
@@ -82,6 +83,122 @@ const exports: Record<ScannerFormat, string> = {
 };
 
 describe('scanner export imports', () => {
+  const adversarialExports: [string, ScannerFormat, string][] = [
+    [
+      'unmatched text delimiters',
+      'Nuclei',
+      JSON.stringify({ info: { name: '<'.repeat(1024 * 1024) } }),
+    ],
+    [
+      'escaped text delimiters',
+      'Nuclei',
+      '{"info":{"name":"' + '\\u003c'.repeat(256 * 1024) + '"}}',
+    ],
+    ['incomplete XML tags', 'Burp', '<a'.repeat(512 * 1024)],
+    ['incomplete CDATA sections', 'Burp', '<![CDATA['.repeat(100000)],
+    ['incomplete document types', 'Burp', '<!DOCTYPE a ['.repeat(80000)],
+    [
+      'unmatched delimiters inside CDATA',
+      'Burp',
+      '<issues><issue><name><![CDATA[' +
+        '<'.repeat(1024 * 1024) +
+        ']]></name></issue></issues>',
+    ],
+  ];
+  for (const [name, format, input] of adversarialExports)
+    it(`rejects ${name} within the processing budget`, () => {
+      // A separate process can interrupt synchronous parsing if ReDoS returns.
+      const result = spawnSync(
+        process.execPath,
+        ['--import', 'tsx', '--eval', `
+          const assert = require('node:assert/strict');
+          const { readFileSync } = require('node:fs');
+          const { parseScannerExport } = require('./src/lib/scanner-import.ts');
+          const { input, format } = JSON.parse(readFileSync(0, 'utf8'));
+          assert.throws(() => parseScannerExport(input, format));
+        `],
+        {
+          input: JSON.stringify({ input, format }),
+          encoding: 'utf8',
+          timeout: 5000,
+          killSignal: 'SIGKILL',
+        }
+      );
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr);
+    });
+  it('preserves markup stripping, unmatched text and one-pass entity decoding', () => {
+    for (const [description, expected] of [
+      ['<p>Details &amp; evidence</p>', 'Details & evidence'],
+      ['<a<b>tail', 'tail'],
+      ['x<<', 'x<<'],
+      ['&lt;b&gt;x&lt;/b&gt;', '<b>x</b>'],
+      ['&amp;lt;', '&lt;'],
+      ['<b></b>'.repeat(20000) + 'Details', 'Details'],
+    ]) {
+      const input = JSON.parse(exports.Nuclei);
+      input.info.description = description;
+      assert.equal(
+        parseScannerExport(JSON.stringify(input), 'Nuclei')[0].background,
+        expected
+      );
+    }
+  });
+  it('preserves internal DTDs, quoted delimiters, comments and processing instructions', () => {
+    const input = exports.Burp.replace(
+      '<!ELEMENT issue ANY>',
+      '<!ELEMENT issue ANY><!ATTLIST issue note CDATA "a > ] b"><!-- unmatched [ --><?note [ ?>'
+    ).replace('<issues>', '<issues note="a > b"><!-- <fake> --><?note <fake> ?>');
+    assert.deepEqual(
+      parseScannerExport(input, 'Burp'),
+      parseScannerExport(exports.Burp, 'Burp')
+    );
+  });
+  it('enforces depth across all element names without counting inert content', () => {
+    for (const name of ['a', '_a', 'é']) {
+      const nested = (depth: number) =>
+        `<${name}>`.repeat(depth) + `</${name}>`.repeat(depth);
+      assert.throws(
+        () => parseScannerExport(nested(64), 'Burp'),
+        /No supported Burp records/
+      );
+      for (const prefix of [
+        '',
+        '<!--' + '</a>'.repeat(64) + '-->',
+        '<?note ' + '</a>'.repeat(64) + '?>',
+      ])
+        assert.throws(
+          () => parseScannerExport(prefix + nested(65), 'Burp'),
+          /nesting is too deep/
+        );
+    }
+    assert.throws(
+      () => parseScannerExport(
+        '<a><![CDATA[' + '</a>'.repeat(64) + ']]>' +
+          '<a>'.repeat(64) + '</a>'.repeat(65),
+        'Burp'
+      ),
+      /nesting is too deep/
+    );
+  });
+  it('retains the XML element budget and ignores markup inside comments and CDATA', () => {
+    for (const content of [
+      '<!--' + '<fake>'.repeat(30001) + '-->',
+      '<![CDATA[' + '<fake>'.repeat(30001) + ']]>',
+    ])
+      assert.throws(
+        () => parseScannerExport(`<a>${content}</a>`, 'Burp'),
+        /No supported Burp records/
+      );
+    assert.throws(
+      () => parseScannerExport('<a>' + '<b/>'.repeat(29998) + '</a>', 'Burp'),
+      /No supported Burp records/
+    );
+    assert.throws(
+      () => parseScannerExport('<a>' + '<b/>'.repeat(29999) + '</a>', 'Burp'),
+      /too many XML elements/
+    );
+  });
   it('preserves SARIF security scores and rule-index locations without guessing missing scores', () => {
     const sarif = JSON.parse(exports.SARIF);
     sarif.runs[0].tool.driver.rules[0].properties = {

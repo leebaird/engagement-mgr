@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import { requireDashboardSession } from '@/lib/require-auth';
-import { saveTemplate, useTemplate } from '@/app/actions/templates';
-import { findingContentSchema, contentFields } from '@/lib/reporting';
-import { FindingMarkdown } from '@/components/FindingMarkdown';
+import { findingContentSchema } from '@/lib/reporting';
+import { buildPathQuery } from '@/lib/list-view-params';
+import { DetailEyeLink } from '@/components/DetailEyeLink';
+import { getSeverityStyle } from '@/lib/finding-severity';
+import { TemplatesClient } from './TemplatesClient';
 
 export default async function TemplatesPage({
   searchParams,
@@ -21,9 +24,18 @@ export default async function TemplatesPage({
 }) {
   const actor = await requireDashboardSession();
   const params = await searchParams;
+  const isAdmin = actor.role === 'Admin';
+  const showPending = isAdmin && params.pending === '1';
+  const listParams = {
+    q: params.q,
+    severity: params.severity,
+    category: params.category,
+    pending: params.pending,
+  };
+
   const templates = await prisma.findingTemplate.findMany({
     where: {
-      approved: actor.role === 'Admin' && params.pending === '1' ? false : true,
+      approved: showPending ? false : true,
       title: { contains: (params.q ?? '').slice(0, 200), mode: 'insensitive' },
       ...(params.severity ? { severity: params.severity.slice(0, 20) } : {}),
       ...(params.category
@@ -38,39 +50,83 @@ export default async function TemplatesPage({
     orderBy: { title: 'asc' },
     take: 100,
   });
+
   const detail =
     params.detail && z.uuid().safeParse(params.detail).success
       ? await prisma.findingTemplate.findFirst({
           where: {
             id: params.detail,
-            ...(actor.role !== 'Admin' ? { approved: true } : {}),
+            ...(isAdmin ? {} : { approved: true }),
           },
         })
       : null;
-  const content = detail ? findingContentSchema.parse(detail.content) : null;
+  const detailContent = detail ? findingContentSchema.parse(detail.content) : null;
   const engagements = detail?.approved
     ? await prisma.engagement.findMany({
         select: { id: true, codeName: true },
         orderBy: { codeName: 'asc' },
       })
     : [];
-  const editable = params.create === '1' || (detail && actor.role === 'Admin');
+
+  const addHref = buildPathQuery('/dashboard/templates', listParams, {
+    create: '1',
+    detail: null,
+  });
+  const createCloseHref = buildPathQuery('/dashboard/templates', listParams, {
+    create: null,
+  });
+  const detailCloseHref = buildPathQuery('/dashboard/templates', listParams, {
+    detail: null,
+  });
+  const approvedTabHref = buildPathQuery('/dashboard/templates', listParams, {
+    pending: null,
+    detail: null,
+    create: null,
+  });
+  const pendingTabHref = buildPathQuery('/dashboard/templates', listParams, {
+    pending: '1',
+    detail: null,
+    create: null,
+  });
+
   return (
-    <div className="page-container">
-      <h1>Finding templates</h1>
-      <p>
-        Approved reusable wording. Each use creates an independent finding with
-        empty observations, hosts and evidence.
-      </p>
-      <div className="writing-toolbar">
-        <a href="/dashboard/templates?create=1">Propose a template</a>
-        <a href="/dashboard/templates">Approved templates</a>
-        {actor.role === 'Admin' && (
-          <a href="/dashboard/templates?pending=1">Pending approval</a>
-        )}
-      </div>
+    <TemplatesClient
+      isAdmin={isAdmin}
+      addHref={addHref}
+      showCreateModal={params.create === '1' && !detailContent}
+      createCloseHref={createCloseHref}
+      detail={
+        detail && detailContent
+          ? {
+              id: detail.id,
+              version: detail.version,
+              approved: detail.approved,
+              content: detailContent,
+            }
+          : null
+      }
+      detailCloseHref={detailCloseHref}
+      engagements={engagements}
+    >
+      {isAdmin && (
+        <nav className="detail-tabs" aria-label="Template sections">
+          <Link
+            href={approvedTabHref}
+            className={showPending ? 'detail-tab' : 'detail-tab detail-tab--active'}
+          >
+            Approved
+          </Link>
+          <Link
+            href={pendingTabHref}
+            className={showPending ? 'detail-tab detail-tab--active' : 'detail-tab'}
+          >
+            Pending approval
+          </Link>
+        </nav>
+      )}
+
       {params.error && (
-        <p role="alert">
+        <p role="alert" className="text-error">
           The template could not be saved or used. Check your permissions and
           reload before retrying.
         </p>
@@ -81,6 +137,7 @@ export default async function TemplatesPage({
           appears in the library.
         </p>
       )}
+
       <form method="get" className="writing-toolbar">
         <input
           className="form-input"
@@ -111,97 +168,85 @@ export default async function TemplatesPage({
         )}
         <button className="btn-secondary">Search</button>
       </form>
-      <div className="writing-layout">
-        <section className="glass-panel glass-panel--padded">
-          <p>Showing up to 100 matches.</p>
-          {templates.map((t) => (
-            <p key={t.id}>
-              <a href={`/dashboard/templates?detail=${t.id}`}>{t.title}</a> ·{' '}
-              {t.severity} · {t.category}
-            </p>
-          ))}
-        </section>
-        <section className="glass-panel glass-panel--padded">
-          {detail && (
-            <>
-              <h2>{detail.title}</h2>
-              <p>
-                Version {detail.version} ·{' '}
-                {detail.approved ? 'Approved' : 'Pending approval'}
-              </p>
-              {content && <FindingMarkdown text={content.background} />}
-              {detail.approved && (
-                <form action={useTemplate}>
-                  <input name="templateId" type="hidden" value={detail.id} />
-                  <label className="form-label">
-                    Add to engagement
-                    <select name="engagementId" className="form-input" required>
-                      <option value="">Choose engagement</option>
-                      {engagements.map((e) => (
-                        <option value={e.id} key={e.id}>
-                          {e.codeName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button className="btn-primary">
-                    Create finding from template
-                  </button>
-                </form>
-              )}
-            </>
-          )}
-          {editable && (
-            <form action={saveTemplate} className="writing-form">
-              {detail && (
-                <>
-                  <input name="id" type="hidden" value={detail.id} />
-                  <input name="version" type="hidden" value={detail.version} />
-                </>
-              )}
-              {contentFields
-                .filter((k) => !['observation', 'affectedHosts'].includes(k))
-                .map((k) => (
-                  <label className="form-label" key={k}>
-                    {k}
-                    {k === 'severity' ? (
-                      <select
-                        name={k}
-                        className="form-input"
-                        defaultValue={content?.severity ?? ''}
-                      >
-                        <option value="">Unrated</option>
-                        {['Critical', 'High', 'Medium', 'Low', 'Info'].map(
-                          (s) => (
-                            <option key={s}>{s}</option>
-                          )
-                        )}
-                      </select>
-                    ) : (
-                      <textarea
-                        name={k}
-                        className="form-input"
-                        rows={['title', 'category'].includes(k) ? 1 : 5}
-                        required={k === 'title'}
-                        maxLength={
-                          k === 'title' ? 500 : k === 'category' ? 200 : 10000
-                        }
-                        defaultValue={content?.[k] ?? ''}
-                      />
-                    )}
-                  </label>
-                ))}
-              {actor.role === 'Admin' && (
-                <label>
-                  <input type="checkbox" name="approved" /> I have reviewed this
-                  wording and approve this version
-                </label>
-              )}
-              <button className="btn-primary">Save template</button>
-            </form>
-          )}
-        </section>
+
+      <div className="glass-panel glass-panel--padded">
+        {templates.length === 0 ? (
+          <p
+            style={{
+              margin: 0,
+              color: 'var(--text-muted)',
+              textAlign: 'center',
+              padding: '1rem 0',
+            }}
+          >
+            {showPending ? (
+              'No templates awaiting approval.'
+            ) : (
+              <>
+                No templates yet. Click{' '}
+                <strong style={{ color: 'var(--text-main)' }}>
+                  Propose Template
+                </strong>{' '}
+                to add one.
+              </>
+            )}
+          </p>
+        ) : (
+          <table className="data-table">
+            <colgroup>
+              <col />
+              <col style={{ width: '200px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '52px' }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Severity</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {templates.map((t) => (
+                <tr key={t.id}>
+                  <td style={{ fontWeight: 500 }}>{t.title}</td>
+                  <td
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                    title={t.category || ''}
+                  >
+                    {t.category || ''}
+                  </td>
+                  <td>
+                    {t.severity ? (
+                      <span className="badge" style={getSeverityStyle(t.severity)}>
+                        {t.severity}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="table-action-cell">
+                    <DetailEyeLink
+                      href={buildPathQuery('/dashboard/templates', listParams, {
+                        detail: t.id,
+                        create: null,
+                      })}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {templates.length === 100 && (
+          <p style={{ margin: '0.75rem 0 0', color: 'var(--text-muted)' }}>
+            Showing up to 100 matches. Refine your search to narrow results.
+          </p>
+        )}
       </div>
-    </div>
+    </TemplatesClient>
   );
 }

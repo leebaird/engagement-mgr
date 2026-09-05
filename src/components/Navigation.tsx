@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Contact, Zap, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, ShieldAlert, Crosshair, LogOut, Contact, Zap, ChevronsLeft, ChevronsRight, LayoutTemplate, ClipboardCheck, Upload } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import { DateTimePreferencesControls } from '@/components/DateTimePreferencesProvider';
 
@@ -15,10 +15,10 @@ const navItems: { name: string; href: string; icon: typeof LayoutDashboard; admi
   { name: 'Clients', href: '/dashboard/clients', icon: Building2 },
   { name: 'Contacts', href: '/dashboard/contacts', icon: Contact },
   { name: 'Findings', href: '/dashboard/findings', icon: ShieldAlert },
-  { name: 'Templates', href: '/dashboard/templates', icon: ShieldAlert },
-  { name: 'Reviews', href: '/dashboard/reviews', icon: ShieldAlert },
+  { name: 'Templates', href: '/dashboard/templates', icon: LayoutTemplate },
+  { name: 'Reviews', href: '/dashboard/reviews', icon: ClipboardCheck },
   { name: 'Reports', href: '/dashboard/reports', icon: Crosshair },
-  { name: 'Imports', href: '/dashboard/imports', icon: ShieldAlert },
+  { name: 'Imports', href: '/dashboard/imports', icon: Upload },
   { name: 'Operators', href: '/dashboard/operators', icon: Zap },
   { name: 'Admin', href: '/dashboard/users', icon: Users, adminOnly: true },
 ];
