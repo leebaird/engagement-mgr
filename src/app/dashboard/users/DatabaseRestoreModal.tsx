@@ -4,6 +4,7 @@ import { importDatabaseBackup } from '@/app/actions/db';
 const DB_ERRORS: Record<string, string> = {
   password: 'Incorrect password.',
   file: 'Invalid or missing backup file.',
+  large: 'This backup exceeds the 8 MB browser limit. Stop the application and run npm run db:restore -- /absolute/path/to/em-backup.zip on the server.',
   unauthorized: 'Unauthorized.',
   generic: 'Restore failed. Use a valid .zip file created by Engagement Manager Backup.',
 };

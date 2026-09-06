@@ -3,7 +3,11 @@ import { after, before, describe, it } from 'node:test';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { changeFinding } from '../src/lib/finding-workflow';
-import { renderEngagementReport } from '../src/lib/report-service';
+import {
+  assertReportBlueprintUnchanged,
+  collectEngagementReport,
+  renderEngagementReport,
+} from '../src/lib/report-service';
 
 const url = process.env.REPORTING_TEST_DATABASE_URL;
 if (
@@ -171,6 +175,49 @@ describe('reporting database transactions', () => {
         .subarray(0, 5)
         .toString(),
       '%PDF-'
+    );
+  });
+  it('rejects issuance when approved content changes after blueprint collection', async () => {
+    await db.engagementReport.update({
+      where: { engagementId },
+      data: { findingIds: [findingId] },
+    });
+    await db.finding.update({
+      where: { id: findingId },
+      data: { reviewStatus: 'Approved' },
+    });
+    const blueprint = await db.$transaction((tx) =>
+      collectEngagementReport(tx, engagementId, true)
+    );
+    await db.finding.update({
+      where: { id: findingId },
+      data: { background: 'Changed during issuance', version: { increment: 1 } },
+    });
+    const issuedBefore = await db.issuedReport.count({ where: { engagementId } });
+
+    await assert.rejects(
+      db.$transaction(async (tx) => {
+        assertReportBlueprintUnchanged(
+          blueprint,
+          await collectEngagementReport(tx, engagementId, true)
+        );
+        await tx.issuedReport.create({
+          data: {
+            engagementId,
+            version: issuedBefore + 1,
+            issuedBy: userId,
+            title: blueprint.title,
+            snapshot: {},
+            pdf: new Uint8Array([1]),
+            sha256: 'not-reached',
+          },
+        });
+      }),
+      /changed while the report was being issued/
+    );
+    assert.equal(
+      await db.issuedReport.count({ where: { engagementId } }),
+      issuedBefore
     );
   });
   it('rejects a report selection containing a finding from another engagement', async () => {

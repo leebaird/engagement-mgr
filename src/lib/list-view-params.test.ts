@@ -6,6 +6,7 @@ import {
   buildDetailHrefs,
   buildSortHrefs,
   parseCalendarDayKey,
+  parseListPage,
 } from './list-view-params';
 
 describe('buildSortHrefs', () => {
@@ -33,6 +34,17 @@ describe('buildSortHrefs', () => {
     assert.equal(ascSortHrefs.icon('company'), ' ↑');
     assert.equal(descSortHrefs.icon('company'), ' ↓');
     assert.equal(ascSortHrefs.icon('website'), null);
+  });
+});
+
+describe('parseListPage', () => {
+  it('accepts positive integer pages and rejects unbounded offsets', () => {
+    assert.equal(parseListPage('2'), 2);
+    assert.equal(parseListPage('0'), 1);
+    assert.equal(parseListPage('-1'), 1);
+    assert.equal(parseListPage('1.5'), 1);
+    assert.equal(parseListPage('10001'), 1);
+    assert.equal(parseListPage('not-a-page'), 1);
   });
 });
 

@@ -7,6 +7,7 @@ export type AuditAction =
   | 'finding.save'
   | 'finding.review'
   | 'finding.import'
+  | 'evidence.cleanup'
   | 'template.save'
   | 'report.issue'
   | 'report.download';

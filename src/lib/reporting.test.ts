@@ -6,6 +6,10 @@ import { FindingMarkdown } from '@/components/FindingMarkdown';
 import { findingContentSchema, readinessIssues, mayReview } from './reporting';
 import { generateReportPdf } from './report-pdf';
 import { normalizeScreenshot } from './normalize-screenshot';
+import {
+  assertReportBlueprintUnchanged,
+  type ReportBlueprint,
+} from './report-service';
 import sharp from 'sharp';
 
 const content = {
@@ -20,6 +24,32 @@ const content = {
 };
 
 describe('reporting security and content', () => {
+  const blueprint: ReportBlueprint = {
+    title: 'Assessment',
+    data: {
+      title: 'Assessment',
+      client: 'Client',
+      codeName: 'Code',
+      executiveSummary: 'Summary',
+      objectives: 'Objectives',
+      targets: 'example.test',
+      exclusions: '',
+      startTesting: '',
+      endTesting: '',
+      findings: [{ ...content, id: 'finding', version: 1, screenshots: [] }],
+    },
+    evidence: [],
+  };
+
+  it('rejects report issuance when a selected finding changes after validation', () => {
+    assert.doesNotThrow(() => assertReportBlueprintUnchanged(blueprint, structuredClone(blueprint)));
+    const changed = structuredClone(blueprint);
+    changed.data.findings[0].version = 2;
+    assert.throws(
+      () => assertReportBlueprintUnchanged(blueprint, changed),
+      /changed while the report was being issued/
+    );
+  });
   it('requires complete finding content and flags unresolved placeholders and captions', () => {
     assert.deepEqual(readinessIssues(content, ['Evidence']), []);
     const issues = readinessIssues(

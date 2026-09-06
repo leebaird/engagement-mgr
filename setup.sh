@@ -368,6 +368,16 @@ run_database_setup() {
   success "Database seed complete"
 }
 
+build_production_application() {
+  if [[ "$SETUP_MODE" != "production" ]]; then
+    return
+  fi
+
+  info "Building the production application..."
+  npm run build
+  success "Production application built"
+}
+
 ensure_runtime_directories() {
   mkdir -p -m 700 uploads
   chmod 700 uploads
@@ -384,10 +394,25 @@ Setup complete.
 - Database user: $DB_USER
 - Setup mode: $SETUP_MODE
 - Environment file: $ROOT_DIR/.env
+EOF
 
+  if [[ "$SETUP_MODE" == "production" ]]; then
+    cat <<EOF
+Start the production server behind an HTTPS reverse proxy:
+
+  NODE_ENV=production npm run start
+
+Do not expose the Next.js development server in production.
+EOF
+  else
+    cat <<EOF
 Start the development server:
 
   npm run dev
+EOF
+  fi
+
+  cat <<EOF
 
 Then open http://localhost:3000 and sign in with:
 
@@ -434,6 +459,7 @@ main() {
   ensure_runtime_directories
   install_node_dependencies
   run_database_setup
+  build_production_application
   print_summary
 }
 

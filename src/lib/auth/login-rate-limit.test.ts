@@ -14,14 +14,16 @@ import {
 describe('login rate-limit keys', () => {
   it('builds separate real-source, sentinel-source, and account keys', () => {
     assert.equal(sourceLoginRateLimitKey('203.0.113.10', 'admin'), 'login:source:203.0.113.10');
-    assert.equal(sourceLoginRateLimitKey('direct', 'admin'), 'login:source:direct:admin');
-    assert.equal(sourceLoginRateLimitKey('unknown', 'Admin'), 'login:source:unknown:Admin');
+    assert.equal(sourceLoginRateLimitKey('direct', 'admin'), 'login:source:direct');
+    assert.equal(sourceLoginRateLimitKey('unknown', 'Admin'), 'login:source:unknown');
     assert.equal(accountLoginRateLimitKey('Admin'), 'login:account:Admin');
     assert.equal(
       passwordConfirmationRateLimitKey('user-id'),
       'password-confirmation:user-id'
     );
     assert.ok(LOGIN_RATE_LIMITS.account.maxAttempts < LOGIN_RATE_LIMITS.source.maxAttempts);
+    assert.ok(LOGIN_RATE_LIMITS.fallbackSource.maxAttempts > LOGIN_RATE_LIMITS.source.maxAttempts);
+    assert.ok(LOGIN_RATE_LIMITS.fallbackSource.windowMs < LOGIN_RATE_LIMITS.source.windowMs);
   });
 });
 
@@ -45,7 +47,7 @@ describe('consumeLoginRateLimitAttempt', () => {
 
     assert.equal(results.filter((result) => result.allowed).length, 5);
     assert.equal(results[5]?.allowed, false);
-    assert.ok(keys.includes('login:source:direct:Admin'));
+    assert.ok(keys.includes('login:source:direct'));
     assert.ok(keys.includes('login:account:Admin'));
   });
 
@@ -177,10 +179,10 @@ describe('consumeLoginRateLimitAttempt', () => {
     await releaseLoginRateLimitAttempt('direct', 'admin', client as never);
 
     assert.match(query, /GREATEST\("count" - 1, 0\)/);
-    assert.deepEqual(keys, ['login:source:direct:admin', 'login:account:admin']);
+    assert.deepEqual(keys, ['login:source:direct', 'login:account:admin']);
   });
 
-  it('does not make direct usernames share a global budget or erase prior source failures', async () => {
+  it('keeps one direct-source budget across rotated usernames', async () => {
     const counts = new Map<string, number>();
     const client = {
       $queryRawUnsafe: async (query: string, ...keys: string[]) => {
@@ -198,12 +200,12 @@ describe('consumeLoginRateLimitAttempt', () => {
       },
     };
 
-    for (let attempt = 0; attempt < 31; attempt += 1) {
-      assert.equal(
-        (await consumeLoginRateLimitAttempt('direct', `user-${attempt}`, client as never)).allowed,
-        true
-      );
+    const rotated = [];
+    for (let attempt = 0; attempt < 101; attempt += 1) {
+      rotated.push(await consumeLoginRateLimitAttempt('direct', `user-${attempt}`, client as never));
     }
+    assert.equal(rotated.filter((result) => result.allowed).length, 100);
+    assert.equal(rotated[100]?.allowed, false);
 
     for (let attempt = 0; attempt < 29; attempt += 1) {
       await consumeLoginRateLimitAttempt('203.0.113.10', `failed-${attempt}`, client as never);

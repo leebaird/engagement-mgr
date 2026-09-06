@@ -10,11 +10,14 @@ import {
   readdir,
   rename,
   rm,
+  unlink,
   writeFile,
 } from 'fs/promises';
-import { existsSync } from 'fs';
-import { inflateRawSync } from 'zlib';
+import { createWriteStream, existsSync } from 'fs';
+import { createInflateRaw } from 'zlib';
 import { promisify } from 'util';
+import { pipeline } from 'node:stream/promises';
+import { Readable, Transform } from 'node:stream';
 import { basename, dirname, join, resolve } from 'path';
 import { tmpdir } from 'os';
 import { prisma } from '@/lib/db';
@@ -22,24 +25,26 @@ import { getPgToolsConnection } from '@/lib/require-admin';
 import { prepareDefaultAdminUser } from '@/lib/seed-default-admin';
 import { APPLICATION_SETTING_ID } from '@/lib/highlight-color';
 import {
-  getUploadsDirectory,
   ensureUploadsDirectory,
 } from '@/lib/uploads-path';
 import {
   MAX_SCREENSHOT_FILES,
   MAX_SCREENSHOT_STORAGE_BYTES,
+  reconcileScreenshotStorage,
   withUploadsMaintenanceLock,
 } from '@/lib/screenshot-storage';
 import { MAX_SCREENSHOT_BYTES } from '@/lib/validation/upload';
+import { MAX_BACKUP_BYTES } from '@/lib/validation/db';
 
 const execFileAsync = promisify(execFile);
 
-const MAX_ARCHIVE_BYTES = 500 * 1024 * 1024;
+const MAX_ARCHIVE_BYTES = MAX_BACKUP_BYTES;
 const MAX_DATABASE_DUMP_BYTES = 500 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = MAX_SCREENSHOT_FILES + 3;
 const MAX_COMPRESSION_RATIO = 20;
 const ARCHIVE_COMMAND_TIMEOUT_MS = 2 * 60 * 1000;
 const DATABASE_COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
+const ARCHIVE_ENTRY_TIMEOUT_MS = 60 * 1000;
 const BACKUP_FOLDER = 'engagement-manager-backup';
 const DATABASE_DUMP_ENTRY = `${BACKUP_FOLDER}/database.dump`;
 const SCREENSHOT_FILENAME_PATTERN =
@@ -237,16 +242,46 @@ function parseZipEntries(archive: Buffer): ZipEntry[] {
   return entries;
 }
 
-function extractEntry(archive: Buffer, entry: ZipEntry): Buffer {
+async function writeZipEntry(
+  archive: Buffer,
+  entry: ZipEntry,
+  target: string
+): Promise<void> {
   const compressed = archive.subarray(entry.dataOffset, entry.dataOffset + entry.compressedSize);
-  const content =
-    entry.compressionMethod === 0
-      ? Buffer.from(compressed)
-      : inflateRawSync(compressed, { maxOutputLength: entry.uncompressedSize });
-  if (content.length !== entry.uncompressedSize) {
-    throw new Error('Invalid backup: ZIP entry size does not match its directory');
+  let bytes = 0;
+  const countOutput = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      bytes += chunk.length;
+      callback(
+        bytes > entry.uncompressedSize
+          ? new Error('Invalid backup: ZIP entry exceeds its declared size')
+          : null,
+        chunk
+      );
+    },
+  });
+  const output = createWriteStream(target, { flags: 'wx', mode: 0o600 });
+  try {
+    if (entry.compressionMethod === 0) {
+      await pipeline(Readable.from([compressed]), countOutput, output, {
+        signal: AbortSignal.timeout(ARCHIVE_ENTRY_TIMEOUT_MS),
+      });
+    } else {
+      await pipeline(
+        Readable.from([compressed]),
+        createInflateRaw(),
+        countOutput,
+        output,
+        { signal: AbortSignal.timeout(ARCHIVE_ENTRY_TIMEOUT_MS) }
+      );
+    }
+    if (bytes !== entry.uncompressedSize) {
+      throw new Error('Invalid backup: ZIP entry size does not match its directory');
+    }
+  } catch (error) {
+    await unlink(target).catch(() => {});
+    throw error;
   }
-  return content;
 }
 
 export async function extractBackupArchive(archive: Buffer, rootDirectory: string): Promise<void> {
@@ -261,7 +296,7 @@ export async function extractBackupArchive(archive: Buffer, rootDirectory: strin
       await chmod(target, 0o700);
     } else {
       await mkdir(dirname(target), { recursive: true, mode: 0o700 });
-      await writeFile(target, extractEntry(archive, entry), { flag: 'wx', mode: 0o600 });
+      await writeZipEntry(archive, entry, target);
     }
   }
 }
@@ -352,17 +387,27 @@ async function runPgRestore(dumpPath: string, workDirectory: string): Promise<vo
 
 async function prepareUploadsDirectory(source?: string): Promise<string> {
   const destination = await mkdtemp(join(process.cwd(), '.uploads-restore-'));
-  await chmod(destination, 0o700);
-  if (source && existsSync(source)) {
-    await copyScreenshotFiles(source, destination);
+  try {
+    await chmod(destination, 0o700);
+    if (source && existsSync(source)) {
+      await copyScreenshotFiles(source, destination);
+    }
+    await assertExtractedPathsContained(destination);
+    return destination;
+  } catch (error) {
+    await rm(destination, { recursive: true, force: true });
+    throw error;
   }
-  await assertExtractedPathsContained(destination);
-  return destination;
 }
 
-async function copyScreenshotFiles(source: string, destination: string): Promise<void> {
+async function copyScreenshotFiles(
+  source: string,
+  destination: string,
+  referencedFiles?: ReadonlySet<string>
+): Promise<void> {
   let totalBytes = 0;
   let fileCount = 0;
+  const copied = new Set<string>();
 
   for (const entry of await readdir(source, { withFileTypes: true })) {
     if (entry.name === '.gitkeep') {
@@ -370,6 +415,9 @@ async function copyScreenshotFiles(source: string, destination: string): Promise
     }
     if (!entry.isFile() || !SCREENSHOT_FILENAME_PATTERN.test(entry.name)) {
       throw new Error('Uploads directory contains an unsupported file');
+    }
+    if (referencedFiles && !referencedFiles.has(entry.name)) {
+      throw new Error('Uploads directory contains an unreferenced screenshot');
     }
     const sourcePath = join(source, entry.name);
     const stats = await lstat(sourcePath);
@@ -386,6 +434,15 @@ async function copyScreenshotFiles(source: string, destination: string): Promise
     const destinationPath = join(destination, entry.name);
     await cp(sourcePath, destinationPath);
     await chmod(destinationPath, 0o600);
+    copied.add(entry.name);
+  }
+
+  if (referencedFiles) {
+    for (const fileName of referencedFiles) {
+      if (!copied.has(fileName)) {
+        throw new Error(`Screenshot file is missing: ${fileName}`);
+      }
+    }
   }
 }
 
@@ -441,12 +498,11 @@ export async function exportDatabaseArchive(): Promise<Buffer> {
       const backupDirectory = join(workDirectory, BACKUP_FOLDER);
       const backupUploads = join(backupDirectory, 'uploads');
       await mkdir(backupUploads, { recursive: true, mode: 0o700 });
+      const uploads = await ensureUploadsDirectory();
+      const referencedFiles = await reconcileScreenshotStorage(uploads);
       await runPgDump(join(backupDirectory, 'database.dump'), workDirectory);
 
-      const uploads = getUploadsDirectory();
-      if (existsSync(uploads)) {
-        await copyScreenshotFiles(uploads, backupUploads);
-      }
+      await copyScreenshotFiles(uploads, backupUploads, referencedFiles);
       await assertExtractedPathsContained(backupDirectory);
 
       const zipPath = join(workDirectory, 'backup.zip');

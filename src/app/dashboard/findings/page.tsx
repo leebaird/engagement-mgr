@@ -7,16 +7,30 @@ import { getSeverityStyle } from '@/lib/finding-severity';
 import { FindingsClient } from './FindingsClient';
 import { FindingDetailButton } from './FindingDetailButton';
 import { requireDashboardSession } from '@/lib/require-auth';
+import { Prisma } from '@prisma/client';
+import { parseListPage } from '@/lib/list-view-params';
+
+const PAGE_SIZE = 100;
+
+type FindingListItem = {
+  id: string;
+  title: string;
+  category: string | null;
+  severity: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export default async function FindingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; dir?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
-}) {
+    searchParams: Promise<{ sort?: string; dir?: string; page?: string; create?: string; detail?: string; edit?: string; delete?: string; deleteError?: string; saveError?: string }>;
+  }) {
   await requireDashboardSession();
-  const { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
-  const listParams = { sort, dir };
-  const currentParams = { sort, dir, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
+  const { sort, dir, page: pageParam, create, detail, edit, delete: deleteConfirm, deleteError, saveError } = await searchParams;
+  const page = parseListPage(pageParam);
+  const listParams = { sort, dir, page: page === 1 ? undefined : String(page) };
+  const currentParams = { ...listParams, create, detail, edit, delete: deleteConfirm, deleteError, saveError };
   const addHref = buildPathQuery('/dashboard/findings', listParams, { create: '1', detail: null });
   const createCloseHref = buildPathQuery('/dashboard/findings', listParams, { create: null });
   const listCloseHref = buildPathQuery('/dashboard/findings', listParams, { detail: null, edit: null, delete: null, deleteError: null, saveError: null });
@@ -25,34 +39,36 @@ export default async function FindingsPage({
   const sortCol = sort && validSortColumns.includes(sort) ? sort : 'title';
   const sortDir = dir === 'desc' ? 'desc' : 'asc';
 
-  const severityOrder: Record<string, number> = {
-    'Critical': 1,
-    'High': 2,
-    'Medium': 3,
-    'Low': 4,
-    'Info': 5
-  };
-
-  // Lean list columns — omit large text blobs (background, remediation, etc.)
-  const findings = await prisma.finding.findMany({
-    select: {
-      id: true,
-      title: true,
-      category: true,
-      severity: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: sortCol === 'severity' ? undefined : { [sortCol]: sortDir },
-  });
-
-  if (sortCol === 'severity') {
-    findings.sort((a, b) => {
-      const valA = severityOrder[a.severity] || 99;
-      const valB = severityOrder[b.severity] || 99;
-      return sortDir === 'asc' ? valA - valB : valB - valA;
-    });
-  }
+  const offset = (page - 1) * PAGE_SIZE;
+  const findingsWithSentinel: FindingListItem[] = sortCol === 'severity'
+    ? await prisma.$queryRaw(Prisma.sql`
+        SELECT "id", "title", "category", "severity", "createdAt", "updatedAt"
+        FROM "Finding"
+        ORDER BY CASE "severity"
+          WHEN 'Critical' THEN 1
+          WHEN 'High' THEN 2
+          WHEN 'Medium' THEN 3
+          WHEN 'Low' THEN 4
+          WHEN 'Info' THEN 5
+          ELSE 99
+        END ${sortDir === 'asc' ? Prisma.sql`ASC` : Prisma.sql`DESC`}, "id" ASC
+        LIMIT ${PAGE_SIZE + 1} OFFSET ${offset}
+      `)
+    : await prisma.finding.findMany({
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          severity: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: [{ [sortCol]: sortDir }, { id: 'asc' }],
+        skip: offset,
+        take: PAGE_SIZE + 1,
+      });
+  const hasNextPage = findingsWithSentinel.length > PAGE_SIZE;
+  const findings = findingsWithSentinel.slice(0, PAGE_SIZE);
 
   const sortHrefs = buildSortHrefs('/dashboard/findings', currentParams, sortCol, sortDir);
 
@@ -183,6 +199,19 @@ export default async function FindingsPage({
             </tbody>
           </table>
           )}
+          <nav className="writing-toolbar" aria-label="Findings pages">
+            {page > 1 ? (
+              <Link className="btn-secondary" href={buildPathQuery('/dashboard/findings', currentParams, { page: page === 2 ? null : String(page - 1) })}>
+                Previous
+              </Link>
+            ) : null}
+            <span>Page {page}</span>
+            {hasNextPage ? (
+              <Link className="btn-secondary" href={buildPathQuery('/dashboard/findings', currentParams, { page: String(page + 1) })}>
+                Next
+              </Link>
+            ) : null}
+          </nav>
         </div>
       </FindingsClient>
     </>

@@ -4,6 +4,7 @@ const WINDOW_MS = 15 * 60 * 1000;
 
 export const LOGIN_RATE_LIMITS = {
   source: { maxAttempts: 30, windowMs: WINDOW_MS },
+  fallbackSource: { maxAttempts: 100, windowMs: 60 * 1000 },
   account: { maxAttempts: 5, windowMs: WINDOW_MS },
   confirmation: { maxAttempts: 5, windowMs: WINDOW_MS },
 } as const;
@@ -22,9 +23,7 @@ export type RateLimitResult =
 type RateLimitReservationResult = RateLimitResult & { resetAt: Date };
 
 export function sourceLoginRateLimitKey(clientIp: string, username: string): string {
-  if (clientIp === 'direct' || clientIp === 'unknown') {
-    return `login:source:${clientIp}:${username}`;
-  }
+  void username;
   return `login:source:${clientIp}`;
 }
 
@@ -44,7 +43,9 @@ export async function consumeLoginRateLimitAttempt(
   const sourceKey = sourceLoginRateLimitKey(clientIp, username);
   const sourceLimit = await consumeRateLimitAttempt(
     sourceKey,
-    LOGIN_RATE_LIMITS.source,
+    clientIp === 'direct' || clientIp === 'unknown'
+      ? LOGIN_RATE_LIMITS.fallbackSource
+      : LOGIN_RATE_LIMITS.source,
     client
   );
   if (!sourceLimit.allowed) {

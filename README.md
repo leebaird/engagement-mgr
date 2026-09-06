@@ -22,11 +22,11 @@ Engagement Manager is a web application for tracking offensive security engageme
 | Qualys | Scan-result XML (`SCAN/IP` structure), not the separate host-detection API format |
 | Semgrep / CodeQL and other SARIF producers | SARIF JSON runs, rules and results |
 
-Exports are limited to 2 MB and 500 findings per import. Unknown layouts fail visibly rather than silently being treated as a successful import. Scanner severities are suggestions: review their context before approval. Referenced URLs, HTML and embedded remote images are not fetched or executed.
+Exports are limited to 2 MB and 500 findings per import, with per-user preview and confirmation rate limits. The application accepts at most 10,000 findings in total and 500 for one engagement across manual creation, templates and scanner imports. The global Findings list loads 100 rows per page, and engagement/report finding queries are capped by the same per-engagement limit. Unknown layouts fail visibly rather than silently being treated as a successful import. Scanner severities are suggestions: review their context before approval. Referenced URLs, HTML and embedded remote images are not fetched or executed.
 
-Reports allow 1–100 findings, up to 100 evidence images (5 MB each, 20 MB total input), 500 pages and 25 MB output. Issuance is limited to 50 versions per engagement and 1 GB of issued PDFs across the application. Preview and issuance have per-user rate limits. Findings retain at most 1000 revisions and 500 comments; reaching a limit fails without overwriting history. DejaVu fonts and their redistribution license are included in `assets/fonts`; deployments must retain these assets (Next output tracing includes them).
+Reports allow 1–100 findings, up to 100 evidence images (5 MB each, 20 MB total input), 500 pages and 25 MB output. Issuance is limited to 50 versions per engagement and 1 GB of issued PDFs across the application. Preview and issuance have per-user rate limits, and only one PDF render is admitted per application process at a time. Findings retain at most 1000 revisions and 500 comments; reaching a limit fails without overwriting history. DejaVu fonts and their redistribution license are included in `assets/fonts`; deployments must retain these assets (Next output tracing includes them).
 
-Next.js Server Actions share a single `25mb` body size limit (set in `next.config.ts`). That size is required for evidence uploads; login and other actions inherit it because Next cannot scope the limit per action.
+Next.js Server Actions share a single `25mb` body size limit (set in `next.config.ts`) for evidence uploads. Login uses a dedicated same-origin URL-encoded route with a 4 KB streaming limit before authentication or database work.
 
 ### Reporting security and deployment
 
@@ -34,7 +34,7 @@ This preserves the existing **shared authenticated workspace**, not a new per-cl
 
 The implementation uses the [OWASP Top 10:2025](https://owasp.org/Top10/2025/) checklist: access checks (A01), private responses and existing CSP/CSRF controls (A02), pinned dependencies and CI (A03), existing session/secret protections plus report integrity checks (A04/A08), inert Markdown/XML and parameterized database access (A05), bounded processing and independent review (A06), live session checks (A07), content-free audit events (A09), and transactional changes with cleanup on failure (A10). A digest detects accidental corruption; it is not a digital signature or protection from a database administrator. This is not a compliance certification. Production still requires HTTPS, protected database/backup storage and operational monitoring of audit output.
 
-Before deploying this upgrade, take a normal application backup and apply the additive `20260904221808_reporting_workflow` migration with `npm run db:migrate`, then regenerate Prisma Client and rebuild. Existing findings begin as Draft at version 1. Do not reset an existing database. Backups include the new tables and issued PDFs through the existing full-database export.
+Before deploying this upgrade, take a normal application backup and apply the additive `20260904221808_reporting_workflow` and `20260906194500_add_revocable_sessions` migrations with `npm run db:migrate`, then regenerate Prisma Client and rebuild. Existing findings begin as Draft at version 1, and existing browser cookies must sign in again so they receive a server-backed session ID. Do not reset an existing database. Backups include the new tables and issued PDFs through the existing full-database export.
 
 ### Verification
 
@@ -96,7 +96,7 @@ chmod 600 .env
 |----------|----------|-------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string. Prisma uses the `schema=public` query parameter. Backup and restore use an owner-only temporary pgpass file so the password is not placed in subprocess arguments. |
 | `JWT_SECRET` | Yes in production | Must be at least **32 characters**. The app refuses to start in production without it. Rotating this invalidates all existing sessions. |
-| `TRUST_PROXY` | No | Set to `1` (or `true`) only when the app is behind a reverse proxy that **overwrites** `X-Forwarded-For` / `X-Real-IP`. When unset, those headers are ignored for rate limiting and audit IPs so clients cannot spoof them. |
+| `TRUST_PROXY` | No | Set to `1` (or `true`) only when the app is behind a reverse proxy that **overwrites** `X-Forwarded-For` / `X-Real-IP`. This is the required production topology for accurate per-source login limits. When unset, headers are ignored to prevent spoofing and login uses a higher one-minute shared fallback budget so one client cannot impose a 15-minute global lockout. |
 | `ALLOWED_DEV_ORIGINS` | No | **Development only.** Extra hostnames allowed to load `/_next` assets (comma-separated). The server’s current LAN IPv4 addresses are allowed automatically. Use this for a stable DNS name. Production builds ignore this. |
 
 Generate a strong secret:
@@ -144,7 +144,7 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-The script installs prerequisites, starts and enables the PostgreSQL service, prompts for a database username and password, writes a `chmod 600` `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account. It does not install Node.js from a remote shell script; install a supported Node.js release first.
+The script installs prerequisites, starts and enables the PostgreSQL service, prompts for a database username and password, writes a `chmod 600` `.env`, creates the PostgreSQL role and database, applies migrations, and seeds the default admin account. Production mode also completes `npm run build` and prints only the production start command. It does not install Node.js from a remote shell script; install a supported Node.js release first.
 
 For headless or CI use:
 
@@ -286,7 +286,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/database.dump` | Full PostgreSQL custom-format dump (schema, tables, data, enums, relations) from `pg_dump` |
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
-- **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
+- **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. Browser restore is limited to 8 MB so decompression cannot monopolise the web process. For a larger archive, stop the application and run `npm run db:restore -- /absolute/path/to/em-backup.zip` as the application user. The offline command accepts regular files up to 500 MB and streams each archive entry through its expanded-size limit. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
 - **Reset** wipes all application data, restores the default pink highlight colour, and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
 
 **Old server**
@@ -340,7 +340,8 @@ This section documents the architecture, database schema, security measures, and
 
 Reporting additions: **Finding** also stores `version`, `reviewStatus`, `authorId`, `reviewerId`, `templateId`, and `importFingerprint`; **Screenshot** stores `sortOrder`. **FindingTemplate** holds reviewed reusable wording; **FindingRevision** holds immutable text revisions; **FindingDraft** holds private per-user drafts with conflict versions; **FindingComment** records review discussions; **EngagementReport** holds report title, executive summary and ordered finding IDs; **IssuedReport** stores an immutable PDF, content snapshot and SHA-256 digest for each issued version. User author/reviewer relationships use `SetNull`; private drafts are removed when their user is removed. Reporting records follow their parent engagement/finding lifecycle.
 
-- **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `createdAt`, `updatedAt`.
+- **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `sessions`, `createdAt`, `updatedAt`.
+- **Session**: `id`, `userId`, `expiresAt`, `createdAt` — server-side records make each signed login session individually revocable on logout.
 - **LoginRateLimit**: `key`, `count`, `resetAt` — atomic source and password-confirmation attempt reservations. Password verification also has a bounded concurrency limit.
 - **ApplicationSetting**: singleton application-wide settings record with `highlightColor` (Pink, Blue, Teal, Green, Purple, or Amber) and `updatedAt`.
 - **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Prep, Recon, Testing, Reporting, Complete), `focus`, `type` (AI, Code_Review, Firewall, Multi, Pentest, Phishing, Physical, Purple_Team, Red_Team, USB_Drop, Vishing, Web_App, Wireless), `location` (Internal, External), `startPrep`, `endPrep`, `startRecon`, `endRecon`, `startTesting`, `endTesting`, `startReporting`, `endReporting`, `outbrief`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
@@ -379,10 +380,10 @@ To add a new field to an existing model (e.g., `focus` on `Engagement`):
 ### Security Architecture
 
 1. **Authentication & Accounts**: Default `admin` account is generated via Prisma seed. `Admin` roles have full create/edit/delete access to all records. `User` roles can create, edit, and delete findings and screenshots; all other entities (engagements, clients, contacts, operators) are read-only for users. Every dashboard page refreshes the session against the database before reading confidential data. Only admins can access the Admin page (`/dashboard/users`), manage accounts, change the application-wide highlight colour, and back up, restore, or reset the database. Backup, restore, and reset require password re-confirmation. Creating a backup is a Server Action; browser download uses `GET /api/db/backup?file=…` with the Admin session and a five-minute signed grant in an `HttpOnly` cookie.
-2. **Session Management**: Sessions are managed via `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies. Cookie expiration is intentionally omitted to keep browser-session behavior, and JWT payloads currently use a 1-day expiration.
+2. **Session Management**: Sessions use `jose` JWTs stored in `HttpOnly`, `SameSite=Lax` cookies and a matching server-side `Session` row that logout revokes. Cookie expiration is intentionally omitted to keep browser-session behavior; both the signed token and database record expire after one day. Transactional admission retains at most ten active sessions per account.
 3. **Application Security**:
    - Next.js Edge Proxy (`src/proxy.ts`) enforces session checks and 90-day password rotation across all protected routes.
    - Next.js Server Actions reduce CSRF risk with built-in same-origin protections.
    - Prisma automatically mitigates SQL injection by parameterizing all queries.
    - React mitigates XSS by automatically escaping HTML elements on render.
-   - Screenshots are stored with owner-only permissions and bounded aggregate/per-finding quotas. The authenticated `/api/uploads` route prevents IDOR and returns `no-store` responses.
+   - Screenshots are stored with owner-only permissions and bounded aggregate/per-finding quotas. Deletion uses recoverable pending markers; dashboard startup, uploads, and backups reconcile disk files against database references, with failures recorded in audit output and shown to administrators. The authenticated `/api/uploads` route prevents IDOR and returns `no-store` responses.

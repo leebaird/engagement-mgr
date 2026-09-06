@@ -68,9 +68,15 @@ export function buildSortHrefs(
     href: (col: string) => buildPathQuery(pathname, current, {
       sort: col,
       dir: activeCol === col && activeDir === 'asc' ? 'desc' : 'asc',
+      page: null,
     }),
     icon: (col: string) => (activeCol !== col ? null : activeDir === 'asc' ? ' ↑' : ' ↓'),
   };
+}
+
+export function parseListPage(value: string | undefined): number {
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page > 0 && page <= 10_000 ? page : 1;
 }
 
 export function parseCalendarView(

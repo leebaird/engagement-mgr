@@ -25,17 +25,51 @@ describe('security boundary regressions', () => {
     assert.match(source, /'--single-transaction'/);
     assert.match(source, /timeout: DATABASE_COMMAND_TIMEOUT_MS/);
     assert.match(source, /withUploadsMaintenanceLock/);
+    assert.match(source, /createInflateRaw/);
+    assert.match(source, /reconcileScreenshotStorage/);
   });
 
   it('re-parses scanner exports on confirm instead of trusting client candidate JSON', async () => {
     const action = await repositoryFile('src/app/actions/scanner-import.ts');
     assert.match(action, /parseScannerExport\(await file\.text\(\), format\)/);
     assert.equal(action.includes("form.get('candidates')"), false);
+    assert.match(action, /consumeRateLimitAttempt\(`scanner-import-preview:/);
+    assert.match(action, /consumeRateLimitAttempt\(`scanner-import-confirm:/);
+    assert.match(action, /createMany/);
+  });
+
+  it('enforces one shared finding capacity across every creation path', async () => {
+    for (const path of [
+      'src/app/actions/finding.ts',
+      'src/app/actions/templates.ts',
+      'src/app/actions/scanner-import.ts',
+    ]) {
+      assert.match(await repositoryFile(path), /assertFindingCreationCapacity/);
+    }
+    const page = await repositoryFile('src/app/dashboard/findings/page.tsx');
+    const engagements = await repositoryFile('src/app/dashboard/engagements/page.tsx');
+    const reports = await repositoryFile('src/app/dashboard/reports/page.tsx');
+    assert.match(page, /take: PAGE_SIZE \+ 1/);
+    assert.match(page, /LIMIT \$\{PAGE_SIZE \+ 1\} OFFSET \$\{offset\}/);
+    assert.match(engagements, /take: MAX_FINDINGS_PER_ENGAGEMENT/);
+    assert.match(reports, /take: MAX_FINDINGS_PER_ENGAGEMENT/);
+  });
+
+  it('revalidates issued content and bounds expensive report rendering', async () => {
+    const action = await repositoryFile('src/app/actions/reports.ts');
+    const route = await repositoryFile('src/app/api/reports/[id]/route.ts');
+    assert.match(action, /assertReportBlueprintUnchanged/);
+    assert.match(action, /withReportRenderCapacity/);
+    assert.match(route, /withReportRenderCapacity/);
+    assert.match(route, /status: 503/);
   });
 
   it('coordinates upload writes with maintenance and checks quota before writing', async () => {
     const action = await repositoryFile('src/app/actions/finding.ts');
     assert.match(action, /withUploadsMaintenanceLock/);
+    assert.match(action, /stageScreenshotDeletion/);
+    assert.match(action, /restoreStagedScreenshotDeletion/);
+    assert.match(action, /reconcileScreenshotStorage/);
     assert.ok(action.indexOf('assertScreenshotQuota({') < action.indexOf('writeFile(temporaryPath'));
   });
 
@@ -45,14 +79,36 @@ describe('security boundary regressions', () => {
   });
 
   it('applies source and account login budgets and releases successful reservations', async () => {
-    const action = await repositoryFile('src/app/actions/auth.ts');
+    const service = await repositoryFile('src/lib/auth/login-service.ts');
+    const route = await repositoryFile('src/app/api/auth/login/route.ts');
     const limiter = await repositoryFile('src/lib/auth/login-rate-limit.ts');
-    assert.match(action, /consumeLoginRateLimitAttempt\(clientIp, username\)/);
-    assert.match(action, /releaseLoginRateLimitAttempt\(clientIp, username\)/);
+    assert.match(service, /consumeLoginRateLimitAttempt\(clientIp, username\)/);
+    assert.match(service, /releaseLoginRateLimitAttempt\(clientIp, username\)/);
+    assert.match(route, /readLoginForm\(request\)/);
     assert.match(limiter, /accountLoginRateLimitKey\(username\)/);
-    assert.match(limiter, /clientIp === 'direct' \|\| clientIp === 'unknown'/);
-    assert.doesNotMatch(action, /clientIp !== 'direct'/);
-    assert.doesNotMatch(action, /clientIp !== 'unknown'/);
+    assert.match(limiter, /`login:source:\$\{clientIp\}`/);
+  });
+
+  it('backs signed cookies with revocable server-side sessions', async () => {
+    const session = await repositoryFile('src/lib/auth/session.ts');
+    const auth = await repositoryFile('src/app/actions/auth.ts');
+    const users = await repositoryFile('src/app/actions/user.ts');
+    assert.match(session, /prisma\.session\.findUnique/);
+    assert.match(session, /prisma\.session\.deleteMany/);
+    assert.match(session, /MAX_ACTIVE_SESSIONS_PER_USER/);
+    assert.match(session, /pg_advisory_xact_lock/);
+    assert.match(auth, /prisma\.session\.deleteMany/);
+    assert.match(users, /tx\.session\.deleteMany/);
+  });
+
+  it('retries and surfaces pending evidence cleanup', async () => {
+    const layout = await repositoryFile('src/app/dashboard/layout.tsx');
+    const storage = await repositoryFile('src/lib/screenshot-storage.ts');
+    const audit = await repositoryFile('src/lib/audit-log.ts');
+    assert.match(layout, /ensureReconciledScreenshotStorage/);
+    assert.match(layout, /Evidence storage cleanup requires operator attention/);
+    assert.match(storage, /reconciliationRequired = true/);
+    assert.match(audit, /'evidence\.cleanup'/);
   });
 
   it('serializes seed credential replacement with a recoverable database lock', async () => {
@@ -94,6 +150,9 @@ describe('security boundary regressions', () => {
     assert.equal(setup.includes('urlencode "$DB_PASSWORD"'), false);
     assert.match(setup, /urllib\.parse\.quote\(sys\.stdin\.read\(\)/);
     assert.equal(summary.includes('$DB_PASSWORD'), false);
+    assert.match(setup, /build_production_application/);
+    assert.match(summary, /NODE_ENV=production npm run start/);
+    assert.match(summary, /Do not expose the Next\.js development server in production/);
   });
 
   it('rejects legacy setup password arguments with an actionable migration example', () => {

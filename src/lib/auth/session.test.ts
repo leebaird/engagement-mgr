@@ -19,6 +19,7 @@ describe('getSessionFromRequest', () => {
 
   async function sessionRequest() {
     const token = await encrypt({
+      sessionId: '22222222-2222-4222-8222-222222222222',
       userId,
       role: 'User',
       lastPasswordChange: lastPasswordChange.toISOString(),
@@ -30,26 +31,52 @@ describe('getSessionFromRequest', () => {
   }
 
   it('rejects a signed session after its user is deleted', async (t) => {
-    const findUnique = prisma.user.findUnique;
-    prisma.user.findUnique = (async () => null) as unknown as typeof prisma.user.findUnique;
+    const findUnique = prisma.session.findUnique;
+    prisma.session.findUnique = (async () => null) as unknown as typeof prisma.session.findUnique;
     t.after(() => {
-      prisma.user.findUnique = findUnique;
+      prisma.session.findUnique = findUnique;
     });
 
     assert.equal(await getSessionFromRequest(await sessionRequest()), null);
   });
 
-  it('accepts a signed session for an existing user', async (t) => {
-    const findUnique = prisma.user.findUnique;
-    prisma.user.findUnique = (async () => ({
-      role: 'User',
-      lastPasswordChange,
-    })) as unknown as typeof prisma.user.findUnique;
+  it('rejects pre-migration tokens without querying an undefined session id', async (t) => {
+    const findUnique = prisma.session.findUnique;
+    let queried = false;
+    prisma.session.findUnique = (async () => {
+      queried = true;
+      return null;
+    }) as unknown as typeof prisma.session.findUnique;
     t.after(() => {
-      prisma.user.findUnique = findUnique;
+      prisma.session.findUnique = findUnique;
+    });
+    const token = await encrypt({
+      sessionId: undefined as unknown as string,
+      userId,
+      role: 'User',
+      lastPasswordChange: lastPasswordChange.toISOString(),
+    });
+    const request = new NextRequest('https://example.test/login', {
+      headers: { cookie: `session=${token}` },
+    });
+
+    assert.equal(await getSessionFromRequest(request), null);
+    assert.equal(queried, false);
+  });
+
+  it('accepts a signed session for an existing user', async (t) => {
+    const findUnique = prisma.session.findUnique;
+    prisma.session.findUnique = (async () => ({
+      userId,
+      expiresAt: new Date(Date.now() + 60_000),
+      user: { role: 'User', lastPasswordChange },
+    })) as unknown as typeof prisma.session.findUnique;
+    t.after(() => {
+      prisma.session.findUnique = findUnique;
     });
 
     assert.deepEqual(await getSessionFromRequest(await sessionRequest()), {
+      sessionId: '22222222-2222-4222-8222-222222222222',
       userId,
       role: 'User',
       lastPasswordChange: lastPasswordChange.toISOString(),
@@ -57,15 +84,57 @@ describe('getSessionFromRequest', () => {
   });
 
   it('rejects a signed session after admin password reset to epoch', async (t) => {
-    const findUnique = prisma.user.findUnique;
-    prisma.user.findUnique = (async () => ({
-      role: 'User',
-      lastPasswordChange: new Date(0),
-    })) as unknown as typeof prisma.user.findUnique;
+    const findUnique = prisma.session.findUnique;
+    prisma.session.findUnique = (async () => ({
+      userId,
+      expiresAt: new Date(Date.now() + 60_000),
+      user: { role: 'User', lastPasswordChange: new Date(0) },
+    })) as unknown as typeof prisma.session.findUnique;
     t.after(() => {
-      prisma.user.findUnique = findUnique;
+      prisma.session.findUnique = findUnique;
     });
 
     assert.equal(await getSessionFromRequest(await sessionRequest()), null);
+  });
+
+  it('rejects a correctly signed token after its session is revoked', async (t) => {
+    const findUnique = prisma.session.findUnique;
+    prisma.session.findUnique = (async () => null) as unknown as typeof prisma.session.findUnique;
+    t.after(() => {
+      prisma.session.findUnique = findUnique;
+    });
+
+    assert.equal(await getSessionFromRequest(await sessionRequest()), null);
+  });
+
+  it('rejects an expired server-side session', async (t) => {
+    const findUnique = prisma.session.findUnique;
+    prisma.session.findUnique = (async () => ({
+      userId,
+      expiresAt: new Date(Date.now() - 1),
+      user: { role: 'User', lastPasswordChange },
+    })) as unknown as typeof prisma.session.findUnique;
+    t.after(() => {
+      prisma.session.findUnique = findUnique;
+    });
+
+    assert.equal(await getSessionFromRequest(await sessionRequest()), null);
+  });
+});
+
+describe('session admission limits', () => {
+  it('keeps at most ten active sessions per user', async () => {
+    const { MAX_ACTIVE_SESSIONS_PER_USER, selectSessionIdsToRetire } =
+      await import('./session');
+    assert.equal(MAX_ACTIVE_SESSIONS_PER_USER, 10);
+    assert.deepEqual(selectSessionIdsToRetire(Array.from({ length: 9 }, (_, i) => `${i}`)), []);
+    assert.deepEqual(
+      selectSessionIdsToRetire(Array.from({ length: 10 }, (_, i) => `${i}`)),
+      ['0']
+    );
+    assert.deepEqual(
+      selectSessionIdsToRetire(Array.from({ length: 15 }, (_, i) => `${i}`)),
+      ['0', '1', '2', '3', '4', '5']
+    );
   });
 });

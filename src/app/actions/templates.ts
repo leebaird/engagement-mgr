@@ -11,6 +11,7 @@ import {
   versionSchema,
 } from '@/lib/reporting';
 import { logAuditEvent } from '@/lib/audit-log';
+import { assertFindingCreationCapacity } from '@/lib/finding-capacity';
 
 export async function saveTemplate(form: FormData): Promise<void> {
   const actor = await requireAuth();
@@ -68,6 +69,7 @@ export async function useTemplate(form: FormData): Promise<void> {
       const template = await tx.findingTemplate.findFirstOrThrow({
         where: { id: templateId, approved: true },
       });
+      await assertFindingCreationCapacity(tx, engagementId, 1);
       const {
         observation: _observation,
         affectedHosts: _hosts,

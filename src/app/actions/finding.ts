@@ -26,10 +26,17 @@ import { versionSchema, WorkflowError } from '@/lib/reporting';
 import { normalizeScreenshot } from '@/lib/normalize-screenshot';
 import {
   assertScreenshotQuota,
+  finishStagedScreenshotDeletion,
   getScreenshotStorageUsage,
+  reconcileScreenshotStorage,
+  restoreStagedScreenshotDeletion,
   ScreenshotQuotaError,
+  stageScreenshotDeletion,
+  type StagedScreenshotDeletion,
   withUploadsMaintenanceLock,
 } from '@/lib/screenshot-storage';
+import { assertFindingCreationCapacity } from '@/lib/finding-capacity';
+import { logAuditEvent } from '@/lib/audit-log';
 
 export type FindingTemplateMatch = {
   id: string;
@@ -144,8 +151,12 @@ export async function createFinding(_prevState: unknown, formData: FormData) {
       };
     }
 
-    await prisma.finding.create({ data: { ...findingData, authorId: auth.userId } });
+    await prisma.$transaction(async (tx) => {
+      await assertFindingCreationCapacity(tx, engagementId, 1);
+      await tx.finding.create({ data: { ...findingData, authorId: auth.userId } });
+    });
   } catch (e) {
+    if (e instanceof WorkflowError) return { error: e.message };
     console.error('Create Finding error:', e);
     return { error: 'Failed to create finding.' };
   }
@@ -307,27 +318,58 @@ export async function deleteFinding(id: string) {
           select: { engagementId: true },
         }),
       ]);
-      await prisma.$transaction(async (tx) => {
-        await tx.screenshot.deleteMany({ where: { findingId: idParsed.data } });
-        await tx.finding.delete({ where: { id: idParsed.data } });
-        if (record?.engagementId) {
-          const report = await tx.engagementReport.findUnique({
-            where: { engagementId: record.engagementId },
-            select: { findingIds: true },
-          });
-          if (report?.findingIds.includes(idParsed.data)) {
-            await tx.engagementReport.update({
+      const staged: StagedScreenshotDeletion[] = [];
+      try {
+        for (const screenshot of screenshots) {
+          const filePath = resolveUploadFilePath(screenshot.filePath);
+          if (!filePath) throw new Error('Screenshot filename is invalid');
+          const deletion = await stageScreenshotDeletion(filePath);
+          if (deletion) staged.push(deletion);
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.screenshot.deleteMany({ where: { findingId: idParsed.data } });
+          await tx.finding.delete({ where: { id: idParsed.data } });
+          if (record?.engagementId) {
+            const report = await tx.engagementReport.findUnique({
               where: { engagementId: record.engagementId },
-              data: {
-                findingIds: report.findingIds.filter((findingId) => findingId !== idParsed.data),
-              },
+              select: { findingIds: true },
             });
+            if (report?.findingIds.includes(idParsed.data)) {
+              await tx.engagementReport.update({
+                where: { engagementId: record.engagementId },
+                data: {
+                  findingIds: report.findingIds.filter((findingId) => findingId !== idParsed.data),
+                  version: { increment: 1 },
+                },
+              });
+            }
+          }
+        });
+      } catch (error) {
+        const restoreErrors: unknown[] = [];
+        for (const deletion of [...staged].reverse()) {
+          try {
+            await restoreStagedScreenshotDeletion(deletion);
+          } catch (restoreError) {
+            restoreErrors.push(restoreError);
           }
         }
-      });
-      for (const screenshot of screenshots) {
-        const filePath = resolveUploadFilePath(screenshot.filePath);
-        if (filePath) await unlink(filePath).catch(() => {});
+        if (restoreErrors.length) {
+          throw new AggregateError(
+            [error, ...restoreErrors],
+            'Finding deletion failed and evidence recovery is pending.'
+          );
+        }
+        throw error;
+      }
+      for (const deletion of staged) {
+        try {
+          await finishStagedScreenshotDeletion(deletion);
+        } catch {
+          console.error('Evidence cleanup is pending; reconciliation will retry it.');
+          await logAuditEvent('evidence.cleanup', auth.userId, 'failure');
+        }
       }
       return record;
     });
@@ -361,6 +403,7 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
   try {
     await withUploadsMaintenanceLock(async () => {
       const uploadsDirectory = await ensureUploadsDirectory();
+      await reconcileScreenshotStorage(uploadsDirectory);
       const written: string[] = [];
       try {
         await prisma.$transaction(
@@ -456,14 +499,28 @@ export async function deleteScreenshot(screenshotId: string, findingId: string, 
         return false;
       }
 
-      await prisma.$transaction(async tx => {
-        await changeFinding(tx, findingId, version, auth.userId, 'Evidence deleted', async () => {
-          await tx.screenshot.delete({ where: { id: screenshot.id } });
-          await tx.finding.update({ where: { id: findingId }, data: { authorId: auth.userId } });
-        });
-      });
       const filePath = resolveUploadFilePath(screenshot.filePath);
-      if (filePath) await unlink(filePath).catch(() => {});
+      if (!filePath) throw new Error('Screenshot filename is invalid');
+      const staged = await stageScreenshotDeletion(filePath);
+      try {
+        await prisma.$transaction(async tx => {
+          await changeFinding(tx, findingId, version, auth.userId, 'Evidence deleted', async () => {
+            await tx.screenshot.delete({ where: { id: screenshot.id } });
+            await tx.finding.update({ where: { id: findingId }, data: { authorId: auth.userId } });
+          });
+        });
+      } catch (error) {
+        if (staged) await restoreStagedScreenshotDeletion(staged);
+        throw error;
+      }
+      if (staged) {
+        try {
+          await finishStagedScreenshotDeletion(staged);
+        } catch {
+          console.error('Evidence cleanup is pending; reconciliation will retry it.');
+          await logAuditEvent('evidence.cleanup', auth.userId, 'failure');
+        }
+      }
       return true;
     });
     if (!deleted) return { error: 'Screenshot not found.' };

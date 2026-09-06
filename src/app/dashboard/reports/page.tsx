@@ -4,6 +4,7 @@ import { requireDashboardSession } from '@/lib/require-auth';
 import { saveReport, issueReport } from '@/app/actions/reports';
 import { findingContent, readinessIssues } from '@/lib/reporting';
 import { revisionInclude } from '@/lib/finding-workflow';
+import { MAX_FINDINGS_PER_ENGAGEMENT } from '@/lib/finding-capacity';
 
 export default async function ReportsPage({
   searchParams,
@@ -27,7 +28,11 @@ export default async function ReportsPage({
           where: { id: params.engagement },
           include: {
             report: true,
-            findings: { include: revisionInclude, orderBy: { title: 'asc' } },
+            findings: {
+              include: revisionInclude,
+              orderBy: { title: 'asc' },
+              take: MAX_FINDINGS_PER_ENGAGEMENT,
+            },
             issuedReports: {
               select: {
                 id: true,

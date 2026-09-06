@@ -1,77 +1,39 @@
-'use client';
+const loginErrors: Record<string, string> = {
+  request: 'The login request was rejected. Reload the page and try again.',
+  credentials: 'Invalid credentials',
+  busy: 'Too many login attempts. Try again shortly.',
+  generic: 'An error occurred during login',
+};
 
-import { useActionState, useRef } from 'react';
-import { login } from '@/app/actions/auth';
-import { Shield } from 'lucide-react';
-
-export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(login, null);
-  const usernameRef = useRef(null);
-  const submitButtonRef = useRef(null);
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const errorCode = (await searchParams).error ?? '';
+  const limited = /^limited-(\d+)$/.exec(errorCode);
+  const error = limited
+    ? `Too many login attempts. Try again in ${limited[1]} minute(s).`
+    : loginErrors[errorCode];
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
         <div className="text-center mb-8">
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sidebar-active-bg)', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
-            <Shield size={32} color="var(--sidebar-active)" />
-          </div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Engagement Manager</h1>
         </div>
-
-        <form action={formAction}>
+        <form action="/api/auth/login" method="post">
           <div className="form-group">
             <label className="form-label" htmlFor="username">Username</label>
-            <input 
-              ref={usernameRef}
-              type="text" 
-              id="username" 
-              name="username" 
-              className="form-input" 
-              required 
-              tabIndex={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Tab' && e.shiftKey) {
-                  e.preventDefault();
-                  (submitButtonRef.current as HTMLButtonElement | null)?.focus();
-                }
-              }}
-            />
+            <input type="text" id="username" name="username" className="form-input" required autoFocus />
           </div>
-          
           <div className="form-group">
             <label className="form-label" htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password" 
-              name="password" 
-              className="form-input" 
-              required 
-              tabIndex={2}
-            />
+            <input type="password" id="password" name="password" className="form-input" required />
           </div>
-
-          {state?.error && (
-            <div className="text-error mb-4 text-center">
-              {state.error}
-            </div>
-          )}
-
-          <button 
-            ref={submitButtonRef}
-            type="submit" 
-            className="btn-secondary" 
-            disabled={isPending} 
-            tabIndex={3}
-            onKeyDown={(e) => {
-              if (e.key === 'Tab' && !e.shiftKey) {
-                e.preventDefault();
-                (usernameRef.current as HTMLInputElement | null)?.focus();
-              }
-            }}
-            style={{ width: 'fit-content', margin: '0 auto', display: 'block', outline: 'none' }}
-          >
-            {isPending ? 'Authenticating...' : 'Sign In'}
+          {error && <div className="text-error mb-4 text-center">{error}</div>}
+          <button type="submit" className="btn-secondary" style={{ width: 'fit-content', margin: '0 auto', display: 'block', outline: 'none' }}>
+            Sign In
           </button>
         </form>
       </div>

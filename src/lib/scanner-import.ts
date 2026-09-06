@@ -18,6 +18,10 @@ export type ImportFinding = FindingContent & {
   sourceId: string;
 };
 const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+const MAX_SARIF_RUNS = 50;
+const MAX_SARIF_RULES_PER_RUN = 10_000;
+const MAX_SARIF_RESULTS_PER_RUN = 500;
+const MAX_SARIF_LOCATIONS_PER_RESULT = 100;
 type Node = Record<string, unknown>;
 const object = (value: unknown): Node =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -396,17 +400,42 @@ export function parseScannerExport(
       }
     }
   } else {
-    for (const runValue of list(root.runs)) {
+    const runs = list(root.runs);
+    if (runs.length > MAX_SARIF_RUNS)
+      throw new Error(`SARIF can contain at most ${MAX_SARIF_RUNS} runs.`);
+    for (const runValue of runs) {
       const run = object(runValue);
       const rules = list(object(object(run.tool).driver).rules).map(object);
-      for (const value of list(run.results)) {
-        const result = object(value),
-          rule =
-            rules.find((r) => r.id === result.ruleId) ??
-            (typeof result.ruleIndex === 'number'
-              ? rules[result.ruleIndex]
-              : undefined) ??
-            {};
+      const results = list(run.results);
+      if (rules.length > MAX_SARIF_RULES_PER_RUN)
+        throw new Error(
+          `Each SARIF run can contain at most ${MAX_SARIF_RULES_PER_RUN} rules.`
+        );
+      if (results.length > MAX_SARIF_RESULTS_PER_RUN)
+        throw new Error(
+          `Each SARIF run can contain at most ${MAX_SARIF_RESULTS_PER_RUN} results.`
+        );
+      const rulesById = new Map<string, Node>();
+      for (const rule of rules) {
+        if (typeof rule.id === 'string' && !rulesById.has(rule.id)) {
+          rulesById.set(rule.id, rule);
+        }
+      }
+      for (const value of results) {
+        const result = object(value);
+        const locations = list(result.locations);
+        if (locations.length > MAX_SARIF_LOCATIONS_PER_RESULT)
+          throw new Error(
+            `Each SARIF result can contain at most ${MAX_SARIF_LOCATIONS_PER_RESULT} locations.`
+          );
+        const rule =
+          (typeof result.ruleId === 'string'
+            ? rulesById.get(result.ruleId)
+            : undefined) ??
+          (typeof result.ruleIndex === 'number'
+            ? rules[result.ruleIndex]
+            : undefined) ??
+          {};
         add({
           title:
             object(rule.shortDescription).text ??
@@ -424,7 +453,7 @@ export function parseScannerExport(
           remediation: object(rule.help).text ?? object(rule.help).markdown,
           observation:
             object(result.message).text ?? object(result.message).markdown,
-          hosts: list(result.locations)
+          hosts: locations
             .map((v) => {
               const p = object(object(v).physicalLocation);
               return `${plain(object(p.artifactLocation).uri)}:${plain(object(p.region).startLine)}`;

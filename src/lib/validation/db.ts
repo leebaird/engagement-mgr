@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MAX_PASSWORD_LENGTH } from '@/lib/auth/password';
 
 export const MAX_BACKUP_BYTES = 500 * 1024 * 1024;
+export const MAX_BROWSER_BACKUP_BYTES = 8 * 1024 * 1024;
 
 export const adminConfirmPasswordSchema = z
   .string()
@@ -36,7 +37,10 @@ export function validateBackupFile(
         .number()
         .int()
         .positive('Backup file is empty')
-        .max(MAX_BACKUP_BYTES, 'Backup file is too large'),
+        .max(
+          MAX_BROWSER_BACKUP_BYTES,
+          'This backup is too large for browser restore. Use npm run db:restore -- /path/to/backup.zip on the application server.'
+        ),
     })
     .safeParse({ name: backupFile.name, size: backupFile.size });
 

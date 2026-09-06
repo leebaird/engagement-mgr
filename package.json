@@ -17,6 +17,7 @@
     "typecheck": "rm -rf .next/types .next/dev/types && tsc --noEmit",
     "audit": "npm audit",
     "db:migrate": "prisma migrate deploy",
+    "db:restore": "node --import tsx scripts/restore-backup.ts",
     "db:seed": "prisma db seed"
   },
   "dependencies": {

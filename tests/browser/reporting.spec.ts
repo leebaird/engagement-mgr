@@ -2,6 +2,7 @@ import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { SignJWT } from 'jose';
+import * as argon2 from 'argon2';
 import { unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -12,8 +13,9 @@ const db = new PrismaClient({
 const secret = new TextEncoder().encode(
   'isolated-browser-test-secret-at-least-32-characters'
 );
-let author: { id: string; role: 'User'; lastPasswordChange: Date },
-  admin: { id: string; role: 'Admin'; lastPasswordChange: Date };
+const loginPassword = 'Browser-login-test-42!';
+let author: { id: string; username: string; role: 'User'; lastPasswordChange: Date },
+  admin: { id: string; username: string; role: 'Admin'; lastPasswordChange: Date };
 let engagementId: string,
   clientId: string,
   findingId: string,
@@ -23,7 +25,14 @@ async function authenticate(
   context: BrowserContext,
   user: typeof author | typeof admin
 ) {
+  const session = await db.session.create({
+    data: {
+      userId: user.id,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    },
+  });
   const token = await new SignJWT({
+    sessionId: session.id,
     userId: user.id,
     role: user.role,
     lastPasswordChange: user.lastPasswordChange.toISOString(),
@@ -77,7 +86,7 @@ test.describe.serial('authoring and reporting', () => {
     admin = (await db.user.create({
       data: {
         username: `reviewer-${crypto.randomUUID()}`,
-        passwordHash: 'unused-test-only',
+        passwordHash: await argon2.hash(loginPassword),
         role: 'Admin',
       },
     })) as typeof admin;
@@ -154,6 +163,33 @@ test.describe.serial('authoring and reporting', () => {
     );
     expect([307, 401]).toContain(response.status());
     expect(response.headers()['content-type']).not.toContain('application/pdf');
+  });
+  test('login succeeds and logout revokes a copied session token', async ({
+    page,
+    context,
+    browser,
+  }) => {
+    await page.goto('/login');
+    await page.getByLabel('Username').fill(admin.username);
+    await page.getByLabel('Password').fill(loginPassword);
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    const copiedSession = (await context.cookies()).find(
+      (cookie) => cookie.name === 'session'
+    );
+    expect(copiedSession).toBeDefined();
+
+    await page.getByRole('button', { name: 'Sign Out' }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    const replayContext = await browser.newContext({
+      baseURL: 'http://127.0.0.1:3317',
+    });
+    await replayContext.addCookies([copiedSession!]);
+    const replayPage = await replayContext.newPage();
+    await replayPage.goto('/dashboard');
+    await expect(replayPage).toHaveURL(/\/login$/);
+    await replayContext.close();
   });
   test('drafts, concurrent edits, evidence, independent review and immutable PDF issuance', async ({
     page,

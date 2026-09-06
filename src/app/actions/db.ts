@@ -111,7 +111,10 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
 
   const fileResult = validateBackupFile(formData.get('file'));
   if (!fileResult.ok) {
-    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'file' }));
+    const dbError = fileResult.error.startsWith('This backup is too large')
+      ? 'large'
+      : 'file';
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError }));
   }
 
   let restoreError = 'generic';

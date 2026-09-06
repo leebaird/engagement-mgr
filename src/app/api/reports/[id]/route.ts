@@ -10,6 +10,10 @@ import {
 } from '@/lib/report-service';
 import { logAuditEvent } from '@/lib/audit-log';
 import { consumeRateLimitAttempt } from '@/lib/auth/login-rate-limit';
+import {
+  ReportRenderCapacityError,
+  withReportRenderCapacity,
+} from '@/lib/report-render-capacity';
 
 export const runtime = 'nodejs';
 
@@ -42,14 +46,16 @@ export async function GET(
           status: 429,
           headers: { ...headers, 'Retry-After': '60' },
         });
-      const blueprint = await prisma.$transaction(
-        (tx) => collectEngagementReport(tx, id.data, false),
-        { isolationLevel: 'RepeatableRead', timeout: 15000 }
-      );
-      const rawEvidence = await withUploadsMaintenanceLock(() =>
-        readReportEvidence(blueprint.evidence)
-      );
-      pdf = (await finishEngagementReport(blueprint, rawEvidence, false)).pdf;
+      pdf = await withReportRenderCapacity(actor.userId, async () => {
+        const blueprint = await prisma.$transaction(
+          (tx) => collectEngagementReport(tx, id.data, false),
+          { isolationLevel: 'RepeatableRead', timeout: 15000 }
+        );
+        const rawEvidence = await withUploadsMaintenanceLock(() =>
+          readReportEvidence(blueprint.evidence)
+        );
+        return (await finishEngagementReport(blueprint, rawEvidence, false)).pdf;
+      });
     } else {
       const report = await prisma.issuedReport.findUnique({
         where: { id: id.data },
@@ -74,8 +80,14 @@ export async function GET(
         'Content-Length': String(pdf.byteLength),
       },
     });
-  } catch {
+  } catch (error) {
     await logAuditEvent('report.download', actor.userId, 'failure');
+    if (error instanceof ReportRenderCapacityError) {
+      return new Response(error.message, {
+        status: 503,
+        headers: { ...headers, 'Retry-After': '5' },
+      });
+    }
     return new Response(
       'Report unavailable. Check its selected findings and evidence, or retry after maintenance.',
       { status: 409, headers }

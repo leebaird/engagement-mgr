@@ -18,6 +18,18 @@ model User {
   authoredFindings     Finding[] @relation("FindingAuthor")
   assignedReviews      Finding[] @relation("FindingReviewer")
   findingDrafts        FindingDraft[]
+  sessions             Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model LoginRateLimit {

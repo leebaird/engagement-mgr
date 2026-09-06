@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import {
   importFingerprint,
@@ -108,24 +111,30 @@ describe('scanner export imports', () => {
   for (const [name, format, input] of adversarialExports)
     it(`rejects ${name} within the processing budget`, () => {
       // A separate process can interrupt synchronous parsing if ReDoS returns.
-      const result = spawnSync(
-        process.execPath,
-        ['--import', 'tsx', '--eval', `
+      const directory = mkdtempSync(join(tmpdir(), 'scanner-import-test-'));
+      const inputPath = join(directory, 'input.json');
+      writeFileSync(inputPath, JSON.stringify({ input, format }), { mode: 0o600 });
+      try {
+        const result = spawnSync(
+          process.execPath,
+          ['--import', 'tsx', '--eval', `
           const assert = require('node:assert/strict');
           const { readFileSync } = require('node:fs');
           const { parseScannerExport } = require('./src/lib/scanner-import.ts');
-          const { input, format } = JSON.parse(readFileSync(0, 'utf8'));
+          const { input, format } = JSON.parse(readFileSync(process.argv[1], 'utf8'));
           assert.throws(() => parseScannerExport(input, format));
-        `],
-        {
-          input: JSON.stringify({ input, format }),
-          encoding: 'utf8',
-          timeout: 5000,
-          killSignal: 'SIGKILL',
-        }
-      );
-      assert.ifError(result.error);
-      assert.equal(result.status, 0, result.stderr);
+        `, inputPath],
+          {
+            encoding: 'utf8',
+            timeout: 5000,
+            killSignal: 'SIGKILL',
+          }
+        );
+        assert.ifError(result.error);
+        assert.equal(result.status, 0, result.stderr);
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
     });
   it('preserves markup stripping, unmatched text and one-pass entity decoding', () => {
     for (const [description, expected] of [
@@ -216,6 +225,29 @@ describe('scanner export imports', () => {
         'OpenVAS'
       )[0].severity,
       ''
+    );
+  });
+  it('bounds SARIF rule tables before repeated result resolution', () => {
+    const sarif = {
+      runs: [
+        {
+          tool: { driver: { rules: Array.from({ length: 10_001 }, () => ({})) } },
+          results: Array.from({ length: 500 }, () => ({ ruleId: 'missing' })),
+        },
+      ],
+    };
+    assert.throws(
+      () => parseScannerExport(JSON.stringify(sarif), 'SARIF'),
+      /at most 10000 rules/
+    );
+    const excessiveLocations = JSON.parse(exports.SARIF);
+    excessiveLocations.runs[0].results[0].locations = Array.from(
+      { length: 101 },
+      () => ({})
+    );
+    assert.throws(
+      () => parseScannerExport(JSON.stringify(excessiveLocations), 'SARIF'),
+      /at most 100 locations/
     );
   });
   for (const [format, input] of Object.entries(exports))

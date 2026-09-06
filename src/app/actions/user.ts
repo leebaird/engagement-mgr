@@ -130,6 +130,9 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
         where: { id: idParsed.data },
         data,
       });
+      if (password) {
+        await tx.session.deleteMany({ where: { userId: idParsed.data } });
+      }
     }, { isolationLevel: 'Serializable' });
 
     revalidatePath('/dashboard/users');

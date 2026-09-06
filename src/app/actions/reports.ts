@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db';
 import { requireAuth, isAuthError } from '@/lib/require-auth';
 import { withUploadsMaintenanceLock } from '@/lib/screenshot-storage';
 import {
+  assertReportBlueprintUnchanged,
   collectEngagementReport,
   finishEngagementReport,
   readReportEvidence,
@@ -14,6 +15,7 @@ import {
 import { WorkflowError } from '@/lib/reporting';
 import { logAuditEvent } from '@/lib/audit-log';
 import { consumeRateLimitAttempt } from '@/lib/auth/login-rate-limit';
+import { withReportRenderCapacity } from '@/lib/report-render-capacity';
 
 export async function saveReport(form: FormData): Promise<void> {
   const actor = await requireAuth();
@@ -129,10 +131,12 @@ export async function issueReport(form: FormData): Promise<void> {
       },
       { isolationLevel: 'Serializable', timeout: 15000 }
     );
-    const rawEvidence = await withUploadsMaintenanceLock(() =>
-      readReportEvidence(blueprint.evidence)
-    );
-    const rendered = await finishEngagementReport(blueprint, rawEvidence, true);
+    const rendered = await withReportRenderCapacity(actor.userId, async () => {
+      const rawEvidence = await withUploadsMaintenanceLock(() =>
+        readReportEvidence(blueprint.evidence)
+      );
+      return finishEngagementReport(blueprint, rawEvidence, true);
+    });
     await prisma.$transaction(
       async (tx) => {
         const settings = await tx.engagementReport.findUniqueOrThrow({
@@ -142,6 +146,10 @@ export async function issueReport(form: FormData): Promise<void> {
           throw new WorkflowError(
             'Report settings changed. Preview the current report before issuing.'
           );
+        assertReportBlueprintUnchanged(
+          blueprint,
+          await collectEngagementReport(tx, id.data, true)
+        );
         const count = await tx.issuedReport.count({
           where: { engagementId: id.data },
         });

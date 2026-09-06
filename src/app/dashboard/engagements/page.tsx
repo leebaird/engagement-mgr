@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import { MAX_FINDINGS_PER_ENGAGEMENT } from '@/lib/finding-capacity';
 import { requireDashboardSession } from '@/lib/require-auth';
 import Link from 'next/link';
 import { engagementToScheduleValues, serializeEngagementScheduleDates } from '@/lib/date-input-value';
@@ -104,6 +105,7 @@ export default async function EngagementsPage({
                 engagementContext: true,
               },
               orderBy: { title: 'asc' },
+              take: MAX_FINDINGS_PER_ENGAGEMENT,
             },
           },
         })

@@ -5,97 +5,12 @@ import * as argon2 from 'argon2';
 import { createSession, deleteSession, getSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import {
-  consumeLoginRateLimitAttempt,
-  releaseLoginRateLimitAttempt,
-} from '@/lib/auth/login-rate-limit';
-import {
   ARGON2_OPTIONS,
   validatePasswordComplexity,
-  verifyAgainstDummyHash,
-  verifyPasswordHash,
 } from '@/lib/auth/password';
 import { verifyUserPasswordRateLimited } from '@/lib/auth/verify-password';
-import { getClientIp } from '@/lib/request-client-ip';
-import { changePasswordSchema, loginSchema } from '@/lib/validation/auth';
+import { changePasswordSchema } from '@/lib/validation/auth';
 import { firstZodError } from '@/lib/validation/common';
-
-export async function login(_prevState: unknown, formData: FormData) {
-  const parsed = loginSchema.safeParse({
-    username: formData.get('username'),
-    password: formData.get('password'),
-  });
-
-  if (!parsed.success) {
-    return { error: firstZodError(parsed.error) };
-  }
-
-  const { username, password } = parsed.data;
-  const clientIp = await getClientIp();
-  const rateLimit = await consumeLoginRateLimitAttempt(clientIp, username);
-  if (!rateLimit.allowed) {
-    return {
-      error: `Too many login attempts. Try again in ${rateLimit.retryAfterMinutes} minute(s).`,
-    };
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { username },
-  });
-
-  if (!user) {
-    // Equalize response timing with the known-user path (prevents user enumeration)
-    const dummyVerification = await verifyAgainstDummyHash(password);
-    if (dummyVerification === 'busy') {
-      await releaseLoginRateLimitAttempt(clientIp, username);
-      return { error: 'Too many login attempts. Try again shortly.' };
-    }
-    return { error: 'Invalid credentials' };
-  }
-
-  let needsPasswordChange = false;
-
-  try {
-    const passwordResult = await verifyPasswordHash(user.passwordHash, password);
-
-    if (passwordResult === 'busy') {
-      await releaseLoginRateLimitAttempt(clientIp, username);
-      return { error: 'Too many login attempts. Try again shortly.' };
-    }
-    if (passwordResult === 'invalid') {
-      return { error: 'Invalid credentials' };
-    }
-
-    await releaseLoginRateLimitAttempt(clientIp, username);
-
-    // Record the login timestamp
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    });
-
-    const lastPasswordChange = user.lastPasswordChange;
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-    needsPasswordChange = lastPasswordChange < ninetyDaysAgo;
-
-    await createSession({
-      userId: user.id,
-      role: user.role,
-      lastPasswordChange: lastPasswordChange.toISOString(),
-    });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    return { error: 'An error occurred during login' };
-  }
-
-  if (needsPasswordChange) {
-    redirect('/change-password');
-  }
-
-  redirect('/dashboard');
-}
 
 export async function logout() {
   await deleteSession();
@@ -158,13 +73,18 @@ export async function changePassword(_prevState: unknown, formData: FormData) {
     const passwordHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
     const passwordChangedAt = new Date();
 
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: {
-        passwordHash,
-        lastPasswordChange: passwordChangedAt,
-      },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: session.userId },
+        data: {
+          passwordHash,
+          lastPasswordChange: passwordChangedAt,
+        },
+      }),
+      prisma.session.deleteMany({
+        where: { userId: session.userId },
+      }),
+    ]);
 
     // Refresh the session with the new lastPasswordChange timestamp
     await createSession({

@@ -25,6 +25,17 @@ export type ReportBlueprint = {
   evidence: ReportEvidenceFile[];
 };
 
+export function assertReportBlueprintUnchanged(
+  expected: ReportBlueprint,
+  current: ReportBlueprint
+): void {
+  if (JSON.stringify(current) !== JSON.stringify(expected)) {
+    throw new WorkflowError(
+      'A selected finding changed while the report was being issued. Preview the current report and try again.'
+    );
+  }
+}
+
 export async function collectEngagementReport(
   tx: Prisma.TransactionClient,
   engagementId: string,
