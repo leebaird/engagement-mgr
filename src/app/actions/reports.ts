@@ -6,7 +6,11 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { requireAuth, isAuthError } from '@/lib/require-auth';
 import { withUploadsMaintenanceLock } from '@/lib/screenshot-storage';
-import { renderEngagementReport } from '@/lib/report-service';
+import {
+  collectEngagementReport,
+  finishEngagementReport,
+  readReportEvidence,
+} from '@/lib/report-service';
 import { WorkflowError } from '@/lib/reporting';
 import { logAuditEvent } from '@/lib/audit-log';
 import { consumeRateLimitAttempt } from '@/lib/auth/login-rate-limit';
@@ -100,41 +104,62 @@ export async function issueReport(form: FormData): Promise<void> {
       throw new WorkflowError('Please wait before issuing another report.');
     if (form.get('confirm') !== 'on')
       throw new WorkflowError('Confirm that this report is ready to issue.');
-    await withUploadsMaintenanceLock(() =>
-      prisma.$transaction(
-        async (tx) => {
-          const settings = await tx.engagementReport.findUniqueOrThrow({
-            where: { engagementId: id.data },
-          });
-          if (settings.version !== version)
-            throw new WorkflowError(
-              'Report settings changed. Preview the current report before issuing.'
-            );
-          const count = await tx.issuedReport.count({
-            where: { engagementId: id.data },
-          });
-          if (count >= 50)
-            throw new WorkflowError(
-              'This engagement has reached the 50 issued-report limit.'
-            );
-          const totals = await tx.$queryRaw<
-            { bytes: bigint }[]
-          >`SELECT COALESCE(SUM(octet_length("pdf")), 0)::bigint AS bytes FROM "IssuedReport"`;
-          if (Number(totals[0].bytes) > 1024 * 1024 * 1024 - 25 * 1024 * 1024)
-            throw new WorkflowError('Issued report storage limit reached.');
-          const rendered = await renderEngagementReport(tx, id.data, true);
-          await tx.issuedReport.create({
-            data: {
-              engagementId: id.data,
-              version: count + 1,
-              issuedBy: actor.userId,
-              ...rendered,
-              pdf: new Uint8Array(rendered.pdf),
-            },
-          });
-        },
-        { isolationLevel: 'Serializable', timeout: 60000 }
-      )
+    const blueprint = await prisma.$transaction(
+      async (tx) => {
+        const settings = await tx.engagementReport.findUniqueOrThrow({
+          where: { engagementId: id.data },
+        });
+        if (settings.version !== version)
+          throw new WorkflowError(
+            'Report settings changed. Preview the current report before issuing.'
+          );
+        const count = await tx.issuedReport.count({
+          where: { engagementId: id.data },
+        });
+        if (count >= 50)
+          throw new WorkflowError(
+            'This engagement has reached the 50 issued-report limit.'
+          );
+        const totals = await tx.$queryRaw<
+          { bytes: bigint }[]
+        >`SELECT COALESCE(SUM(octet_length("pdf")), 0)::bigint AS bytes FROM "IssuedReport"`;
+        if (Number(totals[0].bytes) > 1024 * 1024 * 1024 - 25 * 1024 * 1024)
+          throw new WorkflowError('Issued report storage limit reached.');
+        return collectEngagementReport(tx, id.data, true);
+      },
+      { isolationLevel: 'Serializable', timeout: 15000 }
+    );
+    const rawEvidence = await withUploadsMaintenanceLock(() =>
+      readReportEvidence(blueprint.evidence)
+    );
+    const rendered = await finishEngagementReport(blueprint, rawEvidence, true);
+    await prisma.$transaction(
+      async (tx) => {
+        const settings = await tx.engagementReport.findUniqueOrThrow({
+          where: { engagementId: id.data },
+        });
+        if (settings.version !== version)
+          throw new WorkflowError(
+            'Report settings changed. Preview the current report before issuing.'
+          );
+        const count = await tx.issuedReport.count({
+          where: { engagementId: id.data },
+        });
+        if (count >= 50)
+          throw new WorkflowError(
+            'This engagement has reached the 50 issued-report limit.'
+          );
+        await tx.issuedReport.create({
+          data: {
+            engagementId: id.data,
+            version: count + 1,
+            issuedBy: actor.userId,
+            ...rendered,
+            pdf: new Uint8Array(rendered.pdf),
+          },
+        });
+      },
+      { isolationLevel: 'Serializable', timeout: 15000 }
     );
   } catch (e) {
     error =

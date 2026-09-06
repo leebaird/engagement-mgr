@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useRef } from 'react';
 import {
   previewScannerImport,
   confirmScannerImport,
@@ -17,10 +17,19 @@ export function ImportForm({
   formats: readonly string[];
   selectedEngagement: string;
 }) {
+  const exportFile = useRef<File | null>(null);
+  const exportFormat = useRef(formats[0] ?? '');
   const [state, action, pending] = useActionState<ImportPreview, FormData>(
     previewScannerImport,
     {}
   );
+
+  async function confirm(formData: FormData) {
+    const file = exportFile.current;
+    if (file) formData.set('file', file);
+    formData.set('format', exportFormat.current);
+    await confirmScannerImport(formData);
+  }
   return (
     <>
       <section className="glass-panel glass-panel--padded">
@@ -44,7 +53,14 @@ export function ImportForm({
             </label>
             <label className="form-label">
               Export format
-              <select name="format" className="form-input">
+              <select
+                name="format"
+                className="form-input"
+                defaultValue={formats[0]}
+                onChange={(event) => {
+                  exportFormat.current = event.target.value;
+                }}
+              >
                 {formats.map((f) => (
                   <option key={f}>{f}</option>
                 ))}
@@ -59,6 +75,9 @@ export function ImportForm({
               className="form-input"
               accept=".xml,.json,.jsonl,.sarif,.nessus"
               required
+              onChange={(event) => {
+                exportFile.current = event.target.files?.[0] ?? null;
+              }}
             />
           </label>
           <button
@@ -77,7 +96,7 @@ export function ImportForm({
       </section>
       {state.candidates && (
         <section className="glass-panel glass-panel--padded">
-          <form action={confirmScannerImport}>
+          <form action={confirm}>
             <h2 style={{ marginTop: 0 }}>
               Preview {state.candidates.length} findings
             </h2>
@@ -90,11 +109,6 @@ export function ImportForm({
               name="engagementId"
               type="hidden"
               value={state.engagementId}
-            />
-            <input
-              name="candidates"
-              type="hidden"
-              value={JSON.stringify(state.candidates)}
             />
             <div className="import-candidates">
               {state.candidates.map((f, i) => (

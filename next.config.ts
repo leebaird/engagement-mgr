@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
     useTypeScriptCli: true,
+    // Next applies this to every Server Action (including login). 25 MB covers
+    // four 5 MB evidence images plus form fields; it cannot be set per action.
     serverActions: { bodySizeLimit: '25mb' },
   },
   async headers() {

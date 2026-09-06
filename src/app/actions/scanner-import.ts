@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/db';
 import { requireAuth, isAuthError } from '@/lib/require-auth';
-import { findingContentSchema } from '@/lib/reporting';
 import {
   parseScannerExport,
   scannerFormats,
@@ -76,39 +75,31 @@ export async function confirmScannerImport(form: FormData): Promise<void> {
   let imported = 0;
   try {
     engagementId = z.uuid().parse(form.get('engagementId'));
-    const payload = z
-      .string()
-      .max(4 * 1024 * 1024)
-      .parse(form.get('candidates'));
-    const candidates = z
-      .array(
-        findingContentSchema.extend({
-          source: z.enum(scannerFormats),
-          sourceId: z.string().max(500),
-        })
-      )
-      .max(500)
-      .parse(JSON.parse(payload));
+    const format = z.enum(scannerFormats).parse(form.get('format'));
+    const file = form.get('file');
+    if (!(file instanceof File) || file.size < 1 || file.size > 2 * 1024 * 1024)
+      throw new Error('Choose an export up to 2 MB.');
+    const candidates = parseScannerExport(await file.text(), format);
     const selected = z
       .array(
         z.coerce
           .number()
           .int()
           .min(0)
-          .max(candidates.length - 1)
+          .max(Math.max(candidates.length - 1, 0))
       )
       .min(1)
       .max(500)
       .parse(form.getAll('selected'));
     await prisma.$transaction(
       async (tx) => {
-        // Serializes concurrent imports into this engagement, including deduplication checks.
         await tx.engagement.update({
           where: { id: engagementId },
           data: { updatedAt: new Date() },
         });
         for (const index of new Set(selected)) {
           const candidate = candidates[index];
+          if (!candidate) continue;
           const fingerprint = importFingerprint(candidate);
           if (
             await tx.finding.findUnique({

@@ -27,6 +27,12 @@ describe('security boundary regressions', () => {
     assert.match(source, /withUploadsMaintenanceLock/);
   });
 
+  it('re-parses scanner exports on confirm instead of trusting client candidate JSON', async () => {
+    const action = await repositoryFile('src/app/actions/scanner-import.ts');
+    assert.match(action, /parseScannerExport\(await file\.text\(\), format\)/);
+    assert.equal(action.includes("form.get('candidates')"), false);
+  });
+
   it('coordinates upload writes with maintenance and checks quota before writing', async () => {
     const action = await repositoryFile('src/app/actions/finding.ts');
     assert.match(action, /withUploadsMaintenanceLock/);

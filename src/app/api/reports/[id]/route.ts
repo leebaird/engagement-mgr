@@ -3,7 +3,11 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { requireAuth, isAuthError } from '@/lib/require-auth';
 import { prisma } from '@/lib/db';
 import { withUploadsMaintenanceLock } from '@/lib/screenshot-storage';
-import { renderEngagementReport } from '@/lib/report-service';
+import {
+  collectEngagementReport,
+  finishEngagementReport,
+  readReportEvidence,
+} from '@/lib/report-service';
 import { logAuditEvent } from '@/lib/audit-log';
 import { consumeRateLimitAttempt } from '@/lib/auth/login-rate-limit';
 
@@ -38,13 +42,14 @@ export async function GET(
           status: 429,
           headers: { ...headers, 'Retry-After': '60' },
         });
-      const result = await withUploadsMaintenanceLock(() =>
-        prisma.$transaction(
-          (tx) => renderEngagementReport(tx, id.data, false),
-          { isolationLevel: 'RepeatableRead', timeout: 60000 }
-        )
+      const blueprint = await prisma.$transaction(
+        (tx) => collectEngagementReport(tx, id.data, false),
+        { isolationLevel: 'RepeatableRead', timeout: 15000 }
       );
-      pdf = result.pdf;
+      const rawEvidence = await withUploadsMaintenanceLock(() =>
+        readReportEvidence(blueprint.evidence)
+      );
+      pdf = (await finishEngagementReport(blueprint, rawEvidence, false)).pdf;
     } else {
       const report = await prisma.issuedReport.findUnique({
         where: { id: id.data },

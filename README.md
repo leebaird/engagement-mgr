@@ -26,6 +26,8 @@ Exports are limited to 2 MB and 500 findings per import. Unknown layouts fail vi
 
 Reports allow 1–100 findings, up to 100 evidence images (5 MB each, 20 MB total input), 500 pages and 25 MB output. Issuance is limited to 50 versions per engagement and 1 GB of issued PDFs across the application. Preview and issuance have per-user rate limits. Findings retain at most 1000 revisions and 500 comments; reaching a limit fails without overwriting history. DejaVu fonts and their redistribution license are included in `assets/fonts`; deployments must retain these assets (Next output tracing includes them).
 
+Next.js Server Actions share a single `25mb` body size limit (set in `next.config.ts`). That size is required for evidence uploads; login and other actions inherit it because Next cannot scope the limit per action.
+
 ### Reporting security and deployment
 
 This preserves the existing **shared authenticated workspace**, not a new per-client tenancy model. All new pages, actions and PDF downloads check a current database-backed session. Drafts are scoped to their owner; review, template approval and issuance permissions are enforced server-side. Confidential PDF responses are private/no-store. Final PDFs contain only an explicit report field allowlist, never private drafts, review comments or unrelated engagements.

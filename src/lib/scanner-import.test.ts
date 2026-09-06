@@ -236,6 +236,15 @@ describe('scanner export imports', () => {
     ])
       assert.throws(() => parseScannerExport(input, 'Burp'));
   });
+  it('imports Burp evidence that quotes an ENTITY payload inside CDATA', () => {
+    const input = exports.Burp.replace(
+      '<issueDetail>Observed</issueDetail>',
+      '<issueDetail><![CDATA[Quoted XXE sample: <!ENTITY xxe SYSTEM "file:///etc/passwd">]]></issueDetail>'
+    );
+    const findings = parseScannerExport(input, 'Burp');
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].title, 'TLS issue');
+  });
   it('bounds bytes, result counts and field lengths', () => {
     assert.throws(() =>
       parseScannerExport('x'.repeat(2 * 1024 * 1024 + 1), 'Burp')

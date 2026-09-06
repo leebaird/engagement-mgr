@@ -109,14 +109,11 @@ export function importFingerprint(finding: ImportFinding): string {
 }
 
 function prepareXml(text: string): string {
-  if (/<!ENTITY/i.test(text))
-    throw new Error('Entity declarations are not allowed.');
   const parts: string[] = [];
   let copied = 0;
   let offset = 0;
   let depth = 0;
   let tags = 0;
-  // Advance past each token once, including malformed input and ignored content.
   while (offset < text.length) {
     const start = text.indexOf('<', offset);
     if (start === -1) break;
@@ -156,10 +153,9 @@ function prepareXml(text: string): string {
     if (end === text.length) throw new Error('Invalid XML export.');
     offset = end + 1;
     if (doctype) {
-      // Burp's internal schema is discarded; external identifiers remain forbidden.
       const declaration = text.slice(start, offset);
-      if (/\bSYSTEM\b|\bPUBLIC\b|%/i.test(declaration))
-        throw new Error('External DTDs are not allowed.');
+      if (/<!ENTITY/i.test(declaration) || /\bSYSTEM\b|\bPUBLIC\b|%/i.test(declaration))
+        throw new Error('Entity declarations are not allowed.');
       if (
         !/^<!DOCTYPE\s+[A-Za-z_][\w:.-]*\s*(?:\[[\s\S]*\]\s*)?>$/i.test(declaration)
       )

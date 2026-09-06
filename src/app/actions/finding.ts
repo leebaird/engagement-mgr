@@ -307,10 +307,24 @@ export async function deleteFinding(id: string) {
           select: { engagementId: true },
         }),
       ]);
-      await prisma.$transaction([
-        prisma.screenshot.deleteMany({ where: { findingId: idParsed.data } }),
-        prisma.finding.delete({ where: { id: idParsed.data } }),
-      ]);
+      await prisma.$transaction(async (tx) => {
+        await tx.screenshot.deleteMany({ where: { findingId: idParsed.data } });
+        await tx.finding.delete({ where: { id: idParsed.data } });
+        if (record?.engagementId) {
+          const report = await tx.engagementReport.findUnique({
+            where: { engagementId: record.engagementId },
+            select: { findingIds: true },
+          });
+          if (report?.findingIds.includes(idParsed.data)) {
+            await tx.engagementReport.update({
+              where: { engagementId: record.engagementId },
+              data: {
+                findingIds: report.findingIds.filter((findingId) => findingId !== idParsed.data),
+              },
+            });
+          }
+        }
+      });
       for (const screenshot of screenshots) {
         const filePath = resolveUploadFilePath(screenshot.filePath);
         if (filePath) await unlink(filePath).catch(() => {});

@@ -8,7 +8,6 @@ export const revisionInclude = {
   },
 };
 
-// All writing paths share this compare-and-swap and revision transaction, including evidence edits.
 export async function changeFinding(
   tx: Prisma.TransactionClient,
   id: string,

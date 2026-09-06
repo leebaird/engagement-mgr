@@ -12,11 +12,24 @@ import { resolveUploadFilePath } from '@/lib/uploads-path';
 import { revisionInclude } from '@/lib/finding-workflow';
 import { normalizeScreenshot } from '@/lib/normalize-screenshot';
 
-export async function renderEngagementReport(
+export type ReportEvidenceFile = {
+  findingIndex: number;
+  id: string;
+  description: string;
+  path: string;
+};
+
+export type ReportBlueprint = {
+  title: string;
+  data: ReportData;
+  evidence: ReportEvidenceFile[];
+};
+
+export async function collectEngagementReport(
   tx: Prisma.TransactionClient,
   engagementId: string,
   final: boolean
-) {
+): Promise<ReportBlueprint> {
   const engagement = await tx.engagement.findUniqueOrThrow({
     where: { id: engagementId },
     include: { client: { select: { company: true } }, report: true },
@@ -53,7 +66,7 @@ export async function renderEngagementReport(
     endTesting: engagement.endTesting?.toISOString().slice(0, 10) ?? '',
     findings: [],
   };
-  let evidenceBytes = 0;
+  const evidence: ReportEvidenceFile[] = [];
   let evidenceCount = 0;
   for (const id of report.findingIds) {
     const finding = findings.find((f) => f.id === id)!;
@@ -69,7 +82,13 @@ export async function renderEngagementReport(
       throw new WorkflowError(
         'Every selected finding must be approved and pass the readiness checks.'
       );
-    const screenshots: ReportData['findings'][number]['screenshots'] = [];
+    const findingIndex = data.findings.length;
+    data.findings.push({
+      ...content,
+      id,
+      version: finding.version,
+      screenshots: [],
+    });
     for (const screenshot of finding.screenshots) {
       if (++evidenceCount > 100)
         throw new WorkflowError(
@@ -77,33 +96,63 @@ export async function renderEngagementReport(
         );
       const path = resolveUploadFilePath(screenshot.filePath);
       if (!path) throw new WorkflowError('Evidence is unavailable.');
-      const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-      try {
-        const stats = await file.stat();
-        evidenceBytes += stats.size;
-        if (
-          !stats.isFile() ||
-          stats.size > 5 * 1024 * 1024 ||
-          evidenceBytes > 20 * 1024 * 1024
-        )
-          throw new WorkflowError(
-            'Evidence exceeds report limits (5 MB per image, 20 MB total).'
-          );
-        const image = await normalizeScreenshot(await file.readFile());
-        screenshots.push({
-          id: screenshot.id,
-          description: screenshot.description ?? '',
-          data: image,
-        });
-      } finally {
-        await file.close();
-      }
+      evidence.push({
+        findingIndex,
+        id: screenshot.id,
+        description: screenshot.description ?? '',
+        path,
+      });
     }
-    data.findings.push({
-      ...content,
-      id,
-      version: finding.version,
-      screenshots,
+  }
+  return { title: report.title, data, evidence };
+}
+
+export async function readReportEvidence(
+  evidence: ReportEvidenceFile[]
+): Promise<Buffer[]> {
+  const buffers: Buffer[] = [];
+  let evidenceBytes = 0;
+  for (const item of evidence) {
+    const file = await open(item.path, constants.O_RDONLY | constants.O_NOFOLLOW);
+    try {
+      const stats = await file.stat();
+      evidenceBytes += stats.size;
+      if (
+        !stats.isFile() ||
+        stats.size > 5 * 1024 * 1024 ||
+        evidenceBytes > 20 * 1024 * 1024
+      )
+        throw new WorkflowError(
+          'Evidence exceeds report limits (5 MB per image, 20 MB total).'
+        );
+      buffers.push(await file.readFile());
+    } finally {
+      await file.close();
+    }
+  }
+  return buffers;
+}
+
+export async function finishEngagementReport(
+  blueprint: ReportBlueprint,
+  rawEvidence: Buffer[],
+  final: boolean
+) {
+  if (rawEvidence.length !== blueprint.evidence.length)
+    throw new WorkflowError('Evidence is unavailable.');
+  const data: ReportData = {
+    ...blueprint.data,
+    findings: blueprint.data.findings.map((finding) => ({
+      ...finding,
+      screenshots: [],
+    })),
+  };
+  for (let i = 0; i < blueprint.evidence.length; i++) {
+    const item = blueprint.evidence[i];
+    data.findings[item.findingIndex].screenshots.push({
+      id: item.id,
+      description: item.description,
+      data: await normalizeScreenshot(rawEvidence[i]),
     });
   }
   const pdf = await generateReportPdf(data, !final);
@@ -122,6 +171,16 @@ export async function renderEngagementReport(
     pdf,
     snapshot,
     sha256: createHash('sha256').update(pdf).digest('hex'),
-    title: report.title,
+    title: blueprint.title,
   };
+}
+
+export async function renderEngagementReport(
+  tx: Prisma.TransactionClient,
+  engagementId: string,
+  final: boolean
+) {
+  const blueprint = await collectEngagementReport(tx, engagementId, final);
+  const rawEvidence = await readReportEvidence(blueprint.evidence);
+  return finishEngagementReport(blueprint, rawEvidence, final);
 }
