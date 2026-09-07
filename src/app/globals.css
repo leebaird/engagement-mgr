@@ -1530,10 +1530,6 @@ a.modal-action-btn {
   width: 1rem;
 }
 
-.appearance-settings-submit.btn-primary {
-  width: fit-content;
-}
-
 @media (max-width: 680px) {
   .highlight-color-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));

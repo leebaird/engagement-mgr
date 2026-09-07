@@ -68,16 +68,22 @@ describe('formatDate', () => {
 });
 
 describe('formatDateTime', () => {
+  it('joins date and time with a dash, not a comma', () => {
+    const date = new Date(2026, 8, 7, 17, 14);
+    assert.equal(formatDateTime(date, 'mdy'), '9/7/2026 - 5:14 PM');
+  });
+
   it('includes a time component', () => {
     const date = new Date(2026, 7, 12, 14, 5);
     const text = formatDateTime(date, 'ymd');
-    assert.match(text, /2026-08-12/);
+    assert.match(text, /2026-08-12 - /);
     assert.match(text, /14:05|2:05/);
+    assert.equal(text.includes(','), false);
   });
 
   it('formats absolute timestamps in UTC when selected', () => {
     const text = formatDateTime('2026-08-12T23:05:00.000-07:00', 'ymd', 'utc');
-    assert.match(text, /2026-08-13/);
+    assert.match(text, /2026-08-13 - /);
     assert.match(text, /0?6:05/);
   });
 

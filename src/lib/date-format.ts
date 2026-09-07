@@ -97,14 +97,15 @@ export function formatDateTime(
 ): string {
   const date = toDisplayDate(value);
   if (!date) return '';
-  return date.toLocaleString(localeFor(format), {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
+  const locale = localeFor(format);
+  const zone = timeZoneFor(timeZone);
+  const datePart = date.toLocaleDateString(locale, { timeZone: zone });
+  const timePart = date.toLocaleTimeString(locale, {
     hour: 'numeric',
     minute: '2-digit',
-    timeZone: timeZoneFor(timeZone),
+    timeZone: zone,
   });
+  return `${datePart} - ${timePart}`.replace(/[\u00A0\u202F]/g, ' ');
 }
 
 export function formatMonthYear(year: number, month: number, format: DateFormatId): string {

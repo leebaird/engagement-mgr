@@ -203,12 +203,12 @@ export default async function UsersPage({
   }
 
   const appearanceMessage = appearanceMsg === 'saved'
-    ? 'Highlight colour updated for everyone.'
+    ? 'Highlight color updated for everyone.'
     : null;
   const appearanceErrorMessage = appearanceError === 'invalid'
-    ? 'Select a valid highlight colour.'
+    ? 'Select a valid highlight color.'
     : appearanceError === 'save'
-      ? 'Unable to update the highlight colour.'
+      ? 'Unable to update the highlight color.'
       : null;
 
   return (
@@ -421,9 +421,9 @@ export default async function UsersPage({
               <input type="hidden" name="sort" value={sort ?? ''} />
               <input type="hidden" name="dir" value={dir ?? ''} />
               <fieldset className="highlight-color-fieldset">
-                <legend className="detail-section__label">Highlight colour</legend>
+                <legend className="detail-section__label">Highlight color</legend>
                 <p className="appearance-settings-description">
-                  Choose the highlight colour used throughout Engagement Manager.
+                  Choose the highlight color used throughout Engagement Manager.
                 </p>
                 <div className="highlight-color-options">
                   {HIGHLIGHT_COLOR_OPTIONS.map((option) => (
@@ -444,8 +444,8 @@ export default async function UsersPage({
                   ))}
                 </div>
               </fieldset>
-              <button type="submit" className="btn-primary appearance-settings-submit">
-                Save appearance
+              <button type="submit" className="btn-save">
+                Save
               </button>
             </form>
           </div>
