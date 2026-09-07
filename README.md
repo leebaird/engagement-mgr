@@ -7,6 +7,33 @@ Engagement Manager is a web application for tracking offensive security engageme
 * [![Twitter Follow](https://img.shields.io/twitter/follow/discoverscripts.svg?style=social&label=Follow)](https://twitter.com/discoverscripts) Lee Baird @discoverscripts
 * [![Twitter Follow](https://img.shields.io/twitter/follow/jay_townsend1.svg?style=social&label=Follow)](https://twitter.com/jay_townsend1) Jay "L1ghtn1ng" Townsend @jay_townsend1
 
+## Table of contents
+
+- [Writing findings and producing PDF reports](#writing-findings-and-producing-pdf-reports)
+  - [Reporting security and deployment](#reporting-security-and-deployment)
+  - [Verification](#verification)
+- [Prerequisites](#prerequisites)
+- [Environment Configuration](#environment-configuration)
+- [Database Setup](#database-setup)
+  - [Development](#development)
+  - [Production](#production)
+- [Installation](#installation)
+  - [Automated setup (Ubuntu)](#automated-setup-ubuntu)
+    - [Upgrade notes for hardened setup and backups](#upgrade-notes-for-hardened-setup-and-backups)
+  - [Manual setup](#manual-setup)
+- [Running the Application](#running-the-application)
+- [Production Deployment](#production-deployment)
+  - [Requirements](#requirements)
+  - [Deploy steps](#deploy-steps)
+  - [Production checklist](#production-checklist)
+- [Default Credentials](#default-credentials)
+- [Server migration (Backup / Restore / Reset)](#server-migration-backup--restore--reset)
+- [Implementation Plan & Architecture](#implementation-plan--architecture)
+  - [Technology Stack](#technology-stack)
+  - [Database Schema](#database-schema)
+  - [Adding New Fields](#adding-new-fields)
+  - [Security Architecture](#security-architecture)
+
 ## Writing findings and producing PDF reports
 
 - **Writing workspace:** open a finding's **Write & review** link for Markdown editing and a safe preview. Private drafts save after 15 seconds of inactivity or on demand; they are stored on the server, not in browser local storage. Recover a draft explicitly after reopening. Conflicting saves preserve the editor's text and require comparison with the current revision. Text revisions can be inspected and restored; restoring does not restore deleted evidence.
