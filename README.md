@@ -1,6 +1,11 @@
 # Engagement Manager
 
-Engagement Manager is a web application for tracking offensive security engagements. It features a modern UI, built with Next.js, Prisma, and PostgreSQL. The dashboard includes an engagement schedule calendar; other sections cover engagements, clients, contacts, findings, and operators.
+Engagement Manager is a web application for tracking offensive security engagements. It features a modern UI, built with Next.js, Prisma, and PostgreSQL. The app includes a calendar, engagements, clients, contacts, findings, and operators.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/leebaird/engagement-mgr/blob/main/LICENSE.txt)
+
+* [![Twitter Follow](https://img.shields.io/twitter/follow/discoverscripts.svg?style=social&label=Follow)](https://twitter.com/discoverscripts) Lee Baird @discoverscripts
+* [![Twitter Follow](https://img.shields.io/twitter/follow/jay_townsend1.svg?style=social&label=Follow)](https://twitter.com/jay_townsend1) Jay "L1ghtn1ng" Townsend @jay_townsend1
 
 ## Writing findings and producing PDF reports
 
