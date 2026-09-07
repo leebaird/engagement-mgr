@@ -118,6 +118,28 @@ export function DisplayDate({
   return <span className="display-date">{text}</span>;
 }
 
+function useLocalToday(): Date | null {
+  const [today, setToday] = useState<Date | null>(null);
+
+  useLayoutEffect(() => {
+    let timeout: number | undefined;
+
+    const schedule = () => {
+      const now = new Date();
+      setToday(now);
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      timeout = window.setTimeout(schedule, nextMidnight.getTime() - now.getTime() + 50);
+    };
+
+    schedule();
+    return () => {
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
+  }, []);
+
+  return today;
+}
+
 export function DateTimePreferencesControls() {
   const {
     dateFormat,
@@ -126,6 +148,15 @@ export function DateTimePreferencesControls() {
     setDateFormat,
     setTimeZone,
   } = useDateTimePreferences();
+  const today = useLocalToday();
+  const formatChoices = today
+    ? dateFormatOptions(today)
+    : [
+        { id: 'os' as const, label: 'Operating system' },
+        { id: 'mdy' as const, label: 'Month/day/year' },
+        { id: 'dmy' as const, label: 'Day/month/year' },
+        { id: 'ymd' as const, label: 'Year-month-day' },
+      ];
 
   return (
     <div className="date-time-preferences">
@@ -137,7 +168,7 @@ export function DateTimePreferencesControls() {
           onChange={(event) => setDateFormat(parseDateFormatId(event.target.value))}
           aria-label="Date format"
         >
-          {dateFormatOptions().map((option) => (
+          {formatChoices.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
             </option>
