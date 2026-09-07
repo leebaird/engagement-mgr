@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  DATE_FORMAT_OPTIONS,
+  dateFormatOptions,
   DATE_FORMAT_STORAGE_KEY,
   TIME_ZONE_OPTIONS,
   TIME_ZONE_STORAGE_KEY,
@@ -137,7 +137,7 @@ export function DateTimePreferencesControls() {
           onChange={(event) => setDateFormat(parseDateFormatId(event.target.value))}
           aria-label="Date format"
         >
-          {DATE_FORMAT_OPTIONS.map((option) => (
+          {dateFormatOptions().map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
             </option>

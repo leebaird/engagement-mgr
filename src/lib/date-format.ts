@@ -6,12 +6,14 @@ export const TIME_ZONE_STORAGE_KEY = 'em-time-zone';
 export type DateFormatId = 'os' | 'mdy' | 'dmy' | 'ymd';
 export type TimeZoneId = 'os' | 'utc';
 
-export const DATE_FORMAT_OPTIONS: { id: DateFormatId; label: string }[] = [
-  { id: 'os', label: 'Operating system' },
-  { id: 'mdy', label: '8/12/2026' },
-  { id: 'dmy', label: '12/08/2026' },
-  { id: 'ymd', label: '2026-08-12' },
-];
+export function dateFormatOptions(today: Date = new Date()): { id: DateFormatId; label: string }[] {
+  return [
+    { id: 'os', label: 'Operating system' },
+    { id: 'mdy', label: formatDate(today, 'mdy') },
+    { id: 'dmy', label: formatDate(today, 'dmy') },
+    { id: 'ymd', label: formatDate(today, 'ymd') },
+  ];
+}
 
 export const TIME_ZONE_OPTIONS: { id: TimeZoneId; label: string }[] = [
   { id: 'os', label: 'Operating system' },

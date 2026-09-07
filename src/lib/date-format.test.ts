@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  dateFormatOptions,
   formatDate,
   formatDateTime,
   formatMonthYear,
@@ -8,6 +9,17 @@ import {
   parseTimeZoneId,
   toDisplayDate,
 } from './date-format';
+
+describe('dateFormatOptions', () => {
+  it('labels format choices with the given date', () => {
+    const date = new Date(2026, 8, 7);
+    const labels = Object.fromEntries(dateFormatOptions(date).map((option) => [option.id, option.label]));
+    assert.equal(labels.os, 'Operating system');
+    assert.equal(labels.mdy, '9/7/2026');
+    assert.equal(labels.dmy, '07/09/2026');
+    assert.equal(labels.ymd, '2026-09-07');
+  });
+});
 
 describe('parseDateFormatId', () => {
   it('accepts known format ids and defaults to os', () => {
