@@ -50,7 +50,7 @@ export function DatabaseBackupModal({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <p style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.5 }}>
             Create a full backup zip (database dump and screenshots) on the server under
-            {' '}<code>~/engagement-mgr-backups/</code>. After it is created you can download a copy.
+            {' '}<code>backups/</code>. After it is created you can download a copy.
           </p>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>

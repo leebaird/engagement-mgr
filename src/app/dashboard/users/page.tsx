@@ -189,7 +189,7 @@ export default async function UsersPage({
   if (dbMsg === 'restore') {
     dbMessage = 'Database restored successfully.';
   } else if (dbMsg === 'backup' && backupSavedPath) {
-    dbMessage = `Backup created at ${backupSavedPath}. Download link expires in 5 minutes.`;
+    dbMessage = `Backup located at ${backupSavedPath}. The download link will expire in 5 minutes.`;
   } else if (dbMsg === 'backup') {
     dbMessage = 'Backup created successfully.';
   }
@@ -362,9 +362,9 @@ export default async function UsersPage({
                 {dbMessage}
                 {backupDownloadHref ? (
                   <>
-                    {' '}
+                    {'\u00A0\u00A0'}
                     <a href={backupDownloadHref} style={{ color: '#4ade80', fontWeight: 600 }}>
-                      Download copy
+                      Download
                     </a>
                   </>
                 ) : null}

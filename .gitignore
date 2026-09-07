@@ -54,5 +54,7 @@ next-env.d.ts
 /.uploads-previous-*
 
 # local backup archives (never commit)
+/backups/*
+!/backups/.gitkeep
 em-backup-*.zip
 *.zip

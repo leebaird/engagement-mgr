@@ -1,18 +1,20 @@
-import { homedir } from 'os';
-import { basename, join, resolve } from 'path';
+import { basename, resolve } from 'path';
 import { chmod, mkdir } from 'fs/promises';
-import { randomBytes } from 'crypto';
 
-export const BACKUP_DIR_NAME = 'engagement-mgr-backups';
+export const BACKUP_DIR_NAME = 'backups';
+
+const BACKUP_FILENAME_RE = /^em-backup-\d{4}-\d{2}-\d{2}-\d{4}\.zip$/;
 
 export function getBackupDirectory(): string {
-  return join(homedir(), BACKUP_DIR_NAME);
+  return resolve(process.cwd(), BACKUP_DIR_NAME);
 }
 
 export function formatBackupPathForDisplay(absolutePath: string): string {
-  const home = homedir();
-  if (absolutePath.startsWith(home)) {
-    return `~${absolutePath.slice(home.length)}`;
+  const cwd = resolve(process.cwd());
+  const resolved = resolve(absolutePath);
+  if (resolved === cwd) return '.';
+  if (resolved.startsWith(`${cwd}/`)) {
+    return resolved.slice(cwd.length + 1);
   }
   return absolutePath;
 }
@@ -23,8 +25,8 @@ export function backupFilename(): string {
   const timestamp =
     [now.getFullYear(), pad(now.getMonth() + 1), pad(now.getDate())].join('-') +
     '-' +
-    [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join('-');
-  return `em-backup-${timestamp}-${randomBytes(6).toString('hex')}.zip`;
+    `${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `em-backup-${timestamp}.zip`;
 }
 
 export function resolveBackupFilePath(filename: string): string | null {
@@ -41,7 +43,7 @@ export function resolveBackupFilePath(filename: string): string | null {
     return null;
   }
 
-  if (!/^em-backup-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}(?:-\d{2}-[a-f0-9]{12})?\.zip$/.test(safeName)) {
+  if (!BACKUP_FILENAME_RE.test(safeName)) {
     return null;
   }
 

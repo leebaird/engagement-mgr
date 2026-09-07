@@ -289,7 +289,7 @@ ALLOWED_DEV_ORIGINS=dev.office.example
 - [ ] HTTPS is configured; HTTP redirects to HTTPS
 - [ ] Database user has no `CREATEDB` or superuser privileges
 - [ ] `uploads/` is on persistent disk and included in backups
-- [ ] `~/engagement-mgr-backups/` is on persistent disk if admins use Backup
+- [ ] `backups/` is on persistent disk if admins use Backup
 - [ ] `pg_dump`, `pg_restore`, and `zip` are available if admins will use Backup/Restore
 
 ## Default Credentials
@@ -309,9 +309,9 @@ After seeding the database, you can log in using the generated temporary admin a
 
 On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset** buttons. The **Users** panel lists accounts and provides a **New User** button for adding users. The **Appearance** panel lets an admin choose the application-wide highlight colour.
 
-**Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HH-MM-SS-RANDOM.zip` to `~/engagement-mgr-backups/` on the server (the home directory of the user running the app). After a successful export, use **Download copy** on the Admin page. A short-lived signed grant is held in an `HttpOnly` cookie and only works for the admin who created the backup.
+**Backup** requires your admin password, then saves a `.zip` named `em-backup-YYYY-MM-DD-HHMM.zip` to `backups/` in the application directory (`engagement-mgr/backups/`). After a successful export, use **Download** on the Admin page. A short-lived signed grant is held in an `HttpOnly` cookie and only works for the admin who created the backup.
 
-- The timestamp uses the **local time** of the server running the app and the random suffix prevents collisions between rapid exports. Example: `em-backup-2026-06-02-14-30-45-a1b2c3d4e5f6.zip`.
+- The timestamp uses the **local time** of the server running the app, without seconds. Example: `em-backup-2026-06-02-1430.zip`.
 
 | Path | Contents |
 |------|----------|
@@ -328,7 +328,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 3. Save the `.zip` and copy it to the new server (for example with `scp` or `rsync`):
 
    ```bash
-   scp em-backup-2026-06-02-14-30-45-a1b2c3d4e5f6.zip user@new-server:/path/to/
+   scp em-backup-2026-06-02-1430.zip user@new-server:/path/to/
    ```
 
 **New server**

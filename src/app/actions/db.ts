@@ -35,7 +35,7 @@ function usersListParams(formData: FormData) {
 
 /**
  * Create a full backup after admin password re-confirmation.
- * Writes to ~/engagement-mgr-backups/ and redirects with a download link param.
+ * Writes to backups/ in the application root and redirects with a download link param.
  */
 export async function exportDatabaseBackup(formData: FormData): Promise<void> {
   const listParams = usersListParams(formData);
