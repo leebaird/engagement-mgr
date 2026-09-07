@@ -366,8 +366,8 @@ export async function deleteFinding(id: string) {
       for (const deletion of staged) {
         try {
           await finishStagedScreenshotDeletion(deletion);
-        } catch {
-          console.error('Evidence cleanup is pending; reconciliation will retry it.');
+        } catch (error) {
+          console.error('Evidence cleanup is pending; reconciliation will retry it.', error);
           await logAuditEvent('evidence.cleanup', auth.userId, 'failure');
         }
       }
@@ -516,8 +516,8 @@ export async function deleteScreenshot(screenshotId: string, findingId: string, 
       if (staged) {
         try {
           await finishStagedScreenshotDeletion(staged);
-        } catch {
-          console.error('Evidence cleanup is pending; reconciliation will retry it.');
+        } catch (error) {
+          console.error('Evidence cleanup is pending; reconciliation will retry it.', error);
           await logAuditEvent('evidence.cleanup', auth.userId, 'failure');
         }
       }

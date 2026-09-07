@@ -1,10 +1,16 @@
+import { isTrustProxyEnabled } from '@/lib/request-client-ip';
+
 export const MAX_LOGIN_REQUEST_BYTES = 4 * 1024;
 
 export class LoginRequestError extends Error {}
 
-export function isSameOriginLoginRequest(request: Request): boolean {
+export function isSameOriginLoginRequest(
+  request: Request,
+  trustProxy = isTrustProxyEnabled()
+): boolean {
   const origin = request.headers.get('origin');
-  const host = request.headers.get('host') ?? new URL(request.url).host;
+  const forwardedHost = trustProxy ? request.headers.get('x-forwarded-host') : null;
+  const host = forwardedHost ?? request.headers.get('host') ?? new URL(request.url).host;
   if (!origin || !host) return false;
   try {
     return new URL(origin).host === host;

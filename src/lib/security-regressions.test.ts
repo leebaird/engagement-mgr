@@ -52,7 +52,7 @@ describe('security boundary regressions', () => {
     assert.match(page, /take: PAGE_SIZE \+ 1/);
     assert.match(page, /LIMIT \$\{PAGE_SIZE \+ 1\} OFFSET \$\{offset\}/);
     assert.match(engagements, /take: MAX_FINDINGS_PER_ENGAGEMENT/);
-    assert.match(reports, /take: MAX_FINDINGS_PER_ENGAGEMENT/);
+    assert.match(reports, /loadReportEditorFindings/);
   });
 
   it('revalidates issued content and bounds expensive report rendering', async () => {
@@ -107,6 +107,9 @@ describe('security boundary regressions', () => {
     const audit = await repositoryFile('src/lib/audit-log.ts');
     assert.match(layout, /ensureReconciledScreenshotStorage/);
     assert.match(layout, /Evidence storage cleanup requires operator attention/);
+    assert.match(layout, /console\.error\('Evidence storage reconciliation requires operator attention\.', error\)/);
+    const finding = await repositoryFile('src/app/actions/finding.ts');
+    assert.equal(finding.match(/console\.error\('Evidence cleanup is pending; reconciliation will retry it\.', error\)/g)?.length, 2);
     assert.match(storage, /reconciliationRequired = true/);
     assert.match(audit, /'evidence\.cleanup'/);
   });

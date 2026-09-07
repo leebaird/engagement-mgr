@@ -3,8 +3,8 @@ import { prisma } from '@/lib/db';
 import { requireDashboardSession } from '@/lib/require-auth';
 import { saveReport, issueReport } from '@/app/actions/reports';
 import { findingContent, readinessIssues } from '@/lib/reporting';
-import { revisionInclude } from '@/lib/finding-workflow';
 import { MAX_FINDINGS_PER_ENGAGEMENT } from '@/lib/finding-capacity';
+import { loadReportEditorFindings } from '@/lib/report-service';
 
 export default async function ReportsPage({
   searchParams,
@@ -28,11 +28,6 @@ export default async function ReportsPage({
           where: { id: params.engagement },
           include: {
             report: true,
-            findings: {
-              include: revisionInclude,
-              orderBy: { title: 'asc' },
-              take: MAX_FINDINGS_PER_ENGAGEMENT,
-            },
             issuedReports: {
               select: {
                 id: true,
@@ -46,9 +41,12 @@ export default async function ReportsPage({
           },
         })
       : null;
+  const editor = engagement
+    ? await loadReportEditorFindings(prisma, engagement.id, engagement.report?.findingIds ?? [])
+    : null;
   const selected =
     engagement?.report?.findingIds ??
-    engagement?.findings.map((f) => f.id) ??
+    editor?.findings.map((f) => f.id) ??
     [];
   return (
     <div className="page-container">
@@ -115,6 +113,18 @@ export default async function ReportsPage({
                 may include unapproved findings; issuing requires approval and
                 complete fields.
               </p>
+              {editor?.hasMore && (
+                <p role="status">
+                  Showing the first {MAX_FINDINGS_PER_ENGAGEMENT} findings by title,
+                  plus any saved selections outside that list. Saved selections retain their order.
+                </p>
+              )}
+              {editor && !editor.selectionComplete && (
+                <p role="alert">
+                  Some saved findings could not be loaded. Saving is disabled to preserve
+                  the report selection. Reload or ask an administrator to check the report.
+                </p>
+              )}
               <table className="data-table">
                 <thead>
                   <tr>
@@ -126,7 +136,7 @@ export default async function ReportsPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {engagement.findings.map((f, i) => (
+                  {editor?.findings.map((f, i) => (
                     <tr key={f.id}>
                       <td>
                         <input
@@ -168,7 +178,7 @@ export default async function ReportsPage({
                   ))}
                 </tbody>
               </table>
-              <button className="btn-primary">Save report settings</button>
+              <button className="btn-primary" disabled={!editor?.selectionComplete}>Save report settings</button>
             </form>
             {engagement.report && (
               <div className="writing-toolbar">

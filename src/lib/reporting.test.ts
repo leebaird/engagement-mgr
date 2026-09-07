@@ -6,8 +6,10 @@ import { FindingMarkdown } from '@/components/FindingMarkdown';
 import { findingContentSchema, readinessIssues, mayReview } from './reporting';
 import { generateReportPdf } from './report-pdf';
 import { normalizeScreenshot } from './normalize-screenshot';
+import type { Prisma } from '@prisma/client';
 import {
   assertReportBlueprintUnchanged,
+  loadReportEditorFindings,
   type ReportBlueprint,
 } from './report-service';
 import sharp from 'sharp';
@@ -24,6 +26,40 @@ const content = {
 };
 
 describe('reporting security and content', () => {
+  it('keeps saved selections beyond the first 500 findings in the report editor', async () => {
+    const engagementId = 'engagement';
+    const fixtures = Array.from({ length: 501 }, (_, index) => ({
+      id: String(index), title: `Finding ${String(index).padStart(3, '0')}`, engagementId,
+    }));
+    const queries: Prisma.FindingFindManyArgs[] = [];
+    const tx = {
+      finding: {
+        findMany: async (args: Prisma.FindingFindManyArgs) => {
+          queries.push(args);
+          assert.equal(args.where?.engagementId, engagementId);
+          const ids = (args.where?.id as Prisma.StringFilter | undefined)?.in as string[] | undefined;
+          return fixtures.filter((f) => !ids || ids.includes(f.id)).slice(0, args.take!);
+        },
+      },
+    } as unknown as Prisma.TransactionClient;
+    const selected = ['500', '0'];
+    const editor = await loadReportEditorFindings(tx, engagementId, selected);
+    assert.equal(editor.hasMore, true);
+    assert.equal(editor.selectionComplete, true);
+    assert.equal(editor.findings.length, 501);
+    assert.deepEqual(selected.filter((id) => editor.findings.some((f) => f.id === id)), selected);
+    assert.deepEqual(queries[1].where, { engagementId, id: { in: ['500'] } });
+
+    fixtures.pop();
+    queries.length = 0;
+    const ordinary = await loadReportEditorFindings(tx, engagementId, ['0']);
+    assert.equal(ordinary.hasMore, false);
+    assert.equal(ordinary.selectionComplete, true);
+    assert.equal(queries.length, 1);
+    const missing = await loadReportEditorFindings(tx, engagementId, ['500']);
+    assert.equal(missing.selectionComplete, false);
+  });
+
   const blueprint: ReportBlueprint = {
     title: 'Assessment',
     data: {

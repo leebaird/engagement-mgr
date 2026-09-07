@@ -9,8 +9,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.role === 'Admin';
   const evidenceStorageReady = await ensureReconciledScreenshotStorage()
     .then(() => true)
-    .catch(() => {
-      console.error('Evidence storage reconciliation requires operator attention.');
+    .catch((error) => {
+      console.error('Evidence storage reconciliation requires operator attention.', error);
       return false;
     });
 

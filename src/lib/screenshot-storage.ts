@@ -15,6 +15,9 @@ const TEMPORARY_UPLOAD_PATTERN =
   /^\.[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(png|jpg)\.tmp$/i;
 let reconciliationRequired = true;
 let reconciliationPromise: Promise<void> | undefined;
+const RECONCILIATION_RETRY_DELAY_MS = 60_000;
+let reconciliationRetryAt = 0;
+let reconciliationError: unknown;
 
 type MaintenanceLockClient = {
   query(
@@ -183,14 +186,21 @@ export async function reconcileScreenshotStorage(uploadsDirectory: string): Prom
   const referencedFiles = new Set(screenshots.map((screenshot) => screenshot.filePath));
   await reconcileScreenshotFiles(uploadsDirectory, referencedFiles);
   reconciliationRequired = false;
+  reconciliationRetryAt = 0;
+  reconciliationError = undefined;
   return referencedFiles;
 }
 
 export async function ensureReconciledScreenshotStorage(): Promise<void> {
   if (!reconciliationRequired) return;
+  if (Date.now() < reconciliationRetryAt) throw reconciliationError;
   reconciliationPromise ??= withUploadsMaintenanceLock(async () => {
     const uploadsDirectory = await ensureUploadsDirectory();
     await reconcileScreenshotStorage(uploadsDirectory);
+  }).catch((error) => {
+    reconciliationRetryAt = Date.now() + RECONCILIATION_RETRY_DELAY_MS;
+    reconciliationError = error;
+    throw error;
   }).finally(() => {
     reconciliationPromise = undefined;
   });

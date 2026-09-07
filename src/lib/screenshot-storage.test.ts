@@ -3,14 +3,17 @@ import { access, chmod, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
+import { pool, prisma } from './db';
 
 import {
   assertScreenshotQuota,
+  ensureReconciledScreenshotStorage,
   finishStagedScreenshotDeletion,
   getScreenshotStorageUsage,
   MAX_SCREENSHOTS_PER_FINDING,
   MAX_SCREENSHOT_STORAGE_BYTES,
   reconcileScreenshotFiles,
+  reconcileScreenshotStorage,
   restoreStagedScreenshotDeletion,
   ScreenshotQuotaError,
   stageScreenshotDeletion,
@@ -18,6 +21,50 @@ import {
 } from './screenshot-storage';
 
 describe('screenshot storage quotas', () => {
+  it('backs off failed dashboard reconciliation, coalesces retries, and clears failure after repair', async (t) => {
+    const failure = new Error('storage unavailable');
+    let attempts = 0;
+    let now = Date.now();
+    t.mock.method(Date, 'now', () => now);
+    t.mock.method(pool, 'connect', async () => {
+      attempts++;
+      throw failure;
+    });
+    const findMany = prisma.screenshot.findMany;
+    prisma.screenshot.findMany = (async () => []) as unknown as typeof findMany;
+    t.after(() => { prisma.screenshot.findMany = findMany; });
+
+    await Promise.all([
+      assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure),
+      assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure),
+    ]);
+    assert.equal(attempts, 1);
+    now += 59_999;
+    await assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure);
+    assert.equal(attempts, 1);
+    now += 1;
+    await Promise.all([
+      assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure),
+      assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure),
+    ]);
+    assert.equal(attempts, 2);
+
+    const directory = await mkdtemp(join(tmpdir(), 'em-reconciliation-retry-'));
+    try {
+      await reconcileScreenshotStorage(directory);
+      await ensureReconciledScreenshotStorage();
+      assert.equal(attempts, 2);
+      const path = join(directory, '11111111-1111-4111-8111-111111111111.png');
+      await writeFile(path, 'evidence');
+      await stageScreenshotDeletion(path);
+      await assert.rejects(ensureReconciledScreenshotStorage(), (error) => error === failure);
+      assert.equal(attempts, 3);
+      await reconcileScreenshotStorage(directory);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it('holds the shared session lock across upload and maintenance operations', async () => {
     const calls: unknown[][] = [];
     let released = false;

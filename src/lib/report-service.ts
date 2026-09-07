@@ -11,6 +11,37 @@ import { generateReportPdf, type ReportData } from '@/lib/report-pdf';
 import { resolveUploadFilePath } from '@/lib/uploads-path';
 import { revisionInclude } from '@/lib/finding-workflow';
 import { normalizeScreenshot } from '@/lib/normalize-screenshot';
+import { MAX_FINDINGS_PER_ENGAGEMENT } from '@/lib/finding-capacity';
+
+export async function loadReportEditorFindings(
+  tx: Prisma.TransactionClient,
+  engagementId: string,
+  selectedIds: readonly string[]
+) {
+  const firstPage = await tx.finding.findMany({
+    where: { engagementId },
+    include: revisionInclude,
+    orderBy: [{ title: 'asc' }, { id: 'asc' }],
+    take: MAX_FINDINGS_PER_ENGAGEMENT + 1,
+  });
+  const findings = firstPage.slice(0, MAX_FINDINGS_PER_ENGAGEMENT);
+  const visibleIds = new Set(findings.map((finding) => finding.id));
+  const missingIds = selectedIds.filter((id) => !visibleIds.has(id));
+  if (missingIds.length) {
+    findings.push(...await tx.finding.findMany({
+      where: { engagementId, id: { in: missingIds } },
+      include: revisionInclude,
+      orderBy: [{ title: 'asc' }, { id: 'asc' }],
+      take: 100,
+    }));
+  }
+  const availableIds = new Set(findings.map((finding) => finding.id));
+  return {
+    findings,
+    hasMore: firstPage.length > MAX_FINDINGS_PER_ENGAGEMENT,
+    selectionComplete: selectedIds.every((id) => availableIds.has(id)),
+  };
+}
 
 export type ReportEvidenceFile = {
   findingIndex: number;
