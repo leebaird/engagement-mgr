@@ -52,3 +52,7 @@ next-env.d.ts
 /initial-admin-credentials.txt
 /.uploads-restore-*
 /.uploads-previous-*
+
+# local backup archives (never commit)
+em-backup-*.zip
+*.zip

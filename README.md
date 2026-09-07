@@ -231,7 +231,7 @@ Startup prints both a loopback URL and this machine’s LAN address:
 - Network:       http://192.168.1.20:3000
 ```
 
-`npm run dev` and `npm start` bind `0.0.0.0` so the Network URL works on the LAN. Use that only on trusted networks — dev mode is not hardened for production.
+`npm run dev` and `npm start` bind `0.0.0.0` so the Network URL works on the LAN. Treat LAN access as lab-only on a trusted network. Dev mode is not hardened for the public internet.
 
 If you open the app by **hostname** (not IP) and the remote browser is a blank white page, add that name to `.env` and restart:
 
