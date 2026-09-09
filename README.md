@@ -7,8 +7,13 @@ Engagement Manager is a web application for tracking offensive security engageme
 * [![Twitter Follow](https://img.shields.io/twitter/follow/discoverscripts.svg?style=social&label=Follow)](https://twitter.com/discoverscripts) Lee Baird @discoverscripts
 * [![Twitter Follow](https://img.shields.io/twitter/follow/jay_townsend1.svg?style=social&label=Follow)](https://twitter.com/jay_townsend1) Jay "L1ghtn1ng" Townsend @jay_townsend1
 
+## Screenshots
+
+![Dashboard](docs/images/dashboard.png)
+
 ## Table of contents
 
+- [Screenshots](#screenshots)
 - [Writing findings and producing PDF reports](#writing-findings-and-producing-pdf-reports)
   - [Reporting security and deployment](#reporting-security-and-deployment)
   - [Verification](#verification)
