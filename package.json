@@ -26,9 +26,9 @@
     "@prisma/client": "7.10.0",
     "argon2": "0.45.1",
     "fast-xml-parser": "5.11.1",
-    "jose": "6.2.11",
-    "lucide-react": "1.41.0",
-    "marked": "18.0.11",
+    "jose": "6.2.12",
+    "lucide-react": "1.42.0",
+    "marked": "18.0.12",
     "next": "16.3.4",
     "pdfkit": "0.20.2",
     "pg": "8.23.0",
@@ -38,12 +38,12 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.1",
-    "@types/node": "26.4.1",
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.5.0",
     "@types/pdfkit": "0.17.6",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
-    "oxlint": "1.81.0",
+    "oxlint": "1.82.0",
     "prisma": "7.10.0",
     "tsx": "4.23.13",
     "typescript": "7.0.2"
