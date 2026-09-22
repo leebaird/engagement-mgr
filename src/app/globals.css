@@ -1353,9 +1353,9 @@ a.modal-action-btn {
 
 .btn-save:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  border-color: #00cc00;
+  border-color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 204, 0, 0.4);
+  box-shadow: 0 4px 15px var(--accent-ring);
 }
 
 .btn-save:focus {
