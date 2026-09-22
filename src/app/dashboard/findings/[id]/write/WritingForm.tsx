@@ -125,11 +125,11 @@ export function WritingForm({
       />
       <div className="writing-toolbar">
         <button
-          className="btn-primary"
+          className="btn-secondary"
           type="submit"
           disabled={pending || writingPending}
         >
-          Save finding
+          Save Finding
         </button>
         <button
           className="btn-secondary"
@@ -140,14 +140,14 @@ export function WritingForm({
             submitted.current = current;
           }}
         >
-          Save private draft
+          Save Private Draft
         </button>
         <button
           className="btn-secondary"
           type="button"
           onClick={() => setPreview(!preview)}
         >
-          {preview ? 'Hide preview' : 'Show preview'}
+          {preview ? 'Hide Preview' : 'Show Preview'}
         </button>
       </div>
       {writeState.error && <p role="alert">{writeState.error}</p>}

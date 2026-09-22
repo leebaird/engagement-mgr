@@ -1,12 +1,12 @@
 export const APPLICATION_SETTING_ID = 1;
 
 export const HIGHLIGHT_COLOR_OPTIONS = [
-  { id: 'Pink', label: 'Pink', cssName: 'pink', color: '#ff3366' },
-  { id: 'Blue', label: 'Blue', cssName: 'blue', color: '#3b82f6' },
-  { id: 'Teal', label: 'Teal', cssName: 'teal', color: '#14b8a6' },
-  { id: 'Green', label: 'Green', cssName: 'green', color: '#22c55e' },
-  { id: 'Purple', label: 'Purple', cssName: 'purple', color: '#a855f7' },
+  { id: 'Pink', label: 'Red', cssName: 'pink', color: '#ff3366' },
   { id: 'Amber', label: 'Amber', cssName: 'amber', color: '#f59e0b' },
+  { id: 'Green', label: 'Green', cssName: 'green', color: '#22c55e' },
+  { id: 'Teal', label: 'Teal', cssName: 'teal', color: '#14b8a6' },
+  { id: 'Blue', label: 'Blue', cssName: 'blue', color: '#3b82f6' },
+  { id: 'Purple', label: 'Purple', cssName: 'purple', color: '#a855f7' },
 ] as const;
 
 export type HighlightColor = (typeof HIGHLIGHT_COLOR_OPTIONS)[number]['id'];

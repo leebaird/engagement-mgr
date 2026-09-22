@@ -254,7 +254,7 @@ export function FindingDetailButton({
             sort={sort}
             dir={dir}
             childrenBeforeEdit={
-              <><a href={`/dashboard/findings/${finding.id}/write`} className="modal-action-btn">Write &amp; review</a>
+              <><a href={`/dashboard/findings/${finding.id}/write`} className="modal-action-btn">Write &amp; Review</a>
               <a
                 href={`/dashboard/findings/${finding.id}`}
                 className="modal-action-btn"

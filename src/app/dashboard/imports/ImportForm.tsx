@@ -81,11 +81,11 @@ export function ImportForm({
             />
           </label>
           <button
-            className="btn-primary"
+            className="btn-secondary"
             disabled={pending}
             style={{ width: 'fit-content' }}
           >
-            {pending ? 'Reading export…' : 'Preview import'}
+            {pending ? 'Reading Export…' : 'Preview Import'}
           </button>
           {state.error && (
             <p role="alert" className="text-error" style={{ margin: 0 }}>
@@ -143,10 +143,10 @@ export function ImportForm({
               ))}
             </div>
             <button
-              className="btn-primary"
+              className="btn-secondary"
               style={{ width: 'fit-content' }}
             >
-              Import selected findings
+              Import Selected Findings
             </button>
           </form>
         </section>

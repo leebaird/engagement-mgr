@@ -129,7 +129,7 @@ export default async function WritingPage({
           <form action={discardDraft}>
             {hidden}
             <input type="hidden" name="draftVersion" value={draft.version} />
-            <button className="btn-secondary">Discard private draft</button>
+            <button className="btn-secondary">Discard Private Draft</button>
           </form>
         </div>
       )}
@@ -152,7 +152,7 @@ export default async function WritingPage({
             {hidden}
             <input type="hidden" name="revisionId" value={revision.id} />
             <button className="btn-secondary">
-              Restore this text revision
+              Restore This Text Revision
             </button>
           </form>
         </section>
@@ -203,7 +203,7 @@ export default async function WritingPage({
                     />
                   </label>
                   <button className="btn-secondary">
-                    Save evidence details
+                    Save Evidence Details
                   </button>
                 </form>
               </div>
@@ -228,23 +228,23 @@ export default async function WritingPage({
                 <form action={reviewFinding}>
                   {hidden}
                   <input name="status" type="hidden" value="Ready" />
-                  <button className="btn-primary" disabled={issues.length > 0}>
-                    Send for review
+                  <button className="btn-secondary" disabled={issues.length > 0}>
+                    Send for Review
                   </button>
                 </form>
               )}
             {finding.reviewStatus === 'Ready' && mayReview(actor, finding) && (
               <form action={reviewFinding}>
                 {hidden}
-                <button name="status" value="Approved" className="btn-primary">
-                  Approve revision
+                <button name="status" value="Approved" className="btn-secondary">
+                  Approve Revision
                 </button>
                 <button
                   name="status"
                   value="ChangesRequested"
                   className="btn-secondary"
                 >
-                  Request changes
+                  Request Changes
                 </button>
               </form>
             )}
@@ -269,7 +269,7 @@ export default async function WritingPage({
                       ))}
                   </select>
                 </label>
-                <button className="btn-secondary">Assign reviewer</button>
+                <button className="btn-secondary">Assign Reviewer</button>
               </form>
             )}
             <form action={addFindingComment}>
@@ -284,7 +284,7 @@ export default async function WritingPage({
                   maxLength={4000}
                 />
               </label>
-              <button className="btn-secondary">Add comment</button>
+              <button className="btn-secondary">Add Comment</button>
             </form>
             {finding.comments.map((c) => (
               <div key={c.id}>

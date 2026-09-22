@@ -522,7 +522,7 @@ select.form-input option {
 .btn-primary {
   background: var(--primary-color);
   color: var(--accent-foreground);
-  border: none;
+  border: 1px solid transparent;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -1158,8 +1158,9 @@ a.db-action-btn {
 }
 
 .engagement-calendar__today-btn {
-  width: fit-content;
   margin-left: 0.25rem;
+  text-decoration: none;
+  width: fit-content;
 }
 
 .engagement-calendar__legend {
@@ -1310,9 +1311,9 @@ a.db-action-btn {
   border: 1px solid var(--surface-border);
   color: var(--text-main);
   cursor: pointer;
-  padding: 0.35rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -1340,7 +1341,7 @@ a.modal-action-btn {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-main);
   border: 1px solid var(--surface-border);
-  padding: 0.45rem 0.85rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1374,7 +1375,7 @@ a.modal-action-btn {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-main);
   border: 1px solid var(--surface-border);
-  padding: 0.45rem 0.85rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1395,6 +1396,31 @@ a.modal-action-btn {
 .btn-cancel:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-save,
+.btn-cancel,
+.modal-action-btn,
+.highlight-color-option {
+  appearance: none;
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  height: calc(1.25 * 0.875rem + 1rem + 2px);
+  line-height: 1;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-save,
+.btn-cancel,
+.modal-action-btn {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
 }
 
 /* Text selection highlight matches the accent theme */
@@ -1496,8 +1522,9 @@ a.modal-action-btn {
 
 .highlight-color-options {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  grid-template-columns: repeat(6, 120px);
+  width: max-content;
 }
 
 .highlight-color-option {
@@ -1508,8 +1535,11 @@ a.modal-action-btn {
   cursor: pointer;
   display: flex;
   font-size: 0.875rem;
-  gap: 0.625rem;
-  padding: 0.75rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  white-space: nowrap;
 }
 
 .highlight-color-option:has(input:checked),
@@ -1519,21 +1549,19 @@ a.modal-action-btn {
 }
 
 .highlight-color-option input {
-  accent-color: var(--accent);
+  accent-color: #fff;
+  flex-shrink: 0;
+  height: 0.875rem;
   margin: 0;
+  width: 0.875rem;
 }
 
 .highlight-color-option__swatch {
   border: 1px solid rgb(255 255 255 / 0.35);
   border-radius: 50%;
-  height: 1rem;
-  width: 1rem;
-}
-
-@media (max-width: 680px) {
-  .highlight-color-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  flex-shrink: 0;
+  height: 0.875rem;
+  width: 0.875rem;
 }
 
 /* Tab buttons inside edit/create forms (button reset over .detail-tab) */
@@ -1799,7 +1827,22 @@ body.sidebar-collapsed .sidebar__footer .date-time-preferences {
 }
 .writing-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 1.5rem; align-items: start; }
 .writing-toolbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin: 1rem 0; }
-.writing-toolbar > .form-input { width: auto; max-width: 100%; }
+.writing-toolbar > .form-input {
+  max-width: 100%;
+  width: auto;
+}
+
+.writing-toolbar > .form-input,
+.writing-toolbar .btn-primary,
+.writing-toolbar .btn-secondary,
+.writing-toolbar .btn-save,
+.writing-toolbar .btn-cancel {
+  box-sizing: border-box;
+  font-size: 0.875rem;
+  height: calc(1.25 * 0.875rem + 1rem + 2px);
+  padding-bottom: 0;
+  padding-top: 0;
+}
 .writing-form, .writing-sidebar { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
 .writing-help { color: var(--text-muted); font-size: 0.875rem; }
 .finding-markdown { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; margin: 1rem 0; }

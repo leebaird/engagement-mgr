@@ -72,7 +72,7 @@ export default function ChangePasswordPage() {
             </div>
           )}
 
-          <button type="submit" className="btn-primary" disabled={isPending}>
+          <button type="submit" className="btn-secondary" style={{ width: '100%' }} disabled={isPending}>
             {isPending ? 'Updating...' : 'Set New Password'}
           </button>
         </form>

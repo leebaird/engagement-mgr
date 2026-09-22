@@ -199,9 +199,9 @@ test.describe.serial('authoring and reporting', () => {
     await authenticate(context, author);
     const writingUrl = `/dashboard/findings/${findingId}/write`;
     await page.goto(writingUrl);
-    await page.getByRole('button', { name: 'Show preview' }).click();
+    await page.getByRole('button', { name: 'Show Preview' }).click();
     await expect(
-      page.getByRole('button', { name: 'Hide preview' })
+      page.getByRole('button', { name: 'Hide Preview' })
     ).toBeVisible();
     await page
       .locator('textarea[name=observation]')
@@ -209,7 +209,7 @@ test.describe.serial('authoring and reporting', () => {
     await expect(page.locator('textarea[name=observation]')).toHaveValue(
       '1. Send request\n2. Observe **the result**'
     );
-    await page.getByRole('button', { name: 'Save private draft' }).click();
+    await page.getByRole('button', { name: 'Save Private Draft' }).click();
     await expect(page.getByRole('status')).toContainText('Private draft saved');
     const reviewerContext = await browser.newContext({
       baseURL: 'http://127.0.0.1:3317',
@@ -223,12 +223,12 @@ test.describe.serial('authoring and reporting', () => {
     const otherTab = await context.newPage();
     await otherTab.goto(writingUrl);
     await page
-      .getByRole('button', { name: 'Save finding', exact: true })
+      .getByRole('button', { name: 'Save Finding', exact: true })
       .click();
     await expect(page).toHaveURL(/saved=\d+/);
     await otherTab.locator('input[name=title]').fill('Stale overwrite attempt');
     await otherTab
-      .getByRole('button', { name: 'Save finding', exact: true })
+      .getByRole('button', { name: 'Save Finding', exact: true })
       .click();
     await expect(
       otherTab.locator('.writing-form').getByRole('alert')
@@ -261,12 +261,12 @@ test.describe.serial('authoring and reporting', () => {
     await expect(page.locator('textarea[name=background]')).toHaveValue(
       'Writing continues during evidence upload'
     );
-    await page.getByRole('button', { name: 'Save private draft' }).click();
+    await page.getByRole('button', { name: 'Save Private Draft' }).click();
     await expect(
       page.locator('.writing-form').getByRole('status')
     ).toContainText('Private draft saved');
     await page
-      .getByRole('button', { name: 'Save finding', exact: true })
+      .getByRole('button', { name: 'Save Finding', exact: true })
       .click();
     await expect
       .poll(
@@ -277,16 +277,16 @@ test.describe.serial('authoring and reporting', () => {
       .toBe('Writing continues during evidence upload');
     await expect(page).toHaveURL(/saved=4/);
     await expect(page.getByText(/Revision 4 · Draft/)).toBeVisible();
-    await page.getByRole('button', { name: 'Send for review' }).click();
+    await page.getByRole('button', { name: 'Send for Review' }).click();
     await expect(page.getByText(/Revision .* · Ready/)).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Approve revision' })
+      page.getByRole('button', { name: 'Approve Revision' })
     ).toHaveCount(0);
     await reviewer.reload();
     const reviewFields = await actionFields(
       reviewer,
       writingUrl,
-      'Approve revision'
+      'Approve Revision'
     );
     reviewFields.status = 'Approved';
     await context.request.post(writingUrl, { multipart: reviewFields });
@@ -294,7 +294,7 @@ test.describe.serial('authoring and reporting', () => {
       (await db.finding.findUniqueOrThrow({ where: { id: findingId } }))
         .reviewStatus
     ).toBe('Ready');
-    await reviewer.getByRole('button', { name: 'Approve revision' }).click();
+    await reviewer.getByRole('button', { name: 'Approve Revision' }).click();
     await expect(reviewer.getByText(/Revision .* · Approved/)).toBeVisible();
     await reviewer.screenshot({
       path: testInfo.outputPath('writing.png'),
@@ -305,7 +305,7 @@ test.describe.serial('authoring and reporting', () => {
       .locator('textarea[name=executiveSummary]')
       .fill('Executive summary for the test engagement.');
     await reviewer
-      .getByRole('button', { name: 'Save report settings' })
+      .getByRole('button', { name: 'Save Report Settings' })
       .click();
     await expect(reviewer.getByText('Report settings saved.')).toBeVisible();
     const preview = await reviewerContext.request.get(
@@ -317,7 +317,7 @@ test.describe.serial('authoring and reporting', () => {
     const fields = await actionFields(
       reviewer,
       `/dashboard/reports?engagement=${engagementId}`,
-      'Issue approved PDF'
+      'Issue Approved PDF'
     );
     fields.confirm = 'on';
     await context.request.post('/dashboard/reports', { multipart: fields });
@@ -329,7 +329,7 @@ test.describe.serial('authoring and reporting', () => {
     expect(crossOrigin.status()).toBeGreaterThanOrEqual(400);
     expect(await db.issuedReport.count({ where: { engagementId } })).toBe(0);
     await reviewer.locator('input[name=confirm]').check();
-    await reviewer.getByRole('button', { name: 'Issue approved PDF' }).click();
+    await reviewer.getByRole('button', { name: 'Issue Approved PDF' }).click();
     await expect(
       reviewer.getByText('The approved PDF has been issued')
     ).toBeVisible();
@@ -364,7 +364,7 @@ test.describe.serial('authoring and reporting', () => {
       .locator('textarea[name=background]')
       .fill('Changed after issuance');
     await page
-      .getByRole('button', { name: 'Save finding', exact: true })
+      .getByRole('button', { name: 'Save Finding', exact: true })
       .click();
     await expect(page).toHaveURL(/saved=\d+/);
     expect(
@@ -406,7 +406,7 @@ test.describe.serial('authoring and reporting', () => {
     ).id;
     await page.locator('select[name=engagementId]').selectOption(engagementId);
     await page
-      .getByRole('button', { name: 'Create finding from template' })
+      .getByRole('button', { name: 'Create Finding from Template' })
       .click();
     await expect(page).toHaveURL(/\/write/);
     await expect(page.locator('textarea[name=observation]')).toHaveValue('');
@@ -430,13 +430,13 @@ test.describe.serial('authoring and reporting', () => {
         mimeType: 'application/json',
         buffer: Buffer.from(input),
       });
-      await imports.getByRole('button', { name: 'Preview import' }).click();
+      await imports.getByRole('button', { name: 'Preview Import' }).click();
       await expect(
         imports.getByRole('heading', { name: 'Preview 1 findings' })
       ).toBeVisible();
       await imports.locator('input[name=selected]').check();
       await imports
-        .getByRole('button', { name: 'Import selected findings' })
+        .getByRole('button', { name: 'Import Selected Findings' })
         .click();
       await expect(imports.getByRole('status')).toContainText(
         `Imported ${attempt === 0 ? 1 : 0} new findings`

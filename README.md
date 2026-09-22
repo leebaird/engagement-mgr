@@ -324,7 +324,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
 - **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. Browser restore is limited to 8 MB so decompression cannot monopolise the web process. For a larger archive, stop the application and run `npm run db:restore -- /absolute/path/to/em-backup.zip` as the application user. The offline command loads `.env` from the working directory and requires a non-empty `DATABASE_URL` in `.env` or the environment. It accepts regular files up to 500 MB and streams each archive entry through its expanded-size limit. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
-- **Reset** wipes all application data, restores the default pink highlight colour, and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
+- **Reset** wipes all application data, restores the default red highlight colour, and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
 
 **Old server**
 
@@ -380,7 +380,7 @@ Reporting additions: **Finding** also stores `version`, `reviewStatus`, `authorI
 - **User**: `id`, `username`, `passwordHash`, `role` (Admin, User), `lastPasswordChange`, `lastLogin`, `sessions`, `createdAt`, `updatedAt`.
 - **Session**: `id`, `userId`, `expiresAt`, `createdAt` — server-side records make each signed login session individually revocable on logout.
 - **LoginRateLimit**: `key`, `count`, `resetAt` — atomic source and password-confirmation attempt reservations. Password verification also has a bounded concurrency limit.
-- **ApplicationSetting**: singleton application-wide settings record with `highlightColor` (Pink, Blue, Teal, Green, Purple, or Amber) and `updatedAt`.
+- **ApplicationSetting**: singleton application-wide settings record with `highlightColor` (Red, Blue, Teal, Green, Purple, or Amber) and `updatedAt`.
 - **Engagement**: `id`, `codeName`, `clientId`, `chargeCode`, `status` (Prep, Recon, Testing, Reporting, Complete), `focus`, `type` (AI, Code_Review, Firewall, Multi, Pentest, Phishing, Physical, Purple_Team, Red_Team, USB_Drop, Vishing, Web_App, Wireless), `location` (Internal, External), `startPrep`, `endPrep`, `startRecon`, `endRecon`, `startTesting`, `endTesting`, `startReporting`, `endReporting`, `outbrief`, `objectives`, `targets`, `exclusions`, `notes`, `operators` (M:N), `contacts`/`trustedAgents` (M:N with Contact), `findings`, `findingContexts`, `createdAt`, `updatedAt`.
 - **Client**: `id`, `company` (DB column: `companyName`), `address`, `city`, `state`, `zip`, `phone` (DB column: `phoneNumber`), `website`, `notes`, `contacts`, `engagements`, `createdAt`, `updatedAt`.
 - **Contact**: `id`, `clientId`, `name`, `title`, `email`, `phone` (DB column: `phoneNumber`), `notes`, `assignedEngagements`, `trustedEngagements`, `createdAt`, `updatedAt`.

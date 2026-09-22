@@ -210,7 +210,7 @@ export default async function EngagementsPage({
             <col />
             <col style={{ width: '120px' }} />
             <col style={{ width: '120px' }} />
-            <col style={{ width: '40px' }} />
+            <col style={{ width: '52px' }} />
           </colgroup>
           <thead>
             <tr>

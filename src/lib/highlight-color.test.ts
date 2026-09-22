@@ -10,7 +10,11 @@ describe('highlight colours', () => {
   it('offers the six configured presets', () => {
     assert.deepEqual(
       HIGHLIGHT_COLOR_OPTIONS.map((option) => option.id),
-      ['Pink', 'Blue', 'Teal', 'Green', 'Purple', 'Amber'],
+      ['Pink', 'Amber', 'Green', 'Teal', 'Blue', 'Purple'],
+    );
+    assert.deepEqual(
+      HIGHLIGHT_COLOR_OPTIONS.map((option) => option.label),
+      ['Red', 'Amber', 'Green', 'Teal', 'Blue', 'Purple'],
     );
   });
 

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireDashboardSession } from '@/lib/require-auth';
 import { reviewStatuses } from '@/lib/reporting';
+import { PageHeader } from '@/components/PageHeader';
 
 export default async function ReviewsPage({
   searchParams,
@@ -30,7 +31,7 @@ export default async function ReviewsPage({
   });
   return (
     <div className="page-container">
-      <h1>Finding reviews</h1>
+      <PageHeader title="Finding Reviews" showAddButton={false} />
       <form method="get" className="writing-toolbar">
         <select name="status" className="form-input" defaultValue={status}>
           {reviewStatuses.map((s) => (

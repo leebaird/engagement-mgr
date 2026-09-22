@@ -34,7 +34,7 @@ export function UploadScreenshotForm({ findingId, version }: { findingId: string
       </div>
       {state?.error && <div className="text-error mb-4">{state.error}</div>}
       {state?.success && <p role="status">{state.success}</p>}
-      <button type="submit" className="btn-primary" disabled={isPending}>{isPending ? 'Uploading...' : 'Upload'}</button>
+      <button type="submit" className="btn-secondary" disabled={isPending}>{isPending ? 'Uploading...' : 'Upload'}</button>
     </form>
   );
 }

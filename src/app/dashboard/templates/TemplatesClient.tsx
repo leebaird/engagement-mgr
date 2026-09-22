@@ -279,8 +279,8 @@ export function TemplatesClient({
                     ))}
                   </select>
                 </label>
-                <button className="btn-primary" style={{ width: 'fit-content' }}>
-                  Create finding from template
+                <button className="btn-secondary" style={{ width: 'fit-content' }}>
+                  Create Finding from Template
                 </button>
               </form>
             )}

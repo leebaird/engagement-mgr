@@ -5,6 +5,7 @@ import { saveReport, issueReport } from '@/app/actions/reports';
 import { findingContent, readinessIssues } from '@/lib/reporting';
 import { MAX_FINDINGS_PER_ENGAGEMENT } from '@/lib/finding-capacity';
 import { loadReportEditorFindings } from '@/lib/report-service';
+import { PageHeader } from '@/components/PageHeader';
 
 export default async function ReportsPage({
   searchParams,
@@ -50,7 +51,7 @@ export default async function ReportsPage({
     [];
   return (
     <div className="page-container">
-      <h1>Engagement reports</h1>
+      <PageHeader title="Engagement Reports" showAddButton={false} />
       <form method="get" className="writing-toolbar">
         <select
           name="engagement"
@@ -65,7 +66,7 @@ export default async function ReportsPage({
             </option>
           ))}
         </select>
-        <button className="btn-secondary">Open report</button>
+        <button className="btn-secondary">Open Report</button>
       </form>
       {params.message && <p role="alert">{params.message.slice(0, 300)}</p>}
       {params.saved && <p role="status">Report settings saved.</p>}
@@ -178,7 +179,7 @@ export default async function ReportsPage({
                   ))}
                 </tbody>
               </table>
-              <button className="btn-primary" disabled={!editor?.selectionComplete}>Save report settings</button>
+              <button className="btn-secondary" disabled={!editor?.selectionComplete}>Save Report Settings</button>
             </form>
             {engagement.report && (
               <div className="writing-toolbar">
@@ -186,7 +187,7 @@ export default async function ReportsPage({
                   className="btn-secondary"
                   href={`/api/reports/${engagement.id}?preview=1`}
                 >
-                  Download draft PDF
+                  Download Draft PDF
                 </a>
                 {actor.role === 'Admin' && (
                   <form action={issueReport}>
@@ -204,7 +205,7 @@ export default async function ReportsPage({
                       <input name="confirm" type="checkbox" required /> I have
                       reviewed this report for delivery
                     </label>
-                    <button className="btn-primary">Issue approved PDF</button>
+                    <button className="btn-secondary">Issue Approved PDF</button>
                   </form>
                 )}
               </div>
