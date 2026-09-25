@@ -223,7 +223,15 @@ Run `./setup.sh --help` for all options.
 
 ## Running the Application
 
-PostgreSQL must be running before you start the app (`sudo systemctl start postgresql` if needed). Then start the development server:
+From the project directory, one command installs package updates, starts PostgreSQL if it is stopped, and starts the app:
+
+```bash
+./run.sh
+```
+
+Leave that window open. Use the Local or Network address it prints.
+
+To start it yourself instead: PostgreSQL must be running (`sudo systemctl start postgresql` if needed). Then start the development server:
 
 ```bash
 npm run dev
