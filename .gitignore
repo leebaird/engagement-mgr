@@ -27,6 +27,12 @@
 *.pem
 .junie
 
+# editor skill caches
+/.agents/
+/.claude/
+/.windsurf/
+/skills-lock.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
