@@ -83,6 +83,7 @@ body {
 /* Themed scrollbars */
 html {
   scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-gutter: stable;
 }
 
 ::-webkit-scrollbar {
@@ -799,6 +800,7 @@ a.db-action-btn {
 
 .engagement-create-form {
   width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1438,6 +1440,8 @@ a.modal-action-btn {
 .engagement-detail-view {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
 }
 
 .detail-tabs {
@@ -1724,10 +1728,11 @@ a.modal-action-btn {
 
 .schedule-table {
   display: grid;
-  grid-template-columns: max-content 1fr 1fr;
+  grid-template-columns: max-content auto auto;
   gap: 0.7rem 1.5rem;
   align-items: center;
-  width: fit-content;
+  width: max-content;
+  max-width: 100%;
 }
 
 .schedule-table__header {

@@ -282,7 +282,8 @@ export function EngagementDetailButton({
           closeHref={closeHref}
           title={showDeleteConfirm ? 'Delete Engagement' : isEditing ? 'Edit Engagement' : (engagement.codeName || 'Engagement Details')}
         maxWidth={showDeleteConfirm ? DETAIL_DELETE_MODAL_WIDTH : isEditing ? '900px' : '1500px'}
-        alignTop={!showDeleteConfirm}
+        minHeight={showDeleteConfirm ? undefined : 'calc(100vh - 50px)'}
+        alignTop={false}
         headerActions={isEditing ? (
           <>
             <button key="save" type="submit" form={EDIT_FORM_ID} className="btn-save" style={{ boxShadow: 'none' }}>Save</button>

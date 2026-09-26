@@ -178,8 +178,8 @@ export function EngagementDetailView({
         ))}
       </nav>
 
-      {activeTab === 'overview' ? (
-        <div className="detail-tabpanel">
+      <div className="engagement-form-panels">
+      <div className={activeTab === 'overview' ? 'detail-tabpanel' : 'detail-tabpanel detail-tabpanel--hidden'} aria-hidden={activeTab !== 'overview'}>
           {chips.length > 0 ? (
             <div className="detail-meta">
               {chips.map((chip) => (
@@ -234,26 +234,20 @@ export function EngagementDetailView({
 
           <ProseSection label="Notes" value={engagement.notes} />
         </div>
-      ) : null}
 
-      {activeTab === 'scope' ? (
-        <div className="detail-tabpanel">
+        <div className={activeTab === 'scope' ? 'detail-tabpanel' : 'detail-tabpanel detail-tabpanel--hidden'} aria-hidden={activeTab !== 'scope'}>
           <ProseSection label="Objectives" value={engagement.objectives} />
           <ProseSection label="Targets" value={engagement.targets} />
           <ProseSection label="Exclusions" value={engagement.exclusions} />
         </div>
-      ) : null}
 
-      {activeTab === 'people' ? (
-        <div className="detail-tabpanel people-grid">
+        <div className={activeTab === 'people' ? 'detail-tabpanel people-grid' : 'detail-tabpanel people-grid detail-tabpanel--hidden'} aria-hidden={activeTab !== 'people'}>
           <PeopleGroup label="Trusted Agents" ids={selectedTAs} resolve={resolveContact} />
           <PeopleGroup label="Contacts" ids={selectedContacts} resolve={resolveContact} />
           <PeopleGroup label="Operators" ids={selectedOps} resolve={resolveOperator} />
         </div>
-      ) : null}
 
-      {activeTab === 'schedule' ? (
-        <div className="detail-tabpanel">
+        <div className={activeTab === 'schedule' ? 'detail-tabpanel' : 'detail-tabpanel detail-tabpanel--hidden'} aria-hidden={activeTab !== 'schedule'}>
           <div className="schedule-table">
             <div className="schedule-table__header" />
             <div className="schedule-table__header">Start</div>
@@ -283,7 +277,7 @@ export function EngagementDetailView({
             </div>
           ) : null}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

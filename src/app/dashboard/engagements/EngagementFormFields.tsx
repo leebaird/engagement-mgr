@@ -341,8 +341,8 @@ export function EngagementFormFields({
         ))}
       </nav>
 
-      <div onInvalidCapture={handleInvalidCapture}>
-        <div className={panelClass('overview')} data-form-tab="overview">
+      <div className="engagement-form-panels" onInvalidCapture={handleInvalidCapture}>
+        <div className={panelClass('overview')} data-form-tab="overview" aria-hidden={activeTab !== 'overview'}>
           <div className="form-group">
             <label className="form-label">Code Name</label>
             <input
@@ -427,7 +427,7 @@ export function EngagementFormFields({
           </div>
         </div>
 
-        <div className={panelClass('scope')} data-form-tab="scope">
+        <div className={panelClass('scope')} data-form-tab="scope" aria-hidden={activeTab !== 'scope'}>
           <div className="form-group">
             <label className="form-label">Objectives</label>
             <textarea
@@ -454,7 +454,7 @@ export function EngagementFormFields({
           </div>
         </div>
 
-        <div className={panelClass('people')} data-form-tab="people">
+        <div className={panelClass('people')} data-form-tab="people" aria-hidden={activeTab !== 'people'}>
           <div className="form-group" style={{ position: 'relative' }} ref={taDropdownRef}>
             <label className="form-label">Trusted Agents</label>
             <div

@@ -14,6 +14,7 @@ interface ModalProps {
   onDelete?: () => void;
   hideHeaderActions?: boolean;
   maxWidth?: string;
+  minHeight?: string;
   zIndex?: number;
   headerActions?: React.ReactNode;
   alignTop?: boolean;
@@ -29,6 +30,7 @@ export function Modal({
   onDelete,
   hideHeaderActions,
   maxWidth,
+  minHeight,
   zIndex = 1000,
   headerActions,
   alignTop = false,
@@ -86,6 +88,7 @@ export function Modal({
           zIndex,
           padding: maxWidth ? '0.5rem' : '1rem',
           overflow: 'auto',
+          scrollbarGutter: 'stable',
         }}
       >
         {closeHref ? (
@@ -124,12 +127,14 @@ export function Modal({
           style={{
             width: `min(100%, ${maxWidth || '775px'})`,
             maxWidth: maxWidth || '775px',
+            minHeight,
             margin: '0 auto',
             padding: '2rem',
             position: 'relative',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             boxSizing: 'border-box',
-            flex: '0 0 auto',
+            flex: '0 1 auto',
+            minWidth: 0,
             zIndex: 1,
           }}
           onMouseDown={e => e.stopPropagation()}
