@@ -33,11 +33,12 @@ export function ImportForm({
   return (
     <>
       <section className="glass-panel glass-panel--padded">
-        <form action={action} className="writing-form">
+        <form action={action} className="import-form">
           <div className="import-form__grid">
-            <label className="form-label">
-              Engagement
+            <div className="import-field">
+              <label className="import-field__label" htmlFor="import-engagement">Engagement</label>
               <select
+                id="import-engagement"
                 name="engagementId"
                 className="form-input"
                 required
@@ -50,10 +51,11 @@ export function ImportForm({
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="form-label">
-              Export format
+            </div>
+            <div className="import-field">
+              <label className="import-field__label" htmlFor="import-format">Export format</label>
               <select
+                id="import-format"
                 name="format"
                 className="form-input"
                 defaultValue={formats[0]}
@@ -65,11 +67,12 @@ export function ImportForm({
                   <option key={f}>{f}</option>
                 ))}
               </select>
-            </label>
+            </div>
           </div>
-          <label className="form-label">
-            Export file (up to 2 MB)
+          <div className="import-field">
+            <label className="import-field__label" htmlFor="import-file">Export file (up to 2 MB)</label>
             <input
+              id="import-file"
               type="file"
               name="file"
               className="form-input"
@@ -79,7 +82,7 @@ export function ImportForm({
                 exportFile.current = event.target.files?.[0] ?? null;
               }}
             />
-          </label>
+          </div>
           <button
             className="btn-secondary"
             disabled={pending}
