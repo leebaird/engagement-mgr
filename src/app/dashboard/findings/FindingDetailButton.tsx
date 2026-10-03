@@ -292,28 +292,11 @@ export function FindingDetailButton({
                     <div className="engagement-finding-detail-form__meta">
                       <div>
                         <div className="engagement-finding-detail-field__label">Category</div>
-                        <select disabled value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                          <option value=""></option>
-                          <option value="AI">AI</option>
-                          <option value="Firewall">Firewall</option>
-                          <option value="Host">Host</option>
-                          <option value="OSINT">OSINT</option>
-                          <option value="Physical">Physical</option>
-                          <option value="Social Eng">Social Eng</option>
-                          <option value="Web App">Web App</option>
-                          <option value="Wireless">Wireless</option>
-                        </select>
+                        <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
                       </div>
                       <div>
                         <div className="engagement-finding-detail-field__label">Severity</div>
-                        <select disabled value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                          <option value=""></option>
-                          <option value="Critical">Critical</option>
-                          <option value="High">High</option>
-                          <option value="Medium">Medium</option>
-                          <option value="Low">Low</option>
-                          <option value="Info">Info</option>
-                        </select>
+                        <input readOnly type="text" value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none' }} />
                       </div>
                     </div>
                   </div>
@@ -352,28 +335,11 @@ export function FindingDetailButton({
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Category</div>
-                    <select disabled value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                      <option value=""></option>
-                      <option value="AI">AI</option>
-                      <option value="Firewall">Firewall</option>
-                      <option value="Host">Host</option>
-                      <option value="OSINT">OSINT</option>
-                      <option value="Physical">Physical</option>
-                      <option value="Social Eng">Social Eng</option>
-                      <option value="Web App">Web App</option>
-                      <option value="Wireless">Wireless</option>
-                    </select>
+                    <input readOnly type="text" value={finding.category || ''} className="form-input" style={{ pointerEvents: 'none' }} />
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Severity</div>
-                    <select disabled value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                      <option value=""></option>
-                      <option value="Critical">Critical</option>
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                      <option value="Info">Info</option>
-                    </select>
+                    <input readOnly type="text" value={finding.severity || ''} className="form-input" style={{ pointerEvents: 'none' }} />
                   </div>
                 </div>
 

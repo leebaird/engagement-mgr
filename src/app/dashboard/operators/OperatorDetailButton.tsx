@@ -143,15 +143,7 @@ export function OperatorDetailButton({
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <select disabled value={operator.title || ''} className="form-input" style={{ pointerEvents: 'none', opacity: 1, color: 'var(--text-main)' }}>
-                  <option value=""></option>
-                  <option value="Director">Director</option>
-                  <option value="Red Team Lead">Red Team Lead</option>
-                  <option value="Senior Red Team Operator">Senior Red Team Operator</option>
-                  <option value="Red Team Operator">Red Team Operator</option>
-                  <option value="Junior Red Team Operator">Junior Red Team Operator</option>
-                  <option value="Intern">Intern</option>
-                </select>
+                <input readOnly type="text" value={operator.title || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
             </div>
 
