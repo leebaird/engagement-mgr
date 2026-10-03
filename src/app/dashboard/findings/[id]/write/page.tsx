@@ -259,7 +259,7 @@ export default async function WritingPage({
                     defaultValue={finding.reviewerId ?? ''}
                     required
                   >
-                    <option value="">Choose reviewer</option>
+                    <option value=""></option>
                     {reviewers
                       .filter((u) => u.id !== finding.authorId)
                       .map((u) => (

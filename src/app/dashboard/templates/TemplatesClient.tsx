@@ -62,7 +62,7 @@ function TemplateFormFields({
           className="form-input"
           defaultValue={content?.severity ?? ''}
         >
-          <option value="">Unrated</option>
+          <option value=""></option>
           {SEVERITIES.map((s) => (
             <option key={s}>{s}</option>
           ))}
@@ -271,7 +271,7 @@ export function TemplatesClient({
                 <label className="form-label" style={{ flex: 1, margin: 0 }}>
                   Add to engagement
                   <select name="engagementId" className="form-input" required>
-                    <option value="">Choose engagement</option>
+                    <option value=""></option>
                     {engagements.map((e) => (
                       <option value={e.id} key={e.id}>
                         {e.codeName}

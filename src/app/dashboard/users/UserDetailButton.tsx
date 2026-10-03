@@ -189,6 +189,7 @@ export function UserDetailButton({
                   }
                 }}
               >
+                <option value=""></option>
                 <option value="Admin">Admin</option>
                 <option value="User" disabled={isLastAdmin}>User</option>
               </select>

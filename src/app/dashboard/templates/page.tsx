@@ -158,7 +158,7 @@ export default async function TemplatesPage({
           name="severity"
           defaultValue={params.severity ?? ''}
         >
-          <option value="">All severities</option>
+          <option value=""></option>
           {['Critical', 'High', 'Medium', 'Low', 'Info'].map((s) => (
             <option key={s}>{s}</option>
           ))}

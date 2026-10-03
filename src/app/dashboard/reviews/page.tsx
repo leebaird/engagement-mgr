@@ -10,10 +10,13 @@ export default async function ReviewsPage({
 }) {
   const actor = await requireDashboardSession();
   const params = await searchParams;
-  const status = reviewStatuses.find((s) => s === params.status) ?? 'Ready';
+  const status =
+    params.status === ''
+      ? undefined
+      : reviewStatuses.find((s) => s === params.status) ?? 'Ready';
   const findings = await prisma.finding.findMany({
     where: {
-      reviewStatus: status,
+      ...(status ? { reviewStatus: status } : {}),
       engagementId: { not: null },
       ...(params.mine === '1' ? { reviewerId: actor.userId } : {}),
     },
@@ -33,7 +36,8 @@ export default async function ReviewsPage({
     <div className="page-container">
       <PageHeader title="Finding Reviews" showAddButton={false} />
       <form method="get" className="writing-toolbar">
-        <select name="status" className="form-input" defaultValue={status}>
+        <select name="status" className="form-input" defaultValue={status ?? ''}>
+          <option value=""></option>
           {reviewStatuses.map((s) => (
             <option key={s}>{s}</option>
           ))}

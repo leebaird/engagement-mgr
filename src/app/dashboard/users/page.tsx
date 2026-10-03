@@ -335,7 +335,7 @@ export default async function UsersPage({
                         'User'
                       )}
                     </td>
-                    <td className="cell-numeric" style={{ color: 'var(--text-muted)', textAlign: 'right' }}>
+                    <td className="cell-numeric" style={{ textAlign: 'right', fontSize: '0.9rem' }}>
                       <DisplayDate value={user.lastLogin} includeTime />
                     </td>
                     <td className="table-action-cell">

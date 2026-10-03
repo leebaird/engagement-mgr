@@ -59,7 +59,7 @@ export default async function ReportsPage({
           required
           defaultValue={params.engagement ?? ''}
         >
-          <option value="">Choose engagement</option>
+          <option value=""></option>
           {engagements.map((e) => (
             <option key={e.id} value={e.id}>
               {e.codeName}

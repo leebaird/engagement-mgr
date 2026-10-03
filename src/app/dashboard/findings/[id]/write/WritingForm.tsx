@@ -186,7 +186,7 @@ export function WritingForm({
                   })
                 }
               >
-                <option value="">Unrated</option>
+                <option value=""></option>
                 {['Critical', 'High', 'Medium', 'Low', 'Info'].map((s) => (
                   <option key={s}>{s}</option>
                 ))}

@@ -18,7 +18,7 @@ export function ImportForm({
   selectedEngagement: string;
 }) {
   const exportFile = useRef<File | null>(null);
-  const exportFormat = useRef(formats[0] ?? '');
+  const exportFormat = useRef('');
   const [state, action, pending] = useActionState<ImportPreview, FormData>(
     previewScannerImport,
     {}
@@ -44,7 +44,7 @@ export function ImportForm({
                 required
                 defaultValue={selectedEngagement}
               >
-                <option value="">Choose engagement</option>
+                <option value=""></option>
                 {engagements.map((e) => (
                   <option key={e.id} value={e.id}>
                     {e.codeName}
@@ -53,16 +53,18 @@ export function ImportForm({
               </select>
             </div>
             <div className="import-field">
-              <label className="import-field__label" htmlFor="import-format">Export format</label>
+              <label className="import-field__label" htmlFor="import-format">Tool</label>
               <select
                 id="import-format"
                 name="format"
                 className="form-input"
-                defaultValue={formats[0]}
+                required
+                defaultValue=""
                 onChange={(event) => {
                   exportFormat.current = event.target.value;
                 }}
               >
+                <option value=""></option>
                 {formats.map((f) => (
                   <option key={f}>{f}</option>
                 ))}

@@ -165,9 +165,13 @@ export function DateTimePreferencesControls() {
         <select
           className="form-input date-time-preference__control"
           value={dateFormat}
-          onChange={(event) => setDateFormat(parseDateFormatId(event.target.value))}
+          onChange={(event) => {
+            if (!event.target.value) return;
+            setDateFormat(parseDateFormatId(event.target.value));
+          }}
           aria-label="Date format"
         >
+          <option value=""></option>
           {formatChoices.map((option) => (
             <option key={option.id} value={option.id}>
               {option.label}
@@ -180,9 +184,13 @@ export function DateTimePreferencesControls() {
         <select
           className="form-input date-time-preference__control"
           value={timeZone}
-          onChange={(event) => setTimeZone(parseTimeZoneId(event.target.value))}
+          onChange={(event) => {
+            if (!event.target.value) return;
+            setTimeZone(parseTimeZoneId(event.target.value));
+          }}
           aria-label="Time zone"
         >
+          <option value=""></option>
           {TIME_ZONE_OPTIONS.map((option) => (
             <option key={option.id} value={option.id}>
               {option.id === 'os' && operatingSystemTimeZone
