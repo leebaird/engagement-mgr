@@ -400,10 +400,19 @@ test.describe.serial('authoring and reporting', () => {
       .selectOption('High');
     await page.locator('input[name=approved]').check();
     await page.getByRole('button', { name: 'Save Template' }).click();
-    await expect(page.getByRole('heading', { name: title })).toBeVisible();
+    await expect(page).toHaveURL(/\/dashboard\/templates$/);
+    await expect(
+      page.getByRole('cell', { name: title, exact: true })
+    ).toBeVisible();
     templateId = (
       await db.findingTemplate.findFirstOrThrow({ where: { title } })
     ).id;
+    await page
+      .getByRole('row', { name: title })
+      .getByRole('link', { name: 'View details' })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`[?&]detail=${templateId}(?:&|$)`));
+    await expect(page.getByRole('heading', { name: title })).toBeVisible();
     await page.locator('select[name=engagementId]').selectOption(engagementId);
     await page
       .getByRole('button', { name: 'Create Finding from Template' })
