@@ -117,7 +117,7 @@ export default async function ContactsPage({
                 <Link href={sortHrefs.href('title')} className="sort-link">Title{sortHrefs.icon('title')}</Link>
               </th>
               <th>
-                <Link href={sortHrefs.href('client')} className="sort-link">Company{sortHrefs.icon('client')}</Link>
+                <Link href={sortHrefs.href('client')} className="sort-link">Client{sortHrefs.icon('client')}</Link>
               </th>
               <th style={{ paddingLeft: '3.5rem' }}>
                 <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>

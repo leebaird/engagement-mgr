@@ -1,26 +1,16 @@
 'use client';
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState } from 'react';
 import { createOperator } from '@/app/actions/operator';
 
 export function CreateOperatorForm({
   returnTo = '/dashboard/operators',
-  onSuccess,
 }: {
   returnTo?: string;
-  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(createOperator, null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
 
   return (
-    <form id="create-operator-form" action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <form id="create-operator-form" action={formAction} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <input type="hidden" name="returnTo" value={returnTo} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>

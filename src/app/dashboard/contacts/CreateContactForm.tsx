@@ -1,31 +1,20 @@
 'use client';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { createContact } from '@/app/actions/contact';
 import { ContactTeamField } from './ContactTeamField';
 
 export function CreateContactForm({
   clients,
   returnTo = '/dashboard/contacts',
-  onSuccess,
 }: {
   clients: { id: string, company: string }[];
   returnTo?: string;
-  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(createContact, null);
-  const formRef = useRef<HTMLFormElement>(null);
   const [team, setTeam] = useState('');
 
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      setTeam('');
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
-
   return (
-    <form id="create-contact-form" action={formAction} ref={formRef}>
+    <form id="create-contact-form" action={formAction}>
       <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
           <div>
@@ -79,7 +68,6 @@ export function CreateContactForm({
       </div>
 
       {state?.error && <div className="text-error mb-4" style={{ marginTop: '1rem' }}>{state.error}</div>}
-      {state?.success && <div style={{ color: '#4ade80', marginBottom: '1rem', marginTop: '1rem' }}>{state.success}</div>}
     </form>
   );
 }

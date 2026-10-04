@@ -1,31 +1,16 @@
 'use client';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { createClient } from '@/app/actions/client';
 
 export function CreateClientForm({
   returnTo = '/dashboard/clients',
-  onSuccess,
 }: {
   returnTo?: string;
-  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(createClient, null);
-  const formRef = useRef<HTMLFormElement>(null);
   const [cityError, setCityError] = useState(false);
   const [stateError, setStateError] = useState(false);
   const [zipError, setZipError] = useState(false);
-
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      queueMicrotask(() => {
-        setCityError(false);
-        setStateError(false);
-        setZipError(false);
-      });
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -53,7 +38,7 @@ export function CreateClientForm({
   };
 
   return (
-    <form id="create-client-form" action={formAction} ref={formRef}>
+    <form id="create-client-form" action={formAction}>
       <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
         {/* Left column - matches edit modal */}
@@ -149,7 +134,6 @@ export function CreateClientForm({
       </div>
 
       {state?.error && <div className="text-error mb-4">{state.error}</div>}
-      {state?.success && <div style={{ color: '#4ade80', marginBottom: '1rem' }}>{state.success}</div>}
     </form>
   );
 }

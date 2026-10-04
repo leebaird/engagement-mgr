@@ -1,26 +1,16 @@
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState } from 'react';
 import { createUser } from '@/app/actions/user';
 export function CreateUserForm({
   returnTo = '/dashboard/users',
-  onSuccess,
 }: {
   returnTo?: string;
-  onSuccess?: () => void;
 }) {
   const [state, formAction] = useActionState(createUser, null);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
 
   return (
-    <form id="create-user-form" action={formAction} ref={formRef}>
+    <form id="create-user-form" action={formAction}>
       <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div>
@@ -90,7 +80,6 @@ export function CreateUserForm({
         </div>
 
         {state?.error && <div style={{ color: '#ff4444', textAlign: 'center', marginTop: '0.5rem' }}>{state.error}</div>}
-        {state?.success && <div style={{ color: '#4ade80', fontSize: '0.875rem', marginBottom: '1rem' }}>{state.success}</div>}
       </div>
     </form>
   );

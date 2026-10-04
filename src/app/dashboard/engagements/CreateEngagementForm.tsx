@@ -4,16 +4,14 @@ import { createEngagement } from '@/app/actions/engagement';
 import { EngagementFormFields } from './EngagementFormFields';
 
 export function CreateEngagementForm({
-  clients, contacts, operators, returnTo = '/dashboard/engagements', onSuccess
+  clients, contacts, operators, returnTo = '/dashboard/engagements',
 }: {
   clients: { id: string, company: string }[],
   contacts: { id: string, name: string, title: string | null, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
   returnTo?: string,
-  onSuccess?: () => void
 }) {
   const [state, formAction] = useActionState(createEngagement, null);
-  const formRef = useRef<HTMLFormElement>(null);
   const [selectedOps, setSelectedOps] = useState<string[]>([]);
   const [opsOpen, setOpsOpen] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
@@ -45,20 +43,8 @@ export function CreateEngagementForm({
     };
   }, [opsOpen, contactsOpen, tasOpen]);
 
-  useEffect(() => {
-    if (state?.success) {
-      formRef.current?.reset();
-      queueMicrotask(() => {
-        setSelectedOps([]);
-        setSelectedContacts([]);
-        setSelectedTAs([]);
-      });
-      onSuccess?.();
-    }
-  }, [state, onSuccess]);
-
   return (
-    <form id="create-engagement-form" className="engagement-create-form" action={formAction} ref={formRef}>
+    <form id="create-engagement-form" className="engagement-create-form" action={formAction}>
       <input type="hidden" name="returnTo" value={returnTo} />
       {selectedContacts.map(id => <input type="hidden" key={id} name="contacts" value={id} />)}
       {selectedTAs.map(id => <input type="hidden" key={id} name="trustedAgents" value={id} />)}
@@ -88,7 +74,6 @@ export function CreateEngagementForm({
       />
 
       {state?.error && <div className="text-error mb-4">{state.error}</div>}
-      {state?.success && <div style={{ color: '#4ade80', marginBottom: '1rem' }}>{state.success}</div>}
     </form>
   );
 }
