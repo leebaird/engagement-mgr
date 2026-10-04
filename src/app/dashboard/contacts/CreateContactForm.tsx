@@ -1,30 +1,36 @@
 'use client';
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { createContact } from '@/app/actions/contact';
+import { ContactTeamField } from './ContactTeamField';
 
-export function CreateContactForm({ clients, onSuccess }: { clients: { id: string, company: string }[], onSuccess?: () => void }) {
+export function CreateContactForm({
+  clients,
+  returnTo = '/dashboard/contacts',
+  onSuccess,
+}: {
+  clients: { id: string, company: string }[];
+  returnTo?: string;
+  onSuccess?: () => void;
+}) {
   const [state, formAction] = useActionState(createContact, null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [team, setTeam] = useState('');
 
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
+      setTeam('');
       onSuccess?.();
     }
   }, [state, onSuccess]);
 
   return (
     <form id="create-contact-form" action={formAction} ref={formRef}>
+      <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-        {/* Left column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
             <input autoFocus type="text" name="name" className="form-input" required placeholder=" " />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-            <input type="text" name="title" className="form-input" />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
@@ -33,19 +39,22 @@ export function CreateContactForm({ clients, onSuccess }: { clients: { id: strin
               {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
             </select>
           </div>
-        </div>
-
-        {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-            <input type="email" name="email" className="form-input" />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+            <input type="text" name="title" className="form-input" />
           </div>
           <div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
             <input type="text" name="phoneNumber" className="form-input" />
           </div>
-        </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Team</div>
+            <ContactTeamField value={team} onChange={setTeam} />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+            <input type="email" name="email" className="form-input" />
+          </div>
 
         {/* Notes - full width */}
         <div style={{ gridColumn: '1 / -1' }}>

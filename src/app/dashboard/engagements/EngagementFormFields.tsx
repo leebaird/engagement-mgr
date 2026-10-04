@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, RefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { sortContactIds, sortContactsByTitle } from '@/lib/contact-title-sort';
@@ -57,7 +57,7 @@ type FormTab = 'overview' | 'scope' | 'people';
 const FORM_TABS: { id: FormTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'scope', label: 'Scope' },
-  { id: 'people', label: 'People' },
+  { id: 'people', label: 'Stakeholders' },
 ];
 
 function renderSelectedRelationEntries(
@@ -108,7 +108,6 @@ type EngagementFormFieldsProps = {
   onFieldChange?: (field: keyof EngagementFormValues, value: string) => void;
   autoFocusCodeName?: boolean;
   readOnly?: boolean;
-  footer?: ReactNode;
 };
 
 type SelectOption = {
@@ -122,6 +121,7 @@ const statusOptions: SelectOption[] = [
   { value: 'Recon', label: 'Recon' },
   { value: 'Testing', label: 'Testing' },
   { value: 'Reporting', label: 'Reporting' },
+  { value: 'Outbrief', label: 'Outbrief' },
   { value: 'Complete', label: 'Complete' },
 ];
 
@@ -264,7 +264,6 @@ export function EngagementFormFields({
   onFieldChange,
   autoFocusCodeName = false,
   readOnly = false,
-  footer,
 }: EngagementFormFieldsProps) {
   const controlled = values !== undefined && onFieldChange !== undefined;
   const [activeTab, setActiveTab] = useState<FormTab>('overview');
@@ -771,7 +770,6 @@ export function EngagementFormFields({
           </div>
         </div>
       </div>
-      {footer}
     </>
   );
 }

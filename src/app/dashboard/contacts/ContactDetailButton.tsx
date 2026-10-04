@@ -16,6 +16,7 @@ import {
 const EDIT_FORM_ID = 'edit-contact-form';
 import { DisplayDate } from '@/components/DateTimePreferencesProvider';
 import { formatPhone } from '@/lib/format';
+import { ContactTeamField } from './ContactTeamField';
 import { editEmailInputProps, focusEditFieldAtStart, handleEditFieldFocus } from '@/lib/edit-field-focus';
 
 interface Client {
@@ -27,6 +28,7 @@ interface Contact {
   id: string;
   name: string;
   title: string | null;
+  team: string | null;
   email: string | null;
   phone: string | null;
   notes: string | null;
@@ -79,6 +81,7 @@ export function ContactDetailButton({
     clientId: initialContact.clientId,
     name: initialContact.name,
     title: initialContact.title || '',
+    team: initialContact.team || '',
     email: initialContact.email || '',
     phone: initialContact.phone || '',
     notes: initialContact.notes || '',
@@ -91,6 +94,7 @@ export function ContactDetailButton({
           clientId: contact.clientId,
           name: contact.name,
           title: contact.title || '',
+          team: contact.team || '',
           email: contact.email || '',
           phone: contact.phone || '',
           notes: contact.notes || '',
@@ -142,15 +146,9 @@ export function ContactDetailButton({
         ) : !isEditing ? (
           // VIEW MODE (form field style)
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {/* Column 1: Name + Title + Client */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
                 <input readOnly type="text" value={contact.name || ''} className="form-input" style={{ pointerEvents: 'none' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <input readOnly type="text" value={contact.title || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Client</div>
@@ -162,19 +160,22 @@ export function ContactDetailButton({
                   style={{ pointerEvents: 'none' }}
                 />
               </div>
-            </div>
-
-            {/* Column 2: Email + Phone */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-                <input readOnly type="email" value={contact.email || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
+                <input readOnly type="text" value={contact.title || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input readOnly type="tel" value={formatPhone(contact.phone)} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
-            </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Team</div>
+                <input readOnly type="text" value={contact.team || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+                <input readOnly type="email" value={contact.email || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
 
             {/* Full width below: Notes + Created */}
             <div style={{ gridColumn: '1 / -1' }}>
@@ -195,8 +196,6 @@ export function ContactDetailButton({
           <form id={EDIT_FORM_ID} action={updateContactFromDetail}>
             <DetailEditFormFields recordId={contact.id} sort={sort} dir={dir} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.75fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
-            {/* Left column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
                 <input
@@ -206,17 +205,6 @@ export function ContactDetailButton({
                   value={formData.name}
                   required
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="form-input"
-                  onFocus={handleEditFieldFocus}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
-                <input
-                  name="title"
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
                   className="form-input"
                   onFocus={handleEditFieldFocus}
                 />
@@ -235,17 +223,13 @@ export function ContactDetailButton({
                   {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                 </select>
               </div>
-            </div>
-
-            {/* Right column */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <input
-                  {...editEmailInputProps}
-                  name="email"
-                  value={formData.email}
-                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  name="title"
+                  type="text"
+                  value={formData.title}
+                  onChange={e => setFormData({ ...formData, title: e.target.value })}
                   className="form-input"
                   onFocus={handleEditFieldFocus}
                 />
@@ -261,7 +245,24 @@ export function ContactDetailButton({
                   onFocus={handleEditFieldFocus}
                 />
               </div>
-            </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Team</div>
+                <ContactTeamField
+                  value={formData.team}
+                  onChange={(team) => setFormData({ ...formData, team })}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+                <input
+                  {...editEmailInputProps}
+                  name="email"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  className="form-input"
+                  onFocus={handleEditFieldFocus}
+                />
+              </div>
 
             {/* Notes - full width */}
             <div style={{ gridColumn: '1 / -1' }}>

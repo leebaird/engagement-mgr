@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateClientForm } from './CreateClientForm';
@@ -19,8 +18,6 @@ export function ClientsClient({
   showCreateModal,
   createCloseHref,
 }: ClientsClientProps) {
-  const router = useRouter();
-
   return (
     <div className="page-container">
       <PageHeader
@@ -50,12 +47,7 @@ export function ClientsClient({
             </button>
           }
         >
-          <CreateClientForm
-            onSuccess={() => {
-              router.refresh();
-              window.location.assign(createCloseHref);
-            }}
-          />
+          <CreateClientForm returnTo={createCloseHref} />
         </Modal>
       )}
     </div>

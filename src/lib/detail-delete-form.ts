@@ -111,18 +111,26 @@ export function finishScheduleUpdate(
 
   redirect(
     buildPathQuery(pathname, listParams, {
-      ...extra,
-      detail: id,
-      schedule: '1',
+      detail: null,
+      schedule: null,
       scheduleEdit: null,
       scheduleError: null,
       edit: null,
       delete: null,
       deleteError: null,
       saveError: null,
+      finding: null,
+      findings: null,
+      createFinding: null,
     }),
   );
 }
+
+type FinishDetailUpdateOptions = {
+  /** Detail record to keep open after a successful save. Omit to return to the list. */
+  successDetailId?: string;
+  successUpdates?: Record<string, string | null>;
+};
 
 export function finishDetailUpdate(
   pathname: string,
@@ -131,6 +139,7 @@ export function finishDetailUpdate(
   result: UpdateActionResult,
   saveError = 'generic',
   extraParamKeys: string[] = [],
+  options: FinishDetailUpdateOptions = {},
 ) {
   const listParams = listParamsFromForm(formData);
   const extra = extraParamsFromForm(formData, extraParamKeys);
@@ -151,7 +160,7 @@ export function finishDetailUpdate(
   redirect(
     buildPathQuery(pathname, listParams, {
       ...extra,
-      detail: id,
+      detail: options.successDetailId ?? null,
       edit: null,
       saveError: null,
       delete: null,
@@ -161,6 +170,8 @@ export function finishDetailUpdate(
       scheduleError: null,
       findings: null,
       createFinding: null,
+      finding: null,
+      ...options.successUpdates,
     }),
   );
 }

@@ -1,10 +1,12 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createContactSchema, updateContactSchema } from '@/lib/validation/contact';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
+import { listReturnPath } from '@/lib/list-view-params';
 
 export async function createContact(_prevState: unknown, formData: FormData) {
   const auth = await requireAdminAuth();
@@ -14,6 +16,7 @@ export async function createContact(_prevState: unknown, formData: FormData) {
     clientId: formData.get('clientId'),
     name: formData.get('name'),
     title: formData.get('title'),
+    team: formData.get('team'),
     email: formData.get('email'),
     phoneNumber: formData.get('phoneNumber'),
     notes: formData.get('notes'),
@@ -23,17 +26,18 @@ export async function createContact(_prevState: unknown, formData: FormData) {
     return { error: firstZodError(parsed.error) };
   }
 
-  const { clientId, name, title, email, phoneNumber, notes } = parsed.data;
+  const { clientId, name, title, team, email, phoneNumber, notes } = parsed.data;
 
   try {
     await prisma.contact.create({
-      data: { clientId, name, title, email, phone: phoneNumber, notes },
+      data: { clientId, name, title, team, email, phone: phoneNumber, notes },
     });
-    revalidatePath('/dashboard/contacts');
-    return { success: 'Contact created successfully.' };
   } catch {
     return { error: 'Failed to create contact.' };
   }
+
+  revalidatePath('/dashboard/contacts');
+  redirect(listReturnPath(formData, '/dashboard/contacts'));
 }
 
 export async function updateContact(id: string, _prevState: unknown, formData: FormData) {
@@ -49,6 +53,7 @@ export async function updateContact(id: string, _prevState: unknown, formData: F
     clientId: formData.get('clientId'),
     name: formData.get('name'),
     title: formData.get('title'),
+    team: formData.get('team'),
     email: formData.get('email'),
     phoneNumber: formData.get('phoneNumber'),
     notes: formData.get('notes'),
@@ -58,12 +63,12 @@ export async function updateContact(id: string, _prevState: unknown, formData: F
     return { error: firstZodError(parsed.error) };
   }
 
-  const { clientId, name, title, email, phoneNumber, notes } = parsed.data;
+  const { clientId, name, title, team, email, phoneNumber, notes } = parsed.data;
 
   try {
     await prisma.contact.update({
       where: { id: idParsed.data },
-      data: { clientId, name, title, email, phone: phoneNumber, notes },
+      data: { clientId, name, title, team, email, phone: phoneNumber, notes },
     });
     revalidatePath('/dashboard/contacts');
     return { success: 'Contact updated successfully.' };

@@ -123,7 +123,7 @@ export function Modal({
           />
         )}
         <div
-          className="glass-panel modal-panel"
+          className={minHeight ? 'glass-panel modal-panel modal-panel--fill' : 'glass-panel modal-panel'}
           style={{
             width: `min(100%, ${maxWidth || '775px'})`,
             maxWidth: maxWidth || '775px',

@@ -35,6 +35,27 @@ export function buildDetailHrefs(
   };
 }
 
+const LIST_MODAL_PARAMS = ['create', 'detail', 'edit', 'delete', 'deleteError', 'saveError'] as const;
+
+/** List URL from a form's returnTo field. Rejects anything that is not that list page. */
+export function listReturnPath(formData: FormData, pathname: string): string {
+  const value = formData.get('returnTo')?.toString() ?? '';
+  let url: URL;
+  try {
+    url = new URL(value, 'http://local');
+  } catch {
+    return pathname;
+  }
+  if (url.origin !== 'http://local' || url.pathname !== pathname) {
+    return pathname;
+  }
+  for (const key of LIST_MODAL_PARAMS) {
+    url.searchParams.delete(key);
+  }
+  const query = url.searchParams.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
 export function buildPathQuery(
   pathname: string,
   current: SearchParamRecord,

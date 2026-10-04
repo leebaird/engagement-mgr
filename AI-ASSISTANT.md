@@ -65,7 +65,7 @@ Controls that work on `localhost` often **fail when the app is opened from anoth
    - Navigation / open modal → `<Link href>` or `<a href>`
    - File download → GET API route (e.g. `/api/db/backup`) linked with `<a href>`
    - Detail **delete** → `<form action={delete*FromDetail}>`; `finishDetailDelete()` in `src/lib/detail-delete-form.ts` redirects with `?deleteError=` on failure
-   - Detail **save** → `<form action={update*FromDetail}>` (not `onClick` + `update*` return value); `finishDetailUpdate()` redirects to `?detail=` view on success or `?edit=1&saveError=` on failure. Use `DetailEditFormFields` for hidden `id` / `sort` / `dir` (and extra params like `finding` on engagements). Edit/Delete header actions live in `src/components/DetailModalActions.tsx`.
+   - Detail **save** → `<form action={update*FromDetail}>` (not `onClick` + `update*` return value); `finishDetailUpdate()` returns to the list on success or `?detail=&edit=1&saveError=` on failure. Use `DetailEditFormFields` for hidden `id` / `sort` / `dir` (and extra params like `finding` on engagements). Edit/Delete header actions live in `src/components/DetailModalActions.tsx`.
    - Admin mutations → `<form action={serverAction}>`; server redirects with `?dbError=` or `?dbMsg=` for feedback
    - Reserve `onClick` for pickers, dropdowns, and other truly local UI — not for open modal, save, or delete
 

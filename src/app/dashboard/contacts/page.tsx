@@ -101,12 +101,12 @@ export default async function ContactsPage({
         ) : (
         <table className="data-table">
           <colgroup>
-            <col style={{ width: '170px' }} />
-            <col style={{ width: '170px' }} />
-            <col style={{ width: '160px' }} />
-            <col style={{ width: '180px' }} />
-            <col style={{ width: '160px' }} />
-            <col style={{ width: '40px' }} />
+            <col style={{ width: '18.3%' }} />
+            <col style={{ width: '274px' }} />
+            <col style={{ width: '130px' }} />
+            <col style={{ width: '190px' }} />
+            <col />
+            <col style={{ width: '48px' }} />
           </colgroup>
           <thead>
             <tr>
@@ -119,11 +119,11 @@ export default async function ContactsPage({
               <th>
                 <Link href={sortHrefs.href('client')} className="sort-link">Company{sortHrefs.icon('client')}</Link>
               </th>
-              <th>
-                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
+              <th style={{ paddingLeft: '3.5rem' }}>
+                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
               </th>
               <th>
-                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
+                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
               </th>
               <th></th>
             </tr>
@@ -134,8 +134,8 @@ export default async function ContactsPage({
                 <td style={{ fontWeight: 500 }}>{c.name}</td>
                 <td>{c.title || ''}</td>
                 <td>{c.client.company}</td>
+                <td className="cell-numeric" style={{ paddingLeft: '3.5rem' }}>{formatPhone(c.phone)}</td>
                 <td>{c.email || ''}</td>
-                <td className="cell-numeric">{formatPhone(c.phone)}</td>
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/contacts', listParams, { detail: c.id, create: null })} />
                 </td>

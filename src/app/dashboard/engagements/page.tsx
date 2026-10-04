@@ -51,7 +51,8 @@ export default async function EngagementsPage({
     Recon: 2,
     Testing: 3,
     Reporting: 4,
-    Complete: 5,
+    Outbrief: 5,
+    Complete: 6,
   };
 
   type EngagementOrderBy = NonNullable<Parameters<typeof prisma.engagement.findMany>[0]>['orderBy'];

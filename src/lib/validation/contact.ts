@@ -7,6 +7,7 @@ export const createContactSchema = z.object({
   clientId: uuidSchema,
   name: requiredFormString(200, 'Client and Name are required.'),
   title: optionalFormString(200),
+  team: optionalFormString(200),
   email: optionalFormEmail(),
   phoneNumber: optionalFormString(30),
   notes: optionalFormString(5000),

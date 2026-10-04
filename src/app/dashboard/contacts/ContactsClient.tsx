@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateContactForm } from './CreateContactForm';
@@ -21,8 +20,6 @@ export function ContactsClient({
   showCreateModal,
   createCloseHref,
 }: ContactsClientProps) {
-  const router = useRouter();
-
   return (
     <div className="page-container">
       <PageHeader
@@ -52,13 +49,7 @@ export function ContactsClient({
             </button>
           }
         >
-          <CreateContactForm
-            clients={clients}
-            onSuccess={() => {
-              router.refresh();
-              window.location.assign(createCloseHref);
-            }}
-          />
+          <CreateContactForm clients={clients} returnTo={createCloseHref} />
         </Modal>
       )}
     </div>

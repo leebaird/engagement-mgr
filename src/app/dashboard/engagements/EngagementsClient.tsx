@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateEngagementForm } from './CreateEngagementForm';
@@ -27,8 +26,6 @@ export function EngagementsClient({
   showCreateModal,
   createCloseHref,
 }: EngagementsClientProps) {
-  const router = useRouter();
-
   return (
     <>
       {overlay}
@@ -53,10 +50,7 @@ export function EngagementsClient({
             clients={clients}
             contacts={contacts}
             operators={operators}
-            onSuccess={() => {
-              router.refresh();
-              window.location.assign(createCloseHref);
-            }}
+            returnTo={createCloseHref}
           />
         </Modal>
       )}

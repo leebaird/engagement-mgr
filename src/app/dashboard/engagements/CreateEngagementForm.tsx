@@ -4,11 +4,12 @@ import { createEngagement } from '@/app/actions/engagement';
 import { EngagementFormFields } from './EngagementFormFields';
 
 export function CreateEngagementForm({
-  clients, contacts, operators, onSuccess
+  clients, contacts, operators, returnTo = '/dashboard/engagements', onSuccess
 }: {
   clients: { id: string, company: string }[],
   contacts: { id: string, name: string, title: string | null, clientId: string }[],
   operators: { id: string, name: string, title: string | null }[],
+  returnTo?: string,
   onSuccess?: () => void
 }) {
   const [state, formAction] = useActionState(createEngagement, null);
@@ -58,6 +59,7 @@ export function CreateEngagementForm({
 
   return (
     <form id="create-engagement-form" className="engagement-create-form" action={formAction} ref={formRef}>
+      <input type="hidden" name="returnTo" value={returnTo} />
       {selectedContacts.map(id => <input type="hidden" key={id} name="contacts" value={id} />)}
       {selectedTAs.map(id => <input type="hidden" key={id} name="trustedAgents" value={id} />)}
       {selectedOps.map(id => <input type="hidden" key={id} name="operators" value={id} />)}

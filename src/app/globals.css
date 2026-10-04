@@ -413,6 +413,18 @@ html {
   -webkit-backdrop-filter: none;
 }
 
+.modal-panel--fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.engagement-detail-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .modal-panel .glass-panel {
   background: #1e2128;
   backdrop-filter: none;
@@ -939,7 +951,8 @@ a.db-action-btn {
   color: var(--text-muted);
   gap: 0 0.25rem;
   width: fit-content;
-  margin-top: 0.75rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
   align-self: flex-start;
 }
 
@@ -1696,6 +1709,30 @@ a.modal-action-btn {
   align-items: start;
 }
 
+/* Size every engagement detail tab to the Stakeholders panel. */
+.engagement-detail-view .engagement-form-panels {
+  display: grid;
+  width: 100%;
+}
+
+.engagement-detail-view .engagement-form-panels > .detail-tabpanel {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.engagement-detail-view .engagement-form-panels > .detail-tabpanel:not(.people-grid) {
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.engagement-detail-view .people-grid.detail-tabpanel--hidden {
+  display: grid;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .people-list {
   display: flex;
   flex-direction: column;
@@ -1728,11 +1765,10 @@ a.modal-action-btn {
 
 .schedule-table {
   display: grid;
-  grid-template-columns: max-content auto auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.7rem 1.5rem;
   align-items: center;
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
 }
 
 .schedule-table__header {

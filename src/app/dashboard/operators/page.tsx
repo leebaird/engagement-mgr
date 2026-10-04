@@ -81,8 +81,8 @@ export default async function OperatorsPage({
           <colgroup>
             <col style={{ width: '170px' }} />
             <col style={{ width: '170px' }} />
-            <col style={{ width: '180px' }} />
             <col style={{ width: '160px' }} />
+            <col style={{ width: '180px' }} />
             <col style={{ width: '40px' }} />
           </colgroup>
           <thead>
@@ -94,10 +94,10 @@ export default async function OperatorsPage({
                 <Link href={sortHrefs.href('title')} className="sort-link">Title{sortHrefs.icon('title')}</Link>
               </th>
               <th>
-                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
+                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
               </th>
               <th>
-                <Link href={sortHrefs.href('phoneNumber')} className="sort-link">Phone{sortHrefs.icon('phoneNumber')}</Link>
+                <Link href={sortHrefs.href('email')} className="sort-link">Email{sortHrefs.icon('email')}</Link>
               </th>
 
               <th></th>
@@ -108,8 +108,8 @@ export default async function OperatorsPage({
               <tr key={op.id}>
                 <td style={{ fontWeight: 500 }}>{op.name}</td>
                 <td>{op.title || ''}</td>
-                <td>{op.email || ''}</td>
                 <td className="cell-numeric">{formatPhone(op.phoneNumber)}</td>
+                <td>{op.email || ''}</td>
 
                 <td className="table-action-cell">
                   <DetailEyeLink href={buildPathQuery('/dashboard/operators', listParams, { detail: op.id, create: null })} />

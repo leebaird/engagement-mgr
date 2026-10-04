@@ -1,5 +1,4 @@
 'use client';
-import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Modal } from '@/components/Modal';
 import { CreateOperatorForm } from './CreateOperatorForm';
@@ -19,8 +18,6 @@ export function OperatorsClient({
   showCreateModal,
   createCloseHref,
 }: OperatorsClientProps) {
-  const router = useRouter();
-
   return (
     <div className="page-container">
       <PageHeader
@@ -50,12 +47,7 @@ export function OperatorsClient({
             </button>
           }
         >
-          <CreateOperatorForm
-            onSuccess={() => {
-              router.refresh();
-              window.location.assign(createCloseHref);
-            }}
-          />
+          <CreateOperatorForm returnTo={createCloseHref} />
         </Modal>
       )}
     </div>

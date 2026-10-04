@@ -142,30 +142,24 @@ export function OperatorDetailButton({
                 <input readOnly type="text" value={operator.name} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
               <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
+                <input readOnly type="text" value={operator.discord || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
+              <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <input readOnly type="text" value={operator.title || ''} className="form-input" style={{ pointerEvents: 'none' }} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-                <input readOnly type="email" value={operator.email || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input readOnly type="tel" value={operator.phoneNumber || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
-                <input readOnly type="text" value={operator.discord || ''} className="form-input" style={{ pointerEvents: 'none' }} />
-              </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub</div>
                 <input readOnly type="text" value={operator.github || ''} className="form-input" style={{ pointerEvents: 'none' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+                <input readOnly type="email" value={operator.email || ''} className="form-input" style={{ pointerEvents: 'none' }} />
               </div>
             </div>
 
@@ -199,6 +193,10 @@ export function OperatorDetailButton({
                 <input ref={nameInputRef} name="name" type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input" required onFocus={handleEditFieldFocus} />
               </div>
               <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
+                <input name="discord" type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+              </div>
+              <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
                 <select name="title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="form-input" onFocus={(e) => { try { e.currentTarget.showPicker?.(); } catch {} }}>
                   <option value=""></option>
@@ -210,27 +208,17 @@ export function OperatorDetailButton({
                   <option value="Intern">Intern</option>
                 </select>
               </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-                <input {...editEmailInputProps} name="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
-              </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
                 <input name="phoneNumber" type="tel" value={formData.phoneNumber} onChange={e => setFormData({...formData, phoneNumber: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
-                <input name="discord" type="text" value={formData.discord} onChange={e => setFormData({...formData, discord: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
-              </div>
               <div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub</div>
                 <input name="github" type="text" value={formData.github} onChange={e => setFormData({...formData, github: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+                <input {...editEmailInputProps} name="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input" onFocus={handleEditFieldFocus} />
               </div>
             </div>
 

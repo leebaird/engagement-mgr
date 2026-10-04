@@ -1,7 +1,9 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
+import { listReturnPath } from '@/lib/list-view-params';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import {
   engagementIdSchema,
@@ -122,12 +124,13 @@ export async function createEngagement(_prevState: unknown, formData: FormData) 
         },
       },
     });
-    revalidatePath('/dashboard/engagements');
-    return { success: 'Engagement created successfully.' };
   } catch (e) {
     console.error(e);
     return { error: 'Failed to create engagement.' };
   }
+
+  revalidatePath('/dashboard/engagements');
+  redirect(listReturnPath(formData, '/dashboard/engagements'));
 }
 
 export async function updateEngagement(id: string, _prevState: unknown, formData: FormData) {

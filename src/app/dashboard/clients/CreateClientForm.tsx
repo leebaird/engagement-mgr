@@ -2,7 +2,13 @@
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/app/actions/client';
 
-export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateClientForm({
+  returnTo = '/dashboard/clients',
+  onSuccess,
+}: {
+  returnTo?: string;
+  onSuccess?: () => void;
+}) {
   const [state, formAction] = useActionState(createClient, null);
   const formRef = useRef<HTMLFormElement>(null);
   const [cityError, setCityError] = useState(false);
@@ -48,6 +54,7 @@ export function CreateClientForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <form id="create-client-form" action={formAction} ref={formRef}>
+      <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'grid', gridTemplateColumns: '0.5fr 1fr', gap: '1.25rem', fontSize: '1rem', lineHeight: 1.5 }}>
         {/* Left column - matches edit modal */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

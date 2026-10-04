@@ -1,7 +1,9 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
+import { listReturnPath } from '@/lib/list-view-params';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { createOperatorSchema, updateOperatorSchema } from '@/lib/validation/operator';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
@@ -30,11 +32,12 @@ export async function createOperator(_prevState: unknown, formData: FormData) {
     await prisma.operator.create({
       data: { name, title, email, phoneNumber, discord, github, notes },
     });
-    revalidatePath('/dashboard/operators');
-    return { success: 'Operator created successfully.' };
   } catch {
     return { error: 'Failed to create operator.' };
   }
+
+  revalidatePath('/dashboard/operators');
+  redirect(listReturnPath(formData, '/dashboard/operators'));
 }
 
 export async function updateOperator(id: string, _prevState: unknown, formData: FormData) {

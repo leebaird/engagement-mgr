@@ -8,7 +8,9 @@ import { validatePasswordComplexity, ARGON2_OPTIONS } from '@/lib/auth/password'
 import { firstZodError, userIdSchema } from '@/lib/validation/common';
 import { createUserSchema, updateUserSchema } from '@/lib/validation/user';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
+import { listReturnPath } from '@/lib/list-view-params';
 
 class LastAdminError extends Error {}
 
@@ -70,12 +72,12 @@ export async function createUser(_prevState: unknown, formData: FormData) {
         lastPasswordChange: new Date(0), // Force password change on first login
       },
     });
-
-    revalidatePath('/dashboard/users');
-    return { success: 'User created successfully.' };
   } catch {
     return { error: 'Failed to create user.', fields: { username, role } };
   }
+
+  revalidatePath('/dashboard/users');
+  redirect(listReturnPath(formData, '/dashboard/users'));
 }
 
 export async function updateUser(id: string, _prevState: unknown, formData: FormData) {

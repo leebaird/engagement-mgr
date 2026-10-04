@@ -1,7 +1,9 @@
 'use server';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { isAdminError, requireAdminAuth } from '@/lib/require-admin';
+import { listReturnPath } from '@/lib/list-view-params';
 import { createClientSchema, updateClientDataSchema } from '@/lib/validation/client';
 import { firstZodError, uuidSchema } from '@/lib/validation/common';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
@@ -40,11 +42,12 @@ export async function createClient(_prevState: unknown, formData: FormData) {
         notes,
       },
     });
-    revalidatePath('/dashboard/clients');
-    return { success: 'Client created successfully.' };
   } catch {
     return { error: 'Failed to create client.' };
   }
+
+  revalidatePath('/dashboard/clients');
+  redirect(listReturnPath(formData, '/dashboard/clients'));
 }
 
 export async function updateClient(id: string, data: {

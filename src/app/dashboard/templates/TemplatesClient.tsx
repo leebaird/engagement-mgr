@@ -153,7 +153,9 @@ export function TemplatesClient({
           }
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <form id="create-template-form" action={saveTemplate} />
+            <form id="create-template-form" action={saveTemplate}>
+              <input type="hidden" name="returnTo" value={createCloseHref} />
+            </form>
             <TemplateFormFields formId="create-template-form" />
             {isAdmin && (
               <label>
@@ -199,6 +201,7 @@ export function TemplatesClient({
                 <form id="edit-template-form" action={saveTemplate}>
                   <input name="id" type="hidden" value={detail.id} />
                   <input name="version" type="hidden" value={detail.version} />
+                  <input name="returnTo" type="hidden" value={detailCloseHref} />
                 </form>
                 <TemplateFormFields
                   content={detail.content}

@@ -307,7 +307,7 @@ export function EngagementDetailButton({
         {showDeleteConfirm ? (
           <DetailDeleteConfirmBody deleteError={deleteError} />
         ) : isEditing ? (
-        <>
+        <div className="engagement-detail-layout">
         {saveErrorMessage(saveError) ? (
           <DetailSaveErrorBanner message={saveErrorMessage(saveError)!} />
         ) : null}
@@ -337,14 +337,14 @@ export function EngagementDetailButton({
                 contactDropdownRef={contactDropdownRef}
                 taDropdownRef={taDropdownRef}
                 codeNameRef={codeNameInputRef}
-                footer={timestampsFooter}
               />
           </form>
         </div>
         {findingsSection}
-        </>
+        {timestampsFooter}
+        </div>
         ) : (
-          <>
+          <div className="engagement-detail-layout">
             {findingsSection}
             <EngagementDetailView
               engagement={engagement}
@@ -356,7 +356,7 @@ export function EngagementDetailButton({
               isAdmin={isAdmin}
             />
             {timestampsFooter}
-          </>
+          </div>
         )}
       </Modal>
       )}

@@ -2,7 +2,13 @@
 
 import { useActionState, useEffect, useRef } from 'react';
 import { createUser } from '@/app/actions/user';
-export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateUserForm({
+  returnTo = '/dashboard/users',
+  onSuccess,
+}: {
+  returnTo?: string;
+  onSuccess?: () => void;
+}) {
   const [state, formAction] = useActionState(createUser, null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -15,6 +21,7 @@ export function CreateUserForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <form id="create-user-form" action={formAction} ref={formRef}>
+      <input type="hidden" name="returnTo" value={returnTo} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Username</div>

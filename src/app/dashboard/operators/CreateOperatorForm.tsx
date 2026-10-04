@@ -2,7 +2,13 @@
 import { useActionState, useEffect, useRef } from 'react';
 import { createOperator } from '@/app/actions/operator';
 
-export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateOperatorForm({
+  returnTo = '/dashboard/operators',
+  onSuccess,
+}: {
+  returnTo?: string;
+  onSuccess?: () => void;
+}) {
   const [state, formAction] = useActionState(createOperator, null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -15,11 +21,16 @@ export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <form id="create-operator-form" action={formAction} ref={formRef} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <input type="hidden" name="returnTo" value={returnTo} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Name</div>
           <input autoFocus type="text" name="name" className="form-input" required />
+        </div>
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
+          <input type="text" name="discord" className="form-input" />
         </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Title</div>
@@ -33,27 +44,17 @@ export function CreateOperatorForm({ onSuccess }: { onSuccess?: () => void }) {
             <option value="Intern">Intern</option>
           </select>
         </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
-          <input type="email" name="email" className="form-input" />
-        </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</div>
           <input type="tel" name="phoneNumber" className="form-input" />
         </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-        <div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Discord</div>
-          <input type="text" name="discord" className="form-input" />
-        </div>
         <div>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub</div>
           <input type="text" name="github" className="form-input" />
+        </div>
+        <div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</div>
+          <input type="email" name="email" className="form-input" />
         </div>
       </div>
 

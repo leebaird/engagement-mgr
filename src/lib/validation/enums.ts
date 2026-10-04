@@ -5,6 +5,7 @@ export const engagementStatusSchema = z.enum([
   'Recon',
   'Testing',
   'Reporting',
+  'Outbrief',
   'Complete',
 ]);
 

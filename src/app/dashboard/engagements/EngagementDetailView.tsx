@@ -13,7 +13,7 @@ export type EngagementDetailTab = 'overview' | 'scope' | 'people' | 'schedule';
 const TABS: { id: EngagementDetailTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'scope', label: 'Scope' },
-  { id: 'people', label: 'People' },
+  { id: 'people', label: 'Stakeholders' },
   { id: 'schedule', label: 'Schedule' },
 ];
 

@@ -278,7 +278,10 @@ export async function updateFindingFromDetail(formData: FormData): Promise<void>
   const result = await updateFinding(id, {}, formData);
   const code = updateErrorCode(result.error);
   if (engagementId && formData.get('engagementScoped')?.toString() === 'true') {
-    finishDetailUpdate('/dashboard/engagements', formData, engagementId, result, code, ['finding']);
+    finishDetailUpdate('/dashboard/engagements', formData, engagementId, result, code, ['finding'], {
+      successDetailId: engagementId,
+      successUpdates: { findings: '1' },
+    });
     return;
   }
   finishDetailUpdate('/dashboard/findings', formData, id, result, code);

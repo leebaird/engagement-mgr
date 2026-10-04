@@ -12,6 +12,7 @@ import {
 } from '@/lib/reporting';
 import { logAuditEvent } from '@/lib/audit-log';
 import { assertFindingCreationCapacity } from '@/lib/finding-capacity';
+import { listReturnPath } from '@/lib/list-view-params';
 
 export async function saveTemplate(form: FormData): Promise<void> {
   const actor = await requireAuth();
@@ -43,19 +44,17 @@ export async function saveTemplate(form: FormData): Promise<void> {
       });
       if (result.count !== 1) throw new Error('Conflict');
     } else {
-      const result = await prisma.findingTemplate.create({ data });
-      id = result.id;
+      await prisma.findingTemplate.create({ data });
     }
   } catch {
     redirect('/dashboard/templates?error=save');
   }
   await logAuditEvent('template.save', actor.userId, 'success');
   revalidatePath('/dashboard/templates');
-  redirect(
-    actor.role === 'Admin'
-      ? `/dashboard/templates?detail=${id}`
-      : '/dashboard/templates?proposed=1'
-  );
+  if (!form.get('id') && actor.role !== 'Admin') {
+    redirect('/dashboard/templates?proposed=1');
+  }
+  redirect(listReturnPath(form, '/dashboard/templates'));
 }
 
 export async function useTemplate(form: FormData): Promise<void> {
