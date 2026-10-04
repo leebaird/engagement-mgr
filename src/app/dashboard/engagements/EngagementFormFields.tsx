@@ -3,6 +3,7 @@
 import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
+import { focusCameFromTab } from '@/components/OpenDropdownOnTab';
 import { sortContactIds, sortContactsByTitle } from '@/lib/contact-title-sort';
 import { sortOperatorIds, sortOperatorsByTitle } from '@/lib/operator-title-sort';
 
@@ -207,6 +208,14 @@ function EngagementSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={readOnly ? undefined : () => setOpen(!open)}
+        onFocus={readOnly ? undefined : () => {
+          if (focusCameFromTab()) setOpen(true);
+        }}
+        onBlur={readOnly ? undefined : (event) => {
+          const next = event.relatedTarget;
+          if (next instanceof Node && wrapperRef.current?.contains(next)) return;
+          setOpen(false);
+        }}
         onKeyDown={readOnly ? undefined : (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -471,6 +480,14 @@ export function EngagementFormFields({
                 pointerEvents: readOnly ? 'none' : undefined,
               }}
               onClick={readOnly ? undefined : () => setTasOpen(!tasOpen)}
+              onFocus={readOnly ? undefined : () => {
+                if (focusCameFromTab()) setTasOpen(true);
+              }}
+              onBlur={readOnly ? undefined : (event) => {
+                const next = event.relatedTarget;
+                if (next instanceof Node && taDropdownRef.current?.contains(next)) return;
+                setTasOpen(false);
+              }}
               onKeyDown={readOnly ? undefined : (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -576,6 +593,14 @@ export function EngagementFormFields({
                 pointerEvents: readOnly ? 'none' : undefined,
               }}
               onClick={readOnly ? undefined : () => setContactsOpen(!contactsOpen)}
+              onFocus={readOnly ? undefined : () => {
+                if (focusCameFromTab()) setContactsOpen(true);
+              }}
+              onBlur={readOnly ? undefined : (event) => {
+                const next = event.relatedTarget;
+                if (next instanceof Node && contactDropdownRef.current?.contains(next)) return;
+                setContactsOpen(false);
+              }}
               onKeyDown={readOnly ? undefined : (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -683,6 +708,14 @@ export function EngagementFormFields({
                 pointerEvents: readOnly ? 'none' : undefined,
               }}
               onClick={readOnly ? undefined : () => setOpsOpen(!opsOpen)}
+              onFocus={readOnly ? undefined : () => {
+                if (focusCameFromTab()) setOpsOpen(true);
+              }}
+              onBlur={readOnly ? undefined : (event) => {
+                const next = event.relatedTarget;
+                if (next instanceof Node && dropdownRef.current?.contains(next)) return;
+                setOpsOpen(false);
+              }}
               onKeyDown={readOnly ? undefined : (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();

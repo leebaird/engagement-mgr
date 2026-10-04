@@ -6,7 +6,7 @@ import { DetailEyeLink } from '@/components/DetailEyeLink';
 import { ContactsClient } from './ContactsClient';
 import { ContactDetailButton } from './ContactDetailButton';
 import { formatPhone } from '@/lib/format';
-import { sortContactsByTitle } from '@/lib/contact-title-sort';
+import { sortContactsByClient, sortContactsByTitle } from '@/lib/contact-title-sort';
 
 export default async function ContactsPage({
   searchParams,
@@ -30,10 +30,8 @@ export default async function ContactsPage({
 
   type ContactOrderBy = NonNullable<Parameters<typeof prisma.contact.findMany>[0]>['orderBy'];
   let orderBy: ContactOrderBy | undefined;
-  if (sortCol === 'title') {
+  if (sortCol === 'title' || sortCol === 'client') {
     orderBy = undefined;
-  } else if (sortCol === 'client') {
-    orderBy = { client: { company: sortDir } };
   } else if (sortCol === 'phoneNumber') {
     orderBy = { phone: sortDir };
   } else if (sortCol === 'name') {
@@ -42,13 +40,17 @@ export default async function ContactsPage({
     orderBy = { email: sortDir };
   }
 
-  // Single query (title sort finishes in memory)
+  // Single query. Title and client sorts finish in memory.
   const contactsRaw = await prisma.contact.findMany({
     include: { client: true },
     orderBy,
   });
   const contacts =
-    sortCol === 'title' ? sortContactsByTitle(contactsRaw, sortDir) : contactsRaw;
+    sortCol === 'title'
+      ? sortContactsByTitle(contactsRaw, sortDir)
+      : sortCol === 'client'
+        ? sortContactsByClient(contactsRaw, sortDir)
+        : contactsRaw;
 
   const needsClients = (isAdmin && create === '1') || Boolean(detail);
   const clients = needsClients

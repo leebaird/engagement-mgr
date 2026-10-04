@@ -1,20 +1,31 @@
+const VP_RANK = 1;
+const DIRECTOR_RANK = 3;
+const LEAD_RANK = 5;
+
 const CONTACT_TITLE_EXACT = new Map<string, number>([
-  ['vp', 0],
-  ['vice president', 0],
-  ['ciso', 1],
-  ['chief information security officer', 1],
-  ['director', 2],
-  ['senior consultant', 3],
-  ['sr consultant', 3],
-  ['sr. consultant', 3],
+  ['svp', 0],
+  ['senior vice president', 0],
+  ['senior vp', 0],
+  ['sr vp', 0],
+  ['sr. vp', 0],
+  ['vp', VP_RANK],
+  ['vice president', VP_RANK],
+  ['ciso', 2],
+  ['chief information security officer', 2],
+  ['director', DIRECTOR_RANK],
+  ['senior consultant', 4],
+  ['sr consultant', 4],
+  ['sr. consultant', 4],
 ]);
 
-/** First matching rule wins; VP is checked before CISO so "VP and CISO" ranks at the top. */
+/** First matching rule wins. SVP is checked before VP, and VP before CISO. */
 const CONTACT_TITLE_CONTAINS: { rank: number; pattern: RegExp }[] = [
-  { rank: 0, pattern: /\bvp\b|\bvice president\b/ },
-  { rank: 1, pattern: /\bciso\b|\bchief information security officer\b/ },
-  { rank: 2, pattern: /\bdirector\b/ },
-  { rank: 3, pattern: /\bsenior consultant\b|\bsr\.?\s+consultant\b/ },
+  { rank: 0, pattern: /\bsvp\b|\bsenior vice president\b|\bsenior vp\b|\bsr\.?\s+vp\b/ },
+  { rank: VP_RANK, pattern: /\bvp\b|\bvice president\b/ },
+  { rank: 2, pattern: /\bciso\b|\bchief information security officer\b/ },
+  { rank: DIRECTOR_RANK, pattern: /\bdirector\b/ },
+  { rank: 4, pattern: /\bsenior consultant\b|\bsr\.?\s+consultant\b/ },
+  { rank: LEAD_RANK, pattern: /\blead\b/ },
 ];
 
 function normalizeContactTitle(title: string | null): string {
@@ -47,6 +58,17 @@ export function compareContactsByTitle<T extends { name: string; title: string |
     return dir === 'asc' ? rankA - rankB : rankB - rankA;
   }
 
+  if (rankA === VP_RANK || rankA === DIRECTOR_RANK || rankA === LEAD_RANK) {
+    const byTitle = normalizeContactTitle(a.title).localeCompare(
+      normalizeContactTitle(b.title),
+      undefined,
+      { sensitivity: 'base' }
+    );
+    if (byTitle !== 0) {
+      return dir === 'asc' ? byTitle : -byTitle;
+    }
+  }
+
   const byName = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
   if (byName !== 0) {
     return dir === 'asc' ? byName : -byName;
@@ -65,6 +87,18 @@ export function sortContactsByTitle<T extends { name: string; title: string | nu
   dir: 'asc' | 'desc' = 'asc'
 ): T[] {
   return [...contacts].sort((a, b) => compareContactsByTitle(a, b, dir));
+}
+
+export function sortContactsByClient<
+  T extends { name: string; title: string | null; client: { company: string } },
+>(contacts: T[], dir: 'asc' | 'desc' = 'asc'): T[] {
+  return [...contacts].sort((a, b) => {
+    const byClient = a.client.company.localeCompare(b.client.company, undefined, {
+      sensitivity: 'base',
+    });
+    if (byClient !== 0) return dir === 'asc' ? byClient : -byClient;
+    return compareContactsByTitle(a, b);
+  });
 }
 
 export function sortContactIds(

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { headers } from "next/headers";
 import { getHighlightColor } from '@/lib/application-settings';
 import { highlightColorCssName } from '@/lib/highlight-color';
+import { OpenDropdownOnTab } from '@/components/OpenDropdownOnTab';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default async function RootLayout({
       data-highlight-color={highlightColorCssName(highlightColor)}
     >
       <body data-nonce={nonce}>
+        <OpenDropdownOnTab />
         {children}
         <div id="modal-root" />
       </body>
