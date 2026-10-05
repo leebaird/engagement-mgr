@@ -830,6 +830,64 @@ a.db-action-btn {
   }
 }
 
+/* Size the edit and create Overview tab to Scope and Stakeholders. */
+.engagement-create-form .engagement-form-panels {
+  display: grid;
+  position: relative;
+  width: 100%;
+}
+
+.engagement-create-form .engagement-form-panels > .detail-tabpanel {
+  grid-area: 1 / 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.engagement-create-form .engagement-form-panels > [data-form-tab="overview"] {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+}
+
+.engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .form-group,
+.engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .engagement-form-pairs {
+  flex-shrink: 0;
+}
+
+.engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .form-group:last-child {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .form-group:last-child textarea {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 4.5rem;
+}
+
+.engagement-create-form .engagement-form-panels > [data-form-tab="scope"].detail-tabpanel--hidden,
+.engagement-create-form .engagement-form-panels > [data-form-tab="people"].detail-tabpanel--hidden {
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .engagement-create-form .engagement-form-panels > [data-form-tab="overview"] {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+  }
+
+  .engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .form-group:last-child,
+  .engagement-create-form .engagement-form-panels > [data-form-tab="overview"] > .form-group:last-child textarea {
+    flex: none;
+    height: auto;
+  }
+}
+
 .engagement-select {
   position: relative;
 }
@@ -1023,26 +1081,6 @@ a.db-action-btn {
 
 .engagement-findings-panel:focus {
   outline: none;
-}
-
-.engagement-findings-panel__total {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.engagement-findings-panel__total-label {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.engagement-findings-panel__total-value {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-main);
 }
 
 .engagement-findings-panel__counts {

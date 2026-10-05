@@ -243,24 +243,29 @@ export function EngagementDetailButton({
     </div>
   );
 
+  const findingsPanel = (showSummary: boolean) => (
+    <EngagementFindingsPanel
+      engagementId={engagement.id}
+      findings={findings}
+      activeFindingId={activeFindingId}
+      findingIsEditing={findingIsEditing}
+      findingShowDeleteConfirm={findingShowDeleteConfirm}
+      showFindingsList={showFindingsList}
+      showCreateFinding={showCreateFinding}
+      showSummary={showSummary}
+      deleteError={deleteError}
+      saveError={saveError}
+      sort={sort}
+      dir={dir}
+      isAdmin={isAdmin}
+      listParams={listParams}
+      engagementIdForLinks={engagement.id}
+    />
+  );
+
   const findingsSection = (
     <section className="glass-panel engagement-findings-section">
-      <EngagementFindingsPanel
-        engagementId={engagement.id}
-        findings={findings}
-        activeFindingId={activeFindingId}
-        findingIsEditing={findingIsEditing}
-        findingShowDeleteConfirm={findingShowDeleteConfirm}
-        showFindingsList={showFindingsList}
-        showCreateFinding={showCreateFinding}
-        deleteError={deleteError}
-        saveError={saveError}
-        sort={sort}
-        dir={dir}
-        isAdmin={isAdmin}
-        listParams={listParams}
-        engagementIdForLinks={engagement.id}
-      />
+      {findingsPanel(true)}
     </section>
   );
 
@@ -340,7 +345,7 @@ export function EngagementDetailButton({
               />
           </form>
         </div>
-        {findingsSection}
+        {findingsPanel(false)}
         {timestampsFooter}
         </div>
         ) : (

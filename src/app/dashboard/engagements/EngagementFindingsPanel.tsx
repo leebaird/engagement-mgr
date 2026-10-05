@@ -32,6 +32,7 @@ export function EngagementFindingsPanel({
   findingShowDeleteConfirm = false,
   showFindingsList = false,
   showCreateFinding = false,
+  showSummary = true,
   deleteError,
   saveError,
   sort,
@@ -47,6 +48,7 @@ export function EngagementFindingsPanel({
   findingShowDeleteConfirm?: boolean;
   showFindingsList?: boolean;
   showCreateFinding?: boolean;
+  showSummary?: boolean;
   deleteError?: string;
   saveError?: string;
   sort?: string;
@@ -153,31 +155,29 @@ export function EngagementFindingsPanel({
           showDelete={isAdmin}
         />
       ) : null}
-      <a
-        href={findingsListHref}
-        className="engagement-findings-panel"
-        aria-label="View engagement findings"
-      >
-        <span className="engagement-findings-panel__total">
-          <span className="engagement-findings-panel__total-label">Total Findings</span>
-          <span className="engagement-findings-panel__total-value">{counts.total}</span>
-        </span>
-        <span className="engagement-findings-panel__counts">
-          {SEVERITY_LABELS.map((label) => (
-            <span key={label} className="engagement-findings-panel__count">
-              <span
-                className="engagement-findings-panel__badge"
-                style={getSeverityStyle(label)}
-              >
-                {label}
+      {showSummary ? (
+        <a
+          href={findingsListHref}
+          className="engagement-findings-panel"
+          aria-label="View engagement findings"
+        >
+          <span className="engagement-findings-panel__counts">
+            {SEVERITY_LABELS.map((label) => (
+              <span key={label} className="engagement-findings-panel__count">
+                <span
+                  className="engagement-findings-panel__badge"
+                  style={getSeverityStyle(label)}
+                >
+                  {label}
+                </span>
+                <span className="engagement-findings-panel__count-value">
+                  {counts[label]}
+                </span>
               </span>
-              <span className="engagement-findings-panel__count-value">
-                {counts[label]}
-              </span>
-            </span>
-          ))}
-        </span>
-      </a>
+            ))}
+          </span>
+        </a>
+      ) : null}
 
       {showFindingsList && (
         <Modal
