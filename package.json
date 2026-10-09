@@ -27,7 +27,7 @@
     "argon2": "0.45.1",
     "fast-xml-parser": "5.11.2",
     "jose": "6.2.12",
-    "lucide-react": "1.49.0",
+    "lucide-react": "1.50.0",
     "marked": "18.0.14",
     "next": "16.3.8",
     "pdfkit": "0.20.2",
@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
-    "@types/node": "26.6.3",
+    "@types/node": "26.6.4",
     "@types/pdfkit": "0.17.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
