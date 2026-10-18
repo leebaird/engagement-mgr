@@ -19,7 +19,7 @@ export const runtime = 'nodejs';
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteContext<'/api/reports/[id]'>
 ) {
   const headers = {
     'Cache-Control': 'private, no-store',

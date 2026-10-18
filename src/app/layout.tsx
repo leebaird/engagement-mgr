@@ -22,11 +22,7 @@ export const metadata: Metadata = {
   description: "Secure operations and engagement tracking.",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
   // Dynamic rendering required for per-request CSP nonces (proxy sets x-nonce)
   await connection();
   const nonce = (await headers()).get('x-nonce') ?? undefined;
