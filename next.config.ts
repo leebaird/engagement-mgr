@@ -42,6 +42,7 @@ const nextConfig: NextConfig = {
   // Dev-only: this machine's LAN IPs plus optional ALLOWED_DEV_ORIGINS (hostnames).
   allowedDevOrigins: [...new Set([...lanIPv4Addresses(), ...allowedDevOriginsFromEnv()])],
   experimental: {
+    agentUpgrade: 'latest',
     optimizePackageImports: ['lucide-react'],
     useTypeScriptCli: true,
     // Next applies this to every Server Action (including login). 25 MB covers
