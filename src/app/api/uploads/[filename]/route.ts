@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ filename: string }> }
+  { params }: RouteContext<'/api/uploads/[filename]'>
 ) {
   const session = await getSession();
 

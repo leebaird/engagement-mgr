@@ -4,7 +4,7 @@ import { ModalCleanup } from '@/components/ModalCleanup';
 import { requireDashboardSession } from '@/lib/require-auth';
 import { ensureReconciledScreenshotStorage } from '@/lib/screenshot-storage';
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: LayoutProps<'/dashboard'>) {
   const session = await requireDashboardSession();
   const isAdmin = session.role === 'Admin';
   const evidenceStorageReady = await ensureReconciledScreenshotStorage()

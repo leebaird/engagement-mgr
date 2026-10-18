@@ -356,6 +356,11 @@ install_node_dependencies() {
   info "Installing Node.js dependencies..."
   npm ci
   success "npm dependencies installed"
+
+  # npm blocks dependency install scripts, so Prisma does not generate its client during install.
+  info "Generating Prisma Client..."
+  npx --no-install prisma generate
+  success "Prisma Client generated"
 }
 
 run_database_setup() {

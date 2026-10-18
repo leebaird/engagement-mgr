@@ -203,10 +203,11 @@ Run `./setup.sh --help` for all options.
 
 ### Manual setup
 
-1. Install Node.js dependencies:
+1. Install Node.js dependencies and generate the Prisma Client (npm does not run Prisma's install scripts):
 
    ```bash
    npm ci
+   npx prisma generate
    ```
 
 2. Run database migrations to build the tables:
@@ -349,7 +350,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 1. Install [Prerequisites](#prerequisites) and clone the repository.
 2. Create `.env` with `DATABASE_URL` and `JWT_SECRET` (see [Environment Configuration](#environment-configuration)).
 3. Create an empty PostgreSQL database and user (see [Database Setup](#database-setup)).
-4. Install dependencies: `npm ci`.
+4. Install dependencies and generate the Prisma Client: `npm ci`, then `npx prisma generate`.
 5. Run migrations and seed once so an Admin can sign in. Restore replaces this bootstrap data with the backup.
 6. Build and start the app in production mode (see [Production Deployment](#production-deployment)):
 
