@@ -14,9 +14,11 @@ import {
   MAX_SCREENSHOT_STORAGE_BYTES,
   reconcileScreenshotFiles,
   reconcileScreenshotStorage,
+  requireScreenshotReconciliation,
   restoreStagedScreenshotDeletion,
   ScreenshotQuotaError,
   stageScreenshotDeletion,
+  UploadsLockBusyError,
   withUploadsMaintenanceLock,
 } from './screenshot-storage';
 
@@ -96,27 +98,112 @@ describe('screenshot storage quotas', () => {
     ]);
   });
 
-  it('fails fast when database maintenance already holds the lock', async () => {
+  it('gives up once the wait window passes while another holder keeps the lock', async () => {
     let operationCalled = false;
-    let released = false;
+    let connections = 0;
+    let releases = 0;
     const databasePool = {
-      connect: async () => ({
-        query: async () => ({ rows: [{ locked: false }] }),
-        release: () => {
-          released = true;
-        },
-      }),
+      connect: async () => {
+        connections++;
+        return {
+          query: async () => ({ rows: [{ locked: false }] }),
+          release: () => {
+            releases++;
+          },
+        };
+      },
     };
 
     await assert.rejects(
       () =>
         withUploadsMaintenanceLock(async () => {
           operationCalled = true;
-        }, databasePool),
-      /temporarily unavailable/
+        }, databasePool, { waitMs: 0 }),
+      (error) => error instanceof UploadsLockBusyError && /temporarily unavailable/.test(error.message)
     );
     assert.equal(operationCalled, false);
-    assert.equal(released, true);
+    assert.equal(connections, 1);
+    assert.equal(releases, 1);
+  });
+
+  it('waits for a busy lock and returns the connection between attempts', async () => {
+    const lockAnswers = [false, false, true];
+    let connections = 0;
+    let releases = 0;
+    let heldDuringOperation = 0;
+    const databasePool = {
+      connect: async () => {
+        connections++;
+        return {
+          query: async (sql: string) =>
+            sql.includes('pg_try_advisory_lock')
+              ? { rows: [{ locked: lockAnswers.shift() }] }
+              : { rows: [] },
+          release: () => {
+            releases++;
+          },
+        };
+      },
+    };
+
+    const result = await withUploadsMaintenanceLock(
+      async () => {
+        heldDuringOperation = connections - releases;
+        return 'completed';
+      },
+      databasePool,
+      { waitMs: 5_000 }
+    );
+    assert.equal(result, 'completed');
+    assert.equal(connections, 3);
+    assert.equal(heldDuringOperation, 1);
+    assert.equal(releases, 3);
+  });
+
+  it('serves waiters in this process in arrival order and drops ones that time out', async () => {
+    const databasePool = {
+      connect: async () => ({
+        query: async () => ({ rows: [{ locked: true }] }),
+        release: () => {},
+      }),
+    };
+    let releaseHolder!: () => void;
+    const holderReleased = new Promise<void>((resolve) => (releaseHolder = resolve));
+    const order: string[] = [];
+    const run = (name: string, waitMs?: number) =>
+      withUploadsMaintenanceLock(
+        async () => {
+          order.push(name);
+          if (name === 'holder') await holderReleased;
+        },
+        databasePool,
+        { waitMs }
+      );
+
+    const holder = run('holder');
+    const first = run('first');
+    const expired = run('expired', 50);
+    const second = run('second');
+    await assert.rejects(expired, UploadsLockBusyError);
+    releaseHolder();
+    await Promise.all([holder, first, second]);
+    assert.deepEqual(order, ['holder', 'first', 'second']);
+  });
+
+  it('leaves dashboard reconciliation pending without backoff when the lock is busy', async (t) => {
+    let attempts = 0;
+    t.mock.method(pool, 'connect', async () => {
+      attempts++;
+      return {
+        query: async () => ({ rows: [{ locked: false }] }),
+        release: () => {},
+      };
+    });
+    requireScreenshotReconciliation();
+
+    await ensureReconciledScreenshotStorage();
+    await ensureReconciledScreenshotStorage();
+    assert.equal(attempts, 2);
   });
 
   it('accepts an upload below the global and per-finding limits', () => {

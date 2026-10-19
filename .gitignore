@@ -40,6 +40,9 @@ yarn-error.log*
 .next-log
 .pnpm-debug.log*
 
+# browser test evidence (UPLOADS_DIR for the Playwright server)
+/.browser-test-uploads/
+
 # env files
 .env*
 

@@ -11,6 +11,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { finishDetailDelete, finishDetailUpdate, updateErrorCode } from '@/lib/detail-delete-form';
 import { listReturnPath } from '@/lib/list-view-params';
+import { logAuditEvent } from '@/lib/audit-log';
 
 class LastAdminError extends Error {}
 
@@ -50,6 +51,7 @@ export async function createUser(_prevState: unknown, formData: FormData) {
   }
 
   const { username, password, role } = parsed.data;
+  let createdUserId = '';
 
   const complexity = validatePasswordComplexity(password);
   if (!complexity.valid) {
@@ -64,18 +66,21 @@ export async function createUser(_prevState: unknown, formData: FormData) {
 
     const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
 
-    await prisma.user.create({
+    createdUserId = (await prisma.user.create({
       data: {
         username,
         passwordHash,
         role,
         lastPasswordChange: new Date(0), // Force password change on first login
       },
-    });
+      select: { id: true },
+    })).id;
   } catch {
+    await logAuditEvent('user.create', auth.userId, 'failure', { role });
     return { error: 'Failed to create user.', fields: { username, role } };
   }
 
+  await logAuditEvent('user.create', auth.userId, 'success', { targetUserId: createdUserId, role });
   revalidatePath('/dashboard/users');
   redirect(listReturnPath(formData, '/dashboard/users'));
 }
@@ -102,6 +107,7 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
   }
 
   const { username, password, role } = parsed.data;
+  const auditDetails = { targetUserId: idParsed.data, role, passwordReset: Boolean(password) };
 
   try {
     const existing = await prisma.user.findFirst({ where: { username, NOT: { id: idParsed.data } } });
@@ -137,9 +143,11 @@ export async function updateUser(id: string, _prevState: unknown, formData: Form
       }
     }, { isolationLevel: 'Serializable' });
 
+    await logAuditEvent('user.update', auth.userId, 'success', auditDetails);
     revalidatePath('/dashboard/users');
     return { success: 'User updated successfully.' };
   } catch (err) {
+    await logAuditEvent('user.update', auth.userId, 'failure', auditDetails);
     if (err instanceof LastAdminError) {
       return { error: 'Cannot remove the last admin account.' };
     }
@@ -190,9 +198,11 @@ export async function deleteUser(id: string) {
       await tx.user.delete({ where: { id: userId } });
     }, { isolationLevel: 'Serializable' });
 
+    await logAuditEvent('user.delete', session.userId, 'success', { targetUserId: userId });
     revalidatePath('/dashboard/users');
     return { success: true };
   } catch (err) {
+    await logAuditEvent('user.delete', session.userId, 'failure', { targetUserId: userId });
     if (err instanceof LastAdminError) {
       return { error: 'Cannot delete the last admin account.' };
     }

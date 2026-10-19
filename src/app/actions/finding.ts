@@ -28,7 +28,8 @@ import {
   assertScreenshotQuota,
   finishStagedScreenshotDeletion,
   getScreenshotStorageUsage,
-  reconcileScreenshotStorage,
+  reconcileScreenshotStorageIfRequired,
+  requireScreenshotReconciliation,
   restoreStagedScreenshotDeletion,
   ScreenshotQuotaError,
   stageScreenshotDeletion,
@@ -404,9 +405,19 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
   const description = descriptionParsed.data;
   const findingId = findingIdParsed.data;
   try {
+    // Decode and re-encode before taking the uploads lock and opening the transaction.
+    const buffers: Buffer[] = [];
+    for (const file of files) {
+      const fileResult = validateScreenshotUpload(file);
+      if (!fileResult.ok) throw new WorkflowError(fileResult.error);
+      const input = Buffer.from(await fileResult.file.arrayBuffer());
+      const validation = validateScreenshotBuffer(input, fileResult.extension);
+      if (!validation.ok) throw new WorkflowError(validation.error);
+      buffers.push(await normalizeScreenshot(input));
+    }
     await withUploadsMaintenanceLock(async () => {
       const uploadsDirectory = await ensureUploadsDirectory();
-      await reconcileScreenshotStorage(uploadsDirectory);
+      await reconcileScreenshotStorageIfRequired(uploadsDirectory);
       const written: string[] = [];
       try {
         await prisma.$transaction(
@@ -417,13 +428,7 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
                 transaction.screenshot.count({ where: { findingId } }),
               ]);
               let findingFiles = count;
-              for (const file of files) {
-                const fileResult = validateScreenshotUpload(file);
-                if (!fileResult.ok) throw new WorkflowError(fileResult.error);
-                const input = Buffer.from(await fileResult.file.arrayBuffer());
-                const validation = validateScreenshotBuffer(input, fileResult.extension);
-                if (!validation.ok) throw new WorkflowError(validation.error);
-                const buffer = await normalizeScreenshot(input);
+              for (const buffer of buffers) {
                 const { absolutePath, fileName } = createUploadFilePath('png')!;
                 const temporaryPath = join(dirname(absolutePath), `.${fileName}.tmp`);
                 assertScreenshotQuota({
@@ -453,6 +458,8 @@ export async function uploadScreenshot(_prevState: unknown, formData: FormData) 
         );
       } catch (error) {
         for (const path of written) await unlink(path).catch(() => {});
+        // The commit may have succeeded before the error surfaced; recheck rows against files.
+        if (written.length) requireScreenshotReconciliation();
         throw error;
       }
     });

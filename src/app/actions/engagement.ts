@@ -201,7 +201,7 @@ export async function updateEngagement(id: string, _prevState: unknown, formData
       data: {
         codeName,
         clientId,
-        chargeCode,
+        chargeCode: chargeCode || null,
         type,
         location,
         status,

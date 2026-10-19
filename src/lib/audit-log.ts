@@ -9,6 +9,9 @@ export type AuditAction =
   | 'finding.import'
   | 'evidence.cleanup'
   | 'template.save'
+  | 'user.create'
+  | 'user.update'
+  | 'user.delete'
   | 'report.issue'
   | 'report.download';
 
@@ -19,7 +22,9 @@ export type AuditAction =
 export async function logAuditEvent(
   action: AuditAction,
   userId: string,
-  outcome: 'success' | 'failure'
+  outcome: 'success' | 'failure',
+  // Identifiers and flags only; never passwords, tokens or finding text.
+  details?: Record<string, string | boolean>
 ): Promise<void> {
   const ip = await getClientIp().catch(() => 'unknown');
   console.log(
@@ -28,6 +33,7 @@ export async function logAuditEvent(
       action,
       outcome,
       userId,
+      ...(details && { details }),
       ip,
       at: new Date().toISOString(),
     })

@@ -1,8 +1,21 @@
 import { randomUUID } from 'crypto';
 import { chmod, lstat, mkdir, readdir } from 'fs/promises';
-import { basename, resolve } from 'path';
+import { basename, relative, resolve, sep } from 'path';
 
-const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
+export function resolveUploadsDirectory(
+  setting: string | undefined,
+  appRoot: string = process.cwd()
+): string {
+  // Relative values resolve from the application root.
+  const directory = resolve(appRoot, setting?.trim() || 'uploads');
+  // The app root, its parents and the filesystem root would expose unrelated files to cleanup.
+  if (relative(directory, appRoot).split(sep)[0] !== '..') {
+    throw new Error('UPLOADS_DIR must be a dedicated folder, not the application folder or one of its parents.');
+  }
+  return directory;
+}
+
+const UPLOADS_DIR = resolveUploadsDirectory(process.env.UPLOADS_DIR);
 
 const ALLOWED_UPLOAD_EXTENSIONS = new Set(['png', 'jpg']);
 let securedUploadsDirectory: Promise<string> | undefined;
@@ -59,14 +72,14 @@ export async function ensureUploadsDirectory(): Promise<string> {
   securedUploadsDirectory ??= (async () => {
     await mkdir(UPLOADS_DIR, { recursive: true, mode: 0o700 });
     await chmod(UPLOADS_DIR, 0o700);
-    for (const entry of await readdir(UPLOADS_DIR, { withFileTypes: true })) {
-      const path = resolve(UPLOADS_DIR, entry.name);
-      const stats = await lstat(path);
-      if (!stats.isFile()) {
+    const paths = (await readdir(UPLOADS_DIR)).map((name) => resolve(UPLOADS_DIR, name));
+    // Check every entry before changing any permissions.
+    for (const path of paths) {
+      if (!(await lstat(path)).isFile()) {
         throw new Error('Uploads directory contains an unsupported entry');
       }
-      await chmod(path, 0o600);
     }
+    for (const path of paths) await chmod(path, 0o600);
     return UPLOADS_DIR;
   })().catch((error) => {
     securedUploadsDirectory = undefined;

@@ -31,24 +31,96 @@ type MaintenanceLockPool = {
   connect(): Promise<MaintenanceLockClient>;
 };
 
+export class UploadsLockBusyError extends Error {
+  constructor() {
+    super('Uploads are temporarily unavailable during database maintenance');
+    this.name = 'UploadsLockBusyError';
+  }
+}
+
+export const UPLOADS_LOCK_WAIT_MS = 10_000;
+const UPLOADS_LOCK_RETRY_MS = 100;
+
+type LockTurn = { start: () => void; timer?: NodeJS.Timeout };
+const lockTurns: LockTurn[] = [];
+let lockTurnTaken = false;
+
+/** Requests in this process take the database lock one at a time, in arrival order. */
+function takeLockTurn(deadline: number): Promise<void> {
+  if (!lockTurnTaken) {
+    lockTurnTaken = true;
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    const turn: LockTurn = {
+      start: () => {
+        clearTimeout(turn.timer);
+        resolve();
+      },
+    };
+    turn.timer = setTimeout(() => {
+      lockTurns.splice(lockTurns.indexOf(turn), 1);
+      reject(new UploadsLockBusyError());
+    }, Math.max(0, deadline - Date.now()));
+    lockTurns.push(turn);
+  });
+}
+
+function passLockTurn(): void {
+  const next = lockTurns.shift();
+  if (next) next.start();
+  else lockTurnTaken = false;
+}
+
+/**
+ * Run `operation` while holding the exclusive uploads lock, waiting up to `waitMs`
+ * for it. Requests in this process queue in arrival order; contention from another
+ * process (such as the offline restore) is retried with the pool connection returned
+ * between attempts, so waiting cannot starve the lock holder's Prisma queries.
+ */
 export async function withUploadsMaintenanceLock<T>(
   operation: () => Promise<T>,
-  databasePool: MaintenanceLockPool = pool
+  databasePool: MaintenanceLockPool = pool,
+  { waitMs = UPLOADS_LOCK_WAIT_MS }: { waitMs?: number } = {}
 ): Promise<T> {
-  const client = await databasePool.connect();
-  let acquired = false;
+  const deadline = Date.now() + waitMs;
+  await takeLockTurn(deadline);
+  try {
+    return await holdDatabaseLock(operation, databasePool, deadline);
+  } finally {
+    passLockTurn();
+  }
+}
+
+async function holdDatabaseLock<T>(
+  operation: () => Promise<T>,
+  databasePool: MaintenanceLockPool,
+  deadline: number
+): Promise<T> {
+  let client: MaintenanceLockClient;
+  while (true) {
+    client = await databasePool.connect();
+    let locked: boolean;
+    try {
+      const lockResult = await client.query(
+        'SELECT pg_try_advisory_lock($1::integer) AS locked',
+        [UPLOADS_MAINTENANCE_LOCK_ID]
+      );
+      locked = lockResult.rows?.[0]?.locked === true;
+    } catch (error) {
+      client.release(error instanceof Error ? error : undefined);
+      throw error;
+    }
+    if (locked) break;
+    client.release();
+    if (Date.now() + UPLOADS_LOCK_RETRY_MS > deadline) throw new UploadsLockBusyError();
+    await new Promise((resolve) => setTimeout(resolve, UPLOADS_LOCK_RETRY_MS));
+  }
+
   let failed = false;
   let operationError: unknown;
   let result: T | undefined;
   try {
-    const lockResult = await client.query(
-      'SELECT pg_try_advisory_lock($1::integer) AS locked',
-      [UPLOADS_MAINTENANCE_LOCK_ID]
-    );
-    if (lockResult.rows?.[0]?.locked !== true) {
-      throw new Error('Uploads are temporarily unavailable during database maintenance');
-    }
-    acquired = true;
     result = await operation();
   } catch (error) {
     failed = true;
@@ -56,14 +128,12 @@ export async function withUploadsMaintenanceLock<T>(
   }
 
   let releaseError: Error | undefined;
-  if (acquired) {
-    try {
-      await client.query('SELECT pg_advisory_unlock($1::integer)', [
-        UPLOADS_MAINTENANCE_LOCK_ID,
-      ]);
-    } catch (error) {
-      releaseError = error instanceof Error ? error : new Error('Failed to release uploads lock');
-    }
+  try {
+    await client.query('SELECT pg_advisory_unlock($1::integer)', [
+      UPLOADS_MAINTENANCE_LOCK_ID,
+    ]);
+  } catch (error) {
+    releaseError = error instanceof Error ? error : new Error('Failed to release uploads lock');
   }
   client.release(releaseError);
 
@@ -191,13 +261,24 @@ export async function reconcileScreenshotStorage(uploadsDirectory: string): Prom
   return referencedFiles;
 }
 
+/** Caller must hold the uploads lock. */
+export async function reconcileScreenshotStorageIfRequired(uploadsDirectory: string): Promise<void> {
+  if (reconciliationRequired) await reconcileScreenshotStorage(uploadsDirectory);
+}
+
+export function requireScreenshotReconciliation(): void {
+  reconciliationRequired = true;
+}
+
 export async function ensureReconciledScreenshotStorage(): Promise<void> {
   if (!reconciliationRequired) return;
   if (Date.now() < reconciliationRetryAt) throw reconciliationError;
+  // Page renders do not wait for the lock; a busy lock leaves reconciliation pending for the next render.
   reconciliationPromise ??= withUploadsMaintenanceLock(async () => {
     const uploadsDirectory = await ensureUploadsDirectory();
     await reconcileScreenshotStorage(uploadsDirectory);
-  }).catch((error) => {
+  }, pool, { waitMs: 0 }).catch((error) => {
+    if (error instanceof UploadsLockBusyError) return;
     reconciliationRetryAt = Date.now() + RECONCILIATION_RETRY_DELAY_MS;
     reconciliationError = error;
     throw error;

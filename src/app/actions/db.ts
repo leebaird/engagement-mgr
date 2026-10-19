@@ -117,8 +117,6 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
     redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError }));
   }
 
-  let restoreError = 'generic';
-
   try {
     const buffer = Buffer.from(await fileResult.file.arrayBuffer());
     await importDatabaseArchive(buffer);
@@ -126,7 +124,7 @@ export async function importDatabaseBackup(formData: FormData): Promise<void> {
     revalidatePath('/', 'layout');
   } catch {
     await logAuditEvent('db.restore', session.userId, 'failure');
-    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: restoreError }));
+    redirect(buildPathQuery('/dashboard/users', listParams, { db: 'restore', dbError: 'generic' }));
   }
 
   await logAuditEvent('db.restore', session.userId, 'success');

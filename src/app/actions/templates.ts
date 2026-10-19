@@ -17,6 +17,9 @@ import { listReturnPath } from '@/lib/list-view-params';
 export async function saveTemplate(form: FormData): Promise<void> {
   const actor = await requireAuth();
   if (isAuthError(actor)) redirect('/login');
+  // Curated library maintenance is administrative; all users may propose new templates.
+  if (form.get('id') && actor.role !== 'Admin')
+    redirect('/dashboard/templates?error=permission');
   let id = '';
   try {
     const content = findingContentSchema.parse({
@@ -35,9 +38,6 @@ export async function saveTemplate(form: FormData): Promise<void> {
     if (form.get('id')) {
       id = z.uuid().parse(form.get('id'));
       const version = versionSchema.parse(form.get('version'));
-      // Curated library maintenance is administrative; all users may propose new templates.
-      if (actor.role !== 'Admin')
-        redirect('/dashboard/templates?error=permission');
       const result = await prisma.findingTemplate.updateMany({
         where: { id, version },
         data: { ...data, version: { increment: 1 } },
