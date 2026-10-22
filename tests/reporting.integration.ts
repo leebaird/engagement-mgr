@@ -2,14 +2,21 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import { changeFinding } from '../src/lib/finding-workflow';
 import {
   assertReportBlueprintUnchanged,
   collectEngagementReport,
   renderEngagementReport,
 } from '../src/lib/report-service';
+import {
+  UPLOADS_MAINTENANCE_LOCK_ID,
+  UploadsLockBusyError,
+  withUploadsMaintenanceLock,
+} from '../src/lib/screenshot-storage';
+import { testSetting } from './test-env';
 
-const url = process.env.REPORTING_TEST_DATABASE_URL;
+const url = testSetting('REPORTING_TEST_DATABASE_URL');
 if (
   !url ||
   !['localhost', '127.0.0.1'].includes(new URL(url).hostname) ||
@@ -229,5 +236,78 @@ describe('reporting database transactions', () => {
       db.$transaction((tx) => renderEngagementReport(tx, engagementId, false)),
       /removed or moved/
     );
+  });
+});
+
+describe('uploads maintenance lock on PostgreSQL', () => {
+  // The holder takes the advisory lock on its own connection, standing in for another
+  // process such as the offline restore; the app's in-process queue does not see it.
+  const pools: Pool[] = [];
+  const newPool = (max = 3) => {
+    const pool = new Pool({ connectionString: url, max });
+    pools.push(pool);
+    return pool;
+  };
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  async function holdLockElsewhere() {
+    const client = await newPool(1).connect();
+    await client.query('SELECT pg_advisory_lock($1::integer)', [UPLOADS_MAINTENANCE_LOCK_ID]);
+    return async () => {
+      await client.query('SELECT pg_advisory_unlock($1::integer)', [UPLOADS_MAINTENANCE_LOCK_ID]);
+      client.release();
+    };
+  }
+  after(async () => {
+    await Promise.all(pools.map((pool) => pool.end()));
+  });
+
+  it('waits for another process to release the lock and then runs', async () => {
+    const release = await holdLockElsewhere();
+    const order: string[] = [];
+    const waiter = withUploadsMaintenanceLock(
+      async () => {
+        order.push('waiter');
+      },
+      newPool(),
+      { waitMs: 5_000 }
+    );
+    await sleep(300);
+    assert.equal(order.length, 0);
+    order.push('holder released');
+    await release();
+    await waiter;
+    assert.deepEqual(order, ['holder released', 'waiter']);
+  });
+
+  it('gives up with UploadsLockBusyError once the wait window passes', async () => {
+    const release = await holdLockElsewhere();
+    try {
+      let ran = false;
+      await assert.rejects(
+        withUploadsMaintenanceLock(
+          async () => {
+            ran = true;
+          },
+          newPool(),
+          { waitMs: 300 }
+        ),
+        UploadsLockBusyError
+      );
+      assert.equal(ran, false);
+    } finally {
+      await release();
+    }
+  });
+
+  it('keeps the pool usable for other queries while waiting', async () => {
+    const release = await holdLockElsewhere();
+    const pool = newPool(1);
+    const waiter = withUploadsMaintenanceLock(async () => {}, pool, { waitMs: 10_000 });
+    await sleep(150);
+    // The waiter shares this one-connection pool; app queries must still get through.
+    const { rows } = await pool.query<{ value: number }>('SELECT 1 AS value');
+    assert.equal(rows[0].value, 1);
+    await release();
+    await waiter;
   });
 });

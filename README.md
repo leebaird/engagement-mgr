@@ -85,16 +85,16 @@ npm audit
 
 `npm test` uses Node's non-isolated test mode with `tsx` so the individual TypeScript test cases execute, rather than merely reporting file subprocess success. Keep the explicit assertion totals visible in CI.
 
-Database and browser regressions require a **dedicated local database named `reporting_tests`**, with migrations applied. They create and delete their own fixture rows; never point these tests at an application database. Set `REPORTING_TEST_DATABASE_URL` to that test database, then run:
+Database and browser regressions require a **dedicated local database named `reporting_tests`**, with migrations applied. They create and delete their own fixture rows; never point these tests at an application database. Set `REPORTING_TEST_DATABASE_URL` to that test database, either exported in your shell or in `.env` (the test commands read only `REPORTING_TEST_DATABASE_URL` and `REPORTING_TEST_BROWSER` from it), then run:
 
 ```bash
-DATABASE_URL="$REPORTING_TEST_DATABASE_URL" npx prisma migrate deploy
+DATABASE_URL="$REPORTING_TEST_DATABASE_URL" npx prisma migrate deploy  # needs the variable exported in your shell
 npm run test:reporting
 npx playwright install chromium
 npm run test:browser
 ```
 
-The browser suite starts its own loopback development server on port 3317 with a test-only session secret; it refuses to reuse an existing server. Set `REPORTING_TEST_BROWSER` to an installed Chromium executable if desired. It tests draft privacy, conflicting edits, evidence upload, independent review, PDF permissions/immutability, template creation without JavaScript, and selective deduplicated imports. Integration tests exercise actual transactional conflicts and rollback. The suites do not replace remote-LAN, Safari or production-deployment verification.
+The browser suite starts its own loopback development server on port 3317 with a test-only session secret; it refuses to reuse an existing server, and Next.js allows only one `next dev` per project, so stop any running `npm run dev` first. Set `REPORTING_TEST_BROWSER` to an installed Chromium executable if desired. It tests draft privacy, conflicting edits, evidence upload, independent review, PDF permissions/immutability, template creation without JavaScript, and selective deduplicated imports. Integration tests exercise actual transactional conflicts and rollback. The suites do not replace remote-LAN, Safari or production-deployment verification.
 
 ## Prerequisites
 
@@ -135,6 +135,7 @@ chmod 600 .env
 | `JWT_SECRET` | Yes in production | Must be at least **32 characters**. The app refuses to start in production without it. Rotating this invalidates all existing sessions. |
 | `TRUST_PROXY` | No | Set to `1` (or `true`) only when the app is behind a reverse proxy that **overwrites** `X-Forwarded-For` / `X-Real-IP` and `X-Forwarded-Host`. Login origin checks use `X-Forwarded-Host` when present in this mode; it must contain one public host, including a non-default port when used. Otherwise the proxy must preserve the public `Host` header. This is the required production topology for accurate per-source login limits. When unset, headers are ignored to prevent spoofing and login uses a higher one-minute shared fallback budget so one client cannot impose a 15-minute global lockout. |
 | `ALLOWED_DEV_ORIGINS` | No | **Development only.** Extra hostnames allowed to load `/_next` assets (comma-separated). The server’s current LAN IPv4 addresses are allowed automatically. Use this for a stable DNS name. Production builds ignore this. |
+| `UPLOADS_DIR` | No | Folder for evidence screenshots; defaults to `uploads/` in the application root (relative paths resolve from there). Each database needs its own folder: screenshot cleanup deletes files its database does not reference. The browser suite uses `.browser-test-uploads/`. |
 
 Generate a strong secret:
 
@@ -264,10 +265,11 @@ ALLOWED_DEV_ORIGINS=dev.office.example
 
 ### Deploy steps
 
-1. Clone the repository and install dependencies:
+1. Clone the repository, install dependencies, and generate the Prisma Client:
 
    ```bash
    npm ci
+   npx prisma generate
    ```
 
 2. Create `.env` with production values (`DATABASE_URL`, `JWT_SECRET` ≥ 32 characters).
@@ -332,7 +334,7 @@ On **Admin**, the **Database** panel shows **Backup**, **Restore**, and **Reset*
 | `engagement-manager-backup/database.dump` | Full PostgreSQL custom-format dump (schema, tables, data, enums, relations) from `pg_dump` |
 | `engagement-manager-backup/uploads/` | Finding screenshot files referenced in the database |
 
-- **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. Browser restore is limited to 8 MB so decompression cannot monopolise the web process. For a larger archive, stop the application and run `npm run db:restore -- /absolute/path/to/em-backup.zip` as the application user. The offline command loads `.env` from the working directory and requires a non-empty `DATABASE_URL` in `.env` or the environment. It accepts regular files up to 500 MB and streams each archive entry through its expanded-size limit. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap. Requires your admin password to confirm.
+- **Restore** accepts only a `.zip` created by **Backup** and replaces the current database and `uploads/` folder. Browser restore is limited to 8 MB so decompression cannot monopolise the web process. For a larger archive, stop the application and run `npm run db:restore -- /absolute/path/to/em-backup.zip` as the application user. The offline command loads `.env` from the working directory and requires a non-empty `DATABASE_URL` in `.env` or the environment. It accepts regular files up to 500 MB and streams each archive entry through its expanded-size limit. The database restore runs in one transaction; archive entry counts, paths, compression ratios, and expanded sizes are validated before files are installed. Backup, restore, reset, and screenshot file changes share an exclusive maintenance lock so database commits and filesystem swaps cannot overlap; a request waits up to 10 seconds for the lock before reporting that uploads are temporarily unavailable. Requires your admin password to confirm.
 - **Reset** wipes all application data, restores the default red highlight colour, and recreates `admin`. Requires typing `RESET` and re-entering the confirming administrator's current password. That password becomes the recreated account's temporary password and must be changed on first login.
 
 **Old server**

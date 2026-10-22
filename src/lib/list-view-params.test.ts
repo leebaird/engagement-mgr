@@ -5,6 +5,7 @@ import {
   buildCalendarDayHref,
   buildDetailHrefs,
   buildSortHrefs,
+  listReturnPath,
   parseCalendarDayKey,
   parseListPage,
 } from './list-view-params';
@@ -89,5 +90,38 @@ describe('calendar day params', () => {
       buildCalendarDayCloseHref(2026, 7),
       '/dashboard?year=2026&month=8',
     );
+  });
+});
+
+describe('listReturnPath', () => {
+  const form = (returnTo?: string) => {
+    const data = new FormData();
+    if (returnTo !== undefined) data.set('returnTo', returnTo);
+    return data;
+  };
+
+  it('keeps list query params and drops modal params', () => {
+    assert.equal(
+      listReturnPath(
+        form('/dashboard/users?sort=role&dir=desc&detail=abc&edit=1&delete=1&create=1'),
+        '/dashboard/users'
+      ),
+      '/dashboard/users?sort=role&dir=desc'
+    );
+  });
+
+  it('falls back to the list page for missing, other-page and off-site targets', () => {
+    for (const returnTo of [
+      undefined,
+      '',
+      '/dashboard/clients?sort=company',
+      '/dashboard/users/../clients',
+      'https://evil.example/dashboard/users',
+      '//evil.example/dashboard/users',
+      '/\\evil.example/dashboard/users',
+      'javascript:alert(1)',
+    ]) {
+      assert.equal(listReturnPath(form(returnTo), '/dashboard/users'), '/dashboard/users', String(returnTo));
+    }
   });
 });

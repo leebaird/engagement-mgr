@@ -1,4 +1,12 @@
 import { defineConfig } from '@playwright/test';
+import { BROWSER_TEST_UPLOADS_DIR } from './tests/browser/uploads-dir';
+import { testSetting } from './tests/test-env';
+
+// Test workers inherit these; nothing else from .env is loaded into the test runner.
+for (const name of ['REPORTING_TEST_DATABASE_URL', 'REPORTING_TEST_BROWSER'] as const) {
+  const value = testSetting(name);
+  if (value) process.env[name] = value;
+}
 
 const database = process.env.REPORTING_TEST_DATABASE_URL;
 if (
@@ -29,6 +37,7 @@ export default defineConfig({
       DATABASE_URL: database,
       JWT_SECRET: 'isolated-browser-test-secret-at-least-32-characters',
       NEXT_TELEMETRY_DISABLED: '1',
+      UPLOADS_DIR: BROWSER_TEST_UPLOADS_DIR,
     },
   },
 });

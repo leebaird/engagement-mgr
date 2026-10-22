@@ -4,6 +4,7 @@ import {
   releaseLoginRateLimitAttempt,
 } from '@/lib/auth/login-rate-limit';
 import { verifyAgainstDummyHash, verifyPasswordHash } from '@/lib/auth/password';
+import { isPasswordRotationRequired } from '@/lib/auth/session';
 
 export type LoginResult =
   | {
@@ -41,13 +42,11 @@ export async function authenticateLogin(
     where: { id: user.id },
     data: { lastLogin: new Date() },
   });
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   return {
     status: 'authenticated',
     userId: user.id,
     role: user.role,
     lastPasswordChange: user.lastPasswordChange,
-    needsPasswordChange: user.lastPasswordChange < ninetyDaysAgo,
+    needsPasswordChange: isPasswordRotationRequired(user.lastPasswordChange.toISOString()),
   };
 }

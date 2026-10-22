@@ -1,18 +1,15 @@
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { SignJWT } from 'jose';
+import { test, expect } from '@playwright/test';
 import * as argon2 from 'argon2';
 import { unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import {
+  actionFields,
+  authenticate,
+  browserTestUploadsPath,
+  createTestDatabase,
+} from './support';
 
-const url = process.env.REPORTING_TEST_DATABASE_URL!;
-const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: url }),
-});
-const secret = new TextEncoder().encode(
-  'isolated-browser-test-secret-at-least-32-characters'
-);
+const db = createTestDatabase();
 const loginPassword = 'Browser-login-test-42!';
 let author: { id: string; username: string; role: 'User'; lastPasswordChange: Date },
   admin: { id: string; username: string; role: 'Admin'; lastPasswordChange: Date };
@@ -20,59 +17,6 @@ let engagementId: string,
   clientId: string,
   findingId: string,
   templateId: string;
-
-async function authenticate(
-  context: BrowserContext,
-  user: typeof author | typeof admin
-) {
-  const session = await db.session.create({
-    data: {
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-    },
-  });
-  const token = await new SignJWT({
-    sessionId: session.id,
-    userId: user.id,
-    role: user.role,
-    lastPasswordChange: user.lastPasswordChange.toISOString(),
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('1h')
-    .sign(secret);
-  await context.addCookies([
-    {
-      name: 'session',
-      value: token,
-      domain: '127.0.0.1',
-      path: '/',
-      httpOnly: true,
-      sameSite: 'Lax',
-    },
-  ]);
-}
-
-async function actionFields(page: Page, path: string, button: string) {
-  const response = await page.request.get(path);
-  expect(response.status()).toBe(200);
-  const fields = await page.evaluate(
-    ({ html, button }) => {
-      const document = new DOMParser().parseFromString(html, 'text/html');
-      const form = Array.from(document.forms).find((form) =>
-        Array.from(form.querySelectorAll('button')).some(
-          (element) => element.textContent?.trim() === button
-        )
-      );
-      if (!form) throw new Error('Action form not found');
-      return Object.fromEntries(new FormData(form)) as Record<string, string>;
-    },
-    { html: await response.text(), button }
-  );
-  expect(Object.keys(fields).some((key) => key.startsWith('$ACTION_'))).toBe(
-    true
-  );
-  return fields;
-}
 
 test.describe.serial('authoring and reporting', () => {
   test.beforeAll(async () => {
@@ -138,7 +82,7 @@ test.describe.serial('authoring and reporting', () => {
       await db.finding.deleteMany({ where: { engagementId } });
       await db.engagement.deleteMany({ where: { id: engagementId } });
       for (const screenshot of screenshots)
-        await unlink(join(process.cwd(), 'uploads', screenshot.filePath)).catch(
+        await unlink(join(browserTestUploadsPath, screenshot.filePath)).catch(
           () => {}
         );
     }
@@ -196,7 +140,7 @@ test.describe.serial('authoring and reporting', () => {
     context,
     browser,
   }, testInfo) => {
-    await authenticate(context, author);
+    await authenticate(db, context, author);
     const writingUrl = `/dashboard/findings/${findingId}/write`;
     await page.goto(writingUrl);
     await page.getByRole('button', { name: 'Show Preview' }).click();
@@ -214,7 +158,7 @@ test.describe.serial('authoring and reporting', () => {
     const reviewerContext = await browser.newContext({
       baseURL: 'http://127.0.0.1:3317',
     });
-    await authenticate(reviewerContext, admin);
+    await authenticate(db, reviewerContext, admin);
     const reviewer = await reviewerContext.newPage();
     await reviewer.goto(writingUrl);
     await expect(
@@ -386,7 +330,7 @@ test.describe.serial('authoring and reporting', () => {
       baseURL: 'http://127.0.0.1:3317',
       javaScriptEnabled: false,
     });
-    await authenticate(context, admin);
+    await authenticate(db, context, admin);
     const page = await context.newPage();
     await page.goto('/dashboard/templates?create=1');
     const title = `Reusable fixture ${crypto.randomUUID()}`;
@@ -424,7 +368,7 @@ test.describe.serial('authoring and reporting', () => {
     const importContext = await browser.newContext({
       baseURL: 'http://127.0.0.1:3317',
     });
-    await authenticate(importContext, author);
+    await authenticate(db, importContext, author);
     const imports = await importContext.newPage();
     for (let attempt = 0; attempt < 2; attempt++) {
       await imports.goto(`/dashboard/imports?engagement=${engagementId}`);

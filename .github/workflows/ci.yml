@@ -81,7 +81,7 @@ jobs:
         run: npm run test:browser
 
       - name: Type check
-        run: npx --no-install tsc --noEmit --noUnusedLocals --noUnusedParameters
+        run: npm run typecheck -- --noUnusedLocals --noUnusedParameters
 
       - name: Build
         run: npm run build

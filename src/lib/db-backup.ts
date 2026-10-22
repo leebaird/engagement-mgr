@@ -18,7 +18,7 @@ import { createInflateRaw } from 'zlib';
 import { promisify } from 'util';
 import { pipeline } from 'node:stream/promises';
 import { Readable, Transform } from 'node:stream';
-import { basename, dirname, join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
 import { tmpdir } from 'os';
 import { prisma } from '@/lib/db';
 import { getPgToolsConnection } from '@/lib/require-admin';
@@ -26,11 +26,13 @@ import { prepareDefaultAdminUser } from '@/lib/seed-default-admin';
 import { APPLICATION_SETTING_ID } from '@/lib/highlight-color';
 import {
   ensureUploadsDirectory,
+  getUploadsDirectory,
 } from '@/lib/uploads-path';
 import {
   MAX_SCREENSHOT_FILES,
   MAX_SCREENSHOT_STORAGE_BYTES,
   reconcileScreenshotStorage,
+  requireScreenshotReconciliation,
   withUploadsMaintenanceLock,
 } from '@/lib/screenshot-storage';
 import { MAX_SCREENSHOT_BYTES } from '@/lib/validation/upload';
@@ -386,7 +388,8 @@ async function runPgRestore(dumpPath: string, workDirectory: string): Promise<vo
 }
 
 async function prepareUploadsDirectory(source?: string): Promise<string> {
-  const destination = await mkdtemp(join(process.cwd(), '.uploads-restore-'));
+  // Stage beside the uploads directory so installing it is a same-filesystem rename.
+  const destination = await mkdtemp(join(dirname(getUploadsDirectory()), '.uploads-restore-'));
   try {
     await chmod(destination, 0o700);
     if (source && existsSync(source)) {
@@ -461,7 +464,8 @@ export async function replaceDirectoryDuringOperation<T>(
 ): Promise<T> {
   const previousDirectory = join(
     dirname(currentDirectory),
-    `.${basename(currentDirectory)}-previous-${randomUUID()}`
+    // Fixed prefix so .gitignore covers it whatever UPLOADS_DIR is named.
+    `.uploads-previous-${randomUUID()}`
   );
   let previousMoved = false;
   let installed = false;
@@ -536,16 +540,17 @@ export async function importDatabaseArchive(archive: Buffer): Promise<void> {
       await runWithUploadsReplacement(preparedUploads, () =>
         runPgRestore(databaseDump, workDirectory)
       );
+      // Restored files are not cross-checked against the restored rows until the next reconciliation.
+      requireScreenshotReconciliation();
     })
   );
 }
 
 export async function deleteAllDatabaseData(defaultAdminPassword?: string): Promise<void> {
   const admin = await prepareDefaultAdminUser(defaultAdminPassword);
-  const preparedUploads = await prepareUploadsDirectory();
 
-  await withUploadsMaintenanceLock(() =>
-    runWithUploadsReplacement(preparedUploads, () =>
+  await withUploadsMaintenanceLock(async () =>
+    runWithUploadsReplacement(await prepareUploadsDirectory(), () =>
       prisma.$transaction(
         async (transaction) => {
           await transaction.$executeRawUnsafe(`

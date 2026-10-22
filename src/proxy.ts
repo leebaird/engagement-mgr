@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getSessionFromRequest, getSessionJwtFromRequest } from '@/lib/auth/session';
+import {
+  getSessionFromRequest,
+  getSessionJwtFromRequest,
+  isPasswordRotationRequired,
+} from '@/lib/auth/session';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -91,37 +95,36 @@ export async function proxy(request: NextRequest) {
     return withSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), csp);
   }
 
+  let revokedSessionCookie = false;
   if (session && isLoginPage) {
     const dbSession = await getSessionFromRequest(request);
     if (dbSession) {
       return withSecurityHeaders(NextResponse.redirect(new URL('/dashboard', request.url)), csp);
     }
+    // Signed but revoked: drop it so later visits stop detouring via its stale claims.
+    revokedSessionCookie = true;
   }
 
   // Fast path for password rotation using JWT claim (DB confirms in layout)
-  if (session && !isLoginPage && !isChangePasswordPage) {
-    const lastPasswordChange = new Date(session.lastPasswordChange);
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    if (
-      !Number.isNaN(lastPasswordChange.getTime()) &&
-      lastPasswordChange < ninetyDaysAgo
-    ) {
-      return withSecurityHeaders(
-        NextResponse.redirect(new URL('/change-password', request.url)),
-        csp
-      );
-    }
+  if (
+    session &&
+    !isLoginPage &&
+    !isChangePasswordPage &&
+    isPasswordRotationRequired(session.lastPasswordChange)
+  ) {
+    return withSecurityHeaders(
+      NextResponse.redirect(new URL('/change-password', request.url)),
+      csp
+    );
   }
 
-  return withSecurityHeaders(
-    NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    }),
-    csp
-  );
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+  if (revokedSessionCookie) response.cookies.delete('session');
+  return withSecurityHeaders(response, csp);
 }
 
 export const config = {
